@@ -22,14 +22,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
 	imageUrl,
 }) => {
 	return (
-		<Card className="w-full max-w-xs p-0 gap-0 pb-4 cursor-pointer">
-			<CardHeader className="p-0 h-80">
+		<Card className="w-full max-w-[18rem] p-0 gap-0 pb-4 cursor-pointer">
+			<CardHeader className="p-0 h-72">
 				<Image
 					src={imageUrl || "/images/product_default.webp"}
 					alt={title}
 					width={300}
 					height={300}
-					className="w-full h-80 object-cover rounded-t-md"
+					className="w-full h-72 object-cover rounded-t-md"
 				/>
 			</CardHeader>
 			<CardContent className="border-t pt-4">

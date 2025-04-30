@@ -7,7 +7,7 @@ import { Input } from "../ui/input";
 
 const Header = () => {
 	return (
-		<header className="flex items-center justify-between h-20 border">
+		<header className="flex items-center justify-between h-20 border sticky top-0 bg-background z-50 shadow-sm">
 			<div className="max-w-[85rem] mx-auto py-16 px-4 lg:px-10 flex items-center justify-between w-full">
 				<h1 className="text-2xl w-full">LOGO</h1>
 				<div className="flex items-center gap-4 w-full">
