@@ -1,0 +1,44 @@
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import Image from "next/image";
+import React from "react";
+
+interface ProductCardProps {
+	title: string;
+	description: string;
+	price: string;
+	imageUrl: string;
+}
+
+const ProductCard: React.FC<ProductCardProps> = ({
+	title,
+	description,
+	price,
+	imageUrl,
+}) => {
+	return (
+		<Card className="w-full max-w-xs p-0 gap-0 pb-4 cursor-pointer">
+			<CardHeader className="p-0 h-80">
+				<Image
+					src={imageUrl || "/images/product_default.webp"}
+					alt={title}
+					width={300}
+					height={300}
+					className="w-full h-80 object-cover rounded-t-md"
+				/>
+			</CardHeader>
+			<CardContent className="border-t pt-4">
+				<CardTitle className="text-2xl font-bold">{title}</CardTitle>
+				<CardDescription>{description}</CardDescription>
+				<p className="text-xl font-extrabold mt-2">{price}€</p>
+			</CardContent>
+		</Card>
+	);
+};
+
+export default ProductCard;
