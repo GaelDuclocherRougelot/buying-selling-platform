@@ -41,13 +41,41 @@ export default function SignUp() {
 		}
 	};
 
+	const handleSignUp = async () => {
+		const { error } = await signUp.email({
+			email,
+			password,
+			name: `${firstName} ${lastName}`,
+			image: image ? await convertImageToBase64(image) : "",
+			fetchOptions: {
+				onResponse: () => {
+					setLoading(false);
+				},
+				onRequest: () => {
+					setLoading(true);
+				},
+				onError: (ctx) => {
+					toast.error(ctx.error.message);
+				},
+				onSuccess: async () => {
+					router.push("/auth/login");
+				},
+			},
+		});
+
+		if (error) {
+			toast.error(error.message);
+			return;
+		}
+	};
+
 	return (
 		<Card className="max-w-[30rem] w-full">
 			<CardHeader>
-				<CardTitle className="text-lg md:text-xl">
+				<CardTitle className="text-lg md:text-2xl font-bold text-center">
 					S&apos;inscrire
 				</CardTitle>
-				<CardDescription className="text-xs md:text-sm">
+				<CardDescription className="text-xs md:text-sm text-center">
 					Entrez vos informations ci-dessous pour créer un compte
 				</CardDescription>
 			</CardHeader>
@@ -58,7 +86,7 @@ export default function SignUp() {
 							<Label htmlFor="first-name">Prénom</Label>
 							<Input
 								id="first-name"
-								placeholder="Max"
+								placeholder="John"
 								required
 								onChange={(e) => {
 									setFirstName(e.target.value);
@@ -70,7 +98,7 @@ export default function SignUp() {
 							<Label htmlFor="last-name">Nom</Label>
 							<Input
 								id="last-name"
-								placeholder="Robinson"
+								placeholder="Doe"
 								required
 								onChange={(e) => {
 									setLastName(e.target.value);
@@ -84,7 +112,7 @@ export default function SignUp() {
 						<Input
 							id="email"
 							type="email"
-							placeholder="m@example.com"
+							placeholder="john.doe@example.com"
 							required
 							onChange={(e) => {
 								setEmail(e.target.value);
@@ -122,9 +150,9 @@ export default function SignUp() {
 						<Label htmlFor="image">
 							Image de profil (facultatif)
 						</Label>
-						<div className="flex items-end gap-4">
+						<div className="flex items-center gap-4">
 							{imagePreview && (
-								<div className="relative w-16 h-16 rounded-sm overflow-hidden">
+								<div className="relative w-full max-w-16 h-16 rounded-full overflow-hidden">
 									<Image
 										src={imagePreview}
 										alt="Image de profil"
@@ -157,31 +185,7 @@ export default function SignUp() {
 						type="submit"
 						className="w-full"
 						disabled={loading}
-						onClick={async () => {
-							await signUp.email({
-								email,
-								password,
-								name: `${firstName} ${lastName}`,
-								image: image
-									? await convertImageToBase64(image)
-									: "",
-								callbackURL: "/dashboard",
-								fetchOptions: {
-									onResponse: () => {
-										setLoading(false);
-									},
-									onRequest: () => {
-										setLoading(true);
-									},
-									onError: (ctx) => {
-										toast.error(ctx.error.message);
-									},
-									onSuccess: async () => {
-										router.push("/dashboard");
-									},
-								},
-							});
-						}}
+						onClick={handleSignUp}
 					>
 						{loading ? (
 							<Loader2 size={16} className="animate-spin" />

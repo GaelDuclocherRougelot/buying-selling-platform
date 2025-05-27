@@ -23,13 +23,49 @@ export default function SignIn() {
 	const [loading, setLoading] = useState(false);
 	const [rememberMe, setRememberMe] = useState(false);
 
+	const handleGoogleSignIn = async () => {
+		await signIn.social(
+			{
+				provider: "google",
+				callbackURL: "/auth/profile",
+				newUserCallbackURL: "/auth/profile",
+			},
+			{
+				onRequest: () => {
+					setLoading(true);
+				},
+				onResponse: () => {
+					setLoading(false);
+				},
+			}
+		);
+	}
+
+	const handleEmailSignIn = async () => {
+		await signIn.email(
+				{
+					email,
+					password,
+				},
+				{
+					onRequest: () => {
+						setLoading(true);
+					},
+					onResponse: () => {
+						setLoading(false);
+					},
+				}
+			);
+		}
+		
+
 	return (
 		<Card className="max-w-[30rem] w-full">
 			<CardHeader>
-				<CardTitle className="text-lg md:text-xl">
+				<CardTitle className="text-lg md:text-2xl font-bold text-center">
 					Se connecter
 				</CardTitle>
-				<CardDescription className="text-xs md:text-sm">
+				<CardDescription className="text-xs md:text-sm text-center">
 					Entrez vos informations ci-dessous pour vous connecter
 				</CardDescription>
 			</CardHeader>
@@ -82,24 +118,9 @@ export default function SignIn() {
 
 					<Button
 						type="submit"
-						className="w-full"
+						className="w-full py-5"
 						disabled={loading}
-						onClick={async () => {
-							await signIn.email(
-								{
-									email,
-									password,
-								},
-								{
-									onRequest: () => {
-										setLoading(true);
-									},
-									onResponse: () => {
-										setLoading(false);
-									},
-								}
-							);
-						}}
+						onClick={handleEmailSignIn}
 					>
 						{loading ? (
 							<Loader2 size={16} className="animate-spin" />
@@ -116,24 +137,9 @@ export default function SignIn() {
 					>
 						<Button
 							variant="outline"
-							className={cn("w-full gap-2")}
+							className={cn("w-full gap-2 py-5")}
 							disabled={loading}
-							onClick={async () => {
-								await signIn.social(
-									{
-										provider: "google",
-										callbackURL: "/dashboard",
-									},
-									{
-										onRequest: () => {
-											setLoading(true);
-										},
-										onResponse: () => {
-											setLoading(false);
-										},
-									}
-								);
-							}}
+							onClick={handleGoogleSignIn}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -159,40 +165,6 @@ export default function SignIn() {
 								></path>
 							</svg>
 							Se connecter avec Google
-						</Button>
-						<Button
-							variant="outline"
-							className={cn("w-full gap-2")}
-							disabled={loading}
-							onClick={async () => {
-								await signIn.social(
-									{
-										provider: "facebook",
-										callbackURL: "/dashboard",
-									},
-									{
-										onRequest: () => {
-											setLoading(true);
-										},
-										onResponse: () => {
-											setLoading(false);
-										},
-									}
-								);
-							}}
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="1em"
-								height="1em"
-								viewBox="0 0 24 24"
-							>
-								<path
-									d="M20 3H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h8.615v-6.96h-2.338v-2.725h2.338v-2c0-2.325 1.42-3.592 3.5-3.592c.699-.002 1.399.034 2.095.107v2.42h-1.435c-1.128 0-1.348.538-1.348 1.325v1.735h2.697l-.35 2.725h-2.348V21H20a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1z"
-									fill="currentColor"
-								></path>
-							</svg>
-							Se connecter avec Facebook
 						</Button>
 					</div>
 				</div>
