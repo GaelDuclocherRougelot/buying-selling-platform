@@ -1,4 +1,5 @@
-import { getUser } from "@/lib/auth-session";
+"use client";
+import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import Heart from "../svg/Heart";
 import Person from "../svg/Person";
@@ -6,18 +7,8 @@ import Tchat from "../svg/Tchat";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
-const userIsConnected = async () => {
-	const user = await getUser();
-
-	if (!user) {
-		return false;
-	}
-
-	return true;
-};
-
-const Header = async () => {
-	const user = await userIsConnected();
+const Header = () => {
+	const user = useSession().data?.user;
 	return (
 		<header className="flex items-center justify-between h-20 border sticky top-0 bg-background z-50 shadow-sm">
 			<div className="max-w-[85rem] mx-auto py-4 px-4 lg:px-10 flex items-center justify-between w-full">
@@ -25,7 +16,9 @@ const Header = async () => {
 					Zone
 				</Link>
 				<div className="flex items-center gap-4 w-full">
-					<Button className="py-5">Déposer une annonce</Button>
+					<Link href={"/auth/publish"}>
+						<Button className="py-5">Déposer une annonce</Button>
+					</Link>
 					<Input placeholder="Rechercher" />
 				</div>
 				<nav className="hidden w-full md:flex justify-end">
@@ -34,13 +27,13 @@ const Header = async () => {
 							<>
 								{" "}
 								<li>
-									<Link href="/favorites">
+									<Link href="/auth/favorites">
 										<Heart />
 										<p>Favoris</p>
 									</Link>
 								</li>
 								<li>
-									<Link href="/messages">
+									<Link href="/auth/messages">
 										<Tchat />
 										<p>Messages</p>
 									</Link>
