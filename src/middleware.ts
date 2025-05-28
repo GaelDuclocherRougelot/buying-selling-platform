@@ -13,5 +13,11 @@ export async function middleware(request: NextRequest) {
 
 // Routes protégées par le middleware
 export const config = {
-	matcher: ["/auth/profile", "/auth/favorites", "/auth/messages", "/auth/publish"],
+	matcher: [
+		"/auth/profile",
+		"/auth/favorites",
+		"/auth/messages",
+		"/auth/publish",
+		"/auth/profile/edit",
+	],
 };

@@ -7,6 +7,11 @@ export const auth = betterAuth({
 	database: new Pool({
 		connectionString: process.env.CONNECTION_STRING,
 	}),
+	account: {
+		accountLinking: {
+			enabled: true,
+		},
+	},
 	emailAndPassword: {
 		enabled: true,
 		async sendResetPassword(data) {

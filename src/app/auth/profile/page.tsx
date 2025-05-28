@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getUser } from "@/lib/auth-session";
 import LogOutButton from "./_components/LogOutButton";
 import { ProductsTable } from "./_components/ProductsTable";
+import Link from "next/link";
 
 const ProfilePage = async () => {
 	const user = await getUser();
@@ -45,9 +46,11 @@ const ProfilePage = async () => {
 							</div>
 						</div>
 						<div className="space-x-2">
-							<Button variant="default">
-								Modifier mes informations
-							</Button>
+							<Link href="/auth/profile/edit">
+								<Button variant="default">
+									Paramètres du compte
+								</Button>
+							</Link>
 							<LogOutButton />
 						</div>
 					</CardHeader>

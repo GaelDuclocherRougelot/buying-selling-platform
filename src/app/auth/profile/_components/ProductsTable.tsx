@@ -101,7 +101,7 @@ export const columns: ColumnDef<Payment>[] = [
         },
         cell: ({ row }) => (
             <div>
-            {new Date(row.getValue("createdAt")).toLocaleDateString()}
+            {new Date(row.getValue("createdAt")).toLocaleDateString('fr-FR')}
             </div>
         ),
         sortDescFirst: true,
