@@ -41,7 +41,7 @@ const ProfilePage = async () => {
 							</Avatar>
 							<div className="text-lg font-semibold">
 								<CardTitle>
-									{user?.name.split(" ")[0]}
+									{user.username || user?.name.split(" ")[0]}
 								</CardTitle>
 							</div>
 						</div>

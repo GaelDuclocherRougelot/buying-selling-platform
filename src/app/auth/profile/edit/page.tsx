@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/card";
 import { getUser } from "@/lib/auth-session";
 import { AlertDialogDelete } from "./_components/AlertDialogDelete";
+import ProfileForm from "./_components/ProfileForm";
 
 const ProfileEditPage = async () => {
 	const user = await getUser();
@@ -24,7 +25,10 @@ const ProfileEditPage = async () => {
 						<h1>Paramètres du compte</h1>
 					</CardHeader>
 					<CardContent>
-						<h2>Mon profil</h2>
+						<div className="flex flex-col gap-4 mb-6">
+							<h2>Mon profil</h2>
+							<ProfileForm user={user} />
+						</div>
 
 						<h2>Mes informations personnelles</h2>
 					</CardContent>

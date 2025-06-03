@@ -39,25 +39,32 @@ export default function SignIn() {
 				},
 			}
 		);
-	}
+	};
 
 	const handleEmailSignIn = async () => {
 		await signIn.email(
-				{
-					email,
-					password,
+			{
+				email,
+				password,
+				rememberMe,
+				callbackURL: "/auth/profile",
+			},
+			{
+				onRequest: () => {
+					setLoading(true);
 				},
-				{
-					onRequest: () => {
-						setLoading(true);
-					},
-					onResponse: () => {
-						setLoading(false);
-					},
-				}
-			);
-		}
-		
+				onResponse: () => {
+					setLoading(false);
+				},
+				onError: (ctx) => {
+					if (ctx.error.status === 403) {
+						alert("Veuillez vérifier votre addresse email");
+					}
+					alert(ctx.error.message);
+				},
+			}
+		);
+	};
 
 	return (
 		<Card className="max-w-[30rem] w-full">
@@ -89,7 +96,7 @@ export default function SignIn() {
 						<div className="flex items-center">
 							<Label htmlFor="password">Mot de passe</Label>
 							<Link
-								href="#"
+								href="/auth/forget-password"
 								className="ml-auto inline-block text-sm underline"
 							>
 								Mot de passe oublié ?

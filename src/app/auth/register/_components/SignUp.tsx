@@ -16,57 +16,74 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+type FormValues = {
+	firstName: string;
+	lastName: string;
+	email: string;
+	password: string;
+	passwordConfirmation: string;
+	image: FileList;
+};
+
 export default function SignUp() {
-	const [firstName, setFirstName] = useState("");
-	const [lastName, setLastName] = useState("");
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [passwordConfirmation, setPasswordConfirmation] = useState("");
-	const [image, setImage] = useState<File | null>(null);
+	const {
+		register,
+		handleSubmit,
+		setValue,
+		formState: { errors },
+		reset,
+	} = useForm<FormValues>();
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
-	const router = useRouter();
 	const [loading, setLoading] = useState(false);
+	const router = useRouter();
 
 	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (file) {
-			setImage(file);
 			const reader = new FileReader();
 			reader.onloadend = () => {
 				setImagePreview(reader.result as string);
 			};
 			reader.readAsDataURL(file);
+		} else {
+			setImagePreview(null);
 		}
 	};
 
-	const handleSignUp = async () => {
+	const onSubmit = async (data: FormValues) => {
+		if (data.password !== data.passwordConfirmation) {
+			toast.error("Les mots de passe ne correspondent pas.");
+			return;
+		}
+		setLoading(true);
+		const imageFile = data.image?.[0];
 		const { error } = await signUp.email({
-			email,
-			password,
-			name: `${firstName} ${lastName}`,
-			image: image ? await convertImageToBase64(image) : "",
+			email: data.email,
+			password: data.password,
+			name: `${data.firstName} ${data.lastName}`,
+			image: imageFile ? await convertImageToBase64(imageFile) : "",
 			fetchOptions: {
-				onResponse: () => {
-					setLoading(false);
-				},
-				onRequest: () => {
-					setLoading(true);
-				},
-				onError: (ctx) => {
-					toast.error(ctx.error.message);
-				},
-				onSuccess: async () => {
-					router.push("/auth/login");
-				},
+				onResponse: () => setLoading(false),
+				onRequest: () => setLoading(true),
+				onError: (ctx) => { toast.error(ctx.error.message); },
+				onSuccess: async () => router.push("/auth/login"),
 			},
 		});
-
+		setLoading(false);
 		if (error) {
 			toast.error(error.message);
 			return;
 		}
+		reset();
+		setImagePreview(null);
+	};
+
+	const handleRemoveImage = () => {
+		setValue("image", undefined as unknown as FileList);
+		setImagePreview(null);
 	};
 
 	return (
@@ -80,31 +97,33 @@ export default function SignUp() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="grid gap-4">
+				<form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
 					<div className="grid grid-cols-2 gap-4">
 						<div className="grid gap-2">
 							<Label htmlFor="first-name">Prénom</Label>
 							<Input
 								id="first-name"
 								placeholder="John"
-								required
-								onChange={(e) => {
-									setFirstName(e.target.value);
-								}}
-								value={firstName}
+								{...register("firstName", { required: true })}
 							/>
+							{errors.firstName && (
+								<span className="text-xs text-red-500">
+									Le prénom est requis.
+								</span>
+							)}
 						</div>
 						<div className="grid gap-2">
 							<Label htmlFor="last-name">Nom</Label>
 							<Input
 								id="last-name"
 								placeholder="Doe"
-								required
-								onChange={(e) => {
-									setLastName(e.target.value);
-								}}
-								value={lastName}
+								{...register("lastName", { required: true })}
 							/>
+							{errors.lastName && (
+								<span className="text-xs text-red-500">
+									Le nom est requis.
+								</span>
+							)}
 						</div>
 					</div>
 					<div className="grid gap-2">
@@ -113,38 +132,50 @@ export default function SignUp() {
 							id="email"
 							type="email"
 							placeholder="john.doe@example.com"
-							required
-							onChange={(e) => {
-								setEmail(e.target.value);
-							}}
-							value={email}
+							{...register("email", {
+								required: true,
+								pattern: /^\S+@\S+$/i,
+							})}
 						/>
+						{errors.email && (
+							<span className="text-xs text-red-500">
+								Un email valide est requis.
+							</span>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="password">Mot de passe</Label>
 						<Input
 							id="password"
 							type="password"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							autoComplete="Nouveau mot de passe"
+							autoComplete="new-password"
 							placeholder="Mot de passe"
+							{...register("password", { required: true })}
 						/>
+						{errors.password && (
+							<span className="text-xs text-red-500">
+								Le mot de passe est requis.
+							</span>
+						)}
 					</div>
 					<div className="grid gap-2">
-						<Label htmlFor="password">
+						<Label htmlFor="password_confirmation">
 							Confirmer le mot de passe
 						</Label>
 						<Input
 							id="password_confirmation"
 							type="password"
-							value={passwordConfirmation}
-							onChange={(e) =>
-								setPasswordConfirmation(e.target.value)
-							}
 							autoComplete="new-password"
 							placeholder="Confirmer le mot de passe"
+							{...register("passwordConfirmation", {
+								required: true,
+							})}
 						/>
+						{errors.passwordConfirmation && (
+							<span className="text-xs text-red-500">
+								La confirmation du mot de passe est requise.
+							</span>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="image">
@@ -166,34 +197,30 @@ export default function SignUp() {
 									id="image"
 									type="file"
 									accept="image/*"
-									onChange={handleImageChange}
+									{...register("image")}
+									onChange={(e) => {
+										register("image").onChange(e);
+										handleImageChange(e);
+									}}
 									className="w-full"
 								/>
 								{imagePreview && (
 									<X
 										className="cursor-pointer"
-										onClick={() => {
-											setImage(null);
-											setImagePreview(null);
-										}}
+										onClick={handleRemoveImage}
 									/>
 								)}
 							</div>
 						</div>
 					</div>
-					<Button
-						type="submit"
-						className="w-full"
-						disabled={loading}
-						onClick={handleSignUp}
-					>
+					<Button type="submit" className="w-full" disabled={loading}>
 						{loading ? (
 							<Loader2 size={16} className="animate-spin" />
 						) : (
 							"Créer un compte"
 						)}
 					</Button>
-				</div>
+				</form>
 			</CardContent>
 			<div className="flex items-center justify-center w-full py-2">
 				<p className="text-sm text-muted-foreground">

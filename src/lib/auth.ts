@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
+import { username } from "better-auth/plugins";
 import { Pool } from "pg";
 import { resend } from "./resend";
 
@@ -14,11 +15,12 @@ export const auth = betterAuth({
 	},
 	emailAndPassword: {
 		enabled: true,
+		requireEmailVerification: true,
 		async sendResetPassword(data) {
 			await resend.emails.send({
-				from: "noreply@example.com",
+				from: "gaelduclocher.rougelot@gmail.com",
 				to: data.user.email,
-				subject: "Reset Password",
+				subject: "Réinitialiser votre mot de passe",
 				text: `Réinitialiser votre mot de passe en cliquant sur ce lien : ${data.url}`,
 			});
 		},
@@ -30,5 +32,14 @@ export const auth = betterAuth({
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
 		},
 	},
-	plugins: [nextCookies()],
+	plugins: [
+		nextCookies(),
+		username({
+			minUsernameLength: 5,
+			maxUsernameLength: 20,
+			usernameValidator: (username) => {
+				return /^[a-zA-Z0-9_]+$/.test(username); // Only allow alphanumeric characters and underscores
+			},
+		}),
+	],
 });
