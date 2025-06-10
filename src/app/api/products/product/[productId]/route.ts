@@ -1,9 +1,11 @@
 import { getProductById } from "@/services/product";
 import { NextResponse } from "next/server";
+
 import { z } from "zod";
 const productIdSchema = z.object({
 	productId: z.coerce.number().int().positive(),
 });
+
 export async function GET(
 	request: Request,
 	{ params }: { params: { productId: string } }

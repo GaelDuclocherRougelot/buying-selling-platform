@@ -9,3 +9,10 @@ export async function getProductById(productId: number) {
 export async function getAllProducts() {
 	return await prisma.product.findMany();
 }
+
+export async function getLastTenProducts() {
+	return await prisma.product.findMany({
+		orderBy: { id: "desc" },
+		take: 10,
+	});
+}
