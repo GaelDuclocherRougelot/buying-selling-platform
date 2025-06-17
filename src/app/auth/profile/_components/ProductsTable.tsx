@@ -34,32 +34,33 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 
-const data: Payment[] = [
+const data: Produit[] = [
 	{
 		id: "m5gr84i9",
 		amount: 30500,
-		status: "Active",
-		title: "Tesla model 3",
+		status: "active",
+		title: "Audi A8",
 		createdAt: "2025-05-01T00:00:00.000Z",
 	},
 	{
 		id: "m5gr84i5",
-		amount: 40500,
-		status: "Active",
-		title: "Tesla model Y",
+		amount: 1500,
+		status: "active",
+		title: "Mac book pro",
 		createdAt: "2025-05-10T00:00:00.000Z",
 	},
 ];
 
-export type Payment = {
+export type Produit = {
 	id: string;
 	amount: number;
-	status: "pending" | "processing" | "Active" | "failed";
+	status: "pending" | "processing" | "active" | "failed" | "sold";
 	title: string;
+	condition?: string;
 	createdAt?: string;
 };
 
-export const columns: ColumnDef<Payment>[] = [
+export const columns: ColumnDef<Produit>[] = [
 	{
 		accessorKey: "title",
 		header: ({ column }) => {

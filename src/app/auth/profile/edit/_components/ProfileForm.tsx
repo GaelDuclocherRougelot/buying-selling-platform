@@ -10,8 +10,7 @@ type ProfileFormValues = {
 };
 
 export default function ProfileForm({ user }: { user: User }) {
-	const {
-	} = useForm<ProfileFormValues>();
+	const {} = useForm<ProfileFormValues>();
 
 	return (
 		<form className="flex flex-col gap-4">

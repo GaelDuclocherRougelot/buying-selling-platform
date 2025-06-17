@@ -1,3 +1,4 @@
+import Footer from "@/components/global/Footer";
 import Header from "@/components/global/Header";
 import CategoriesNavbar from "@/features/categories/CategoriesNavbar";
 import CategoryCard from "@/features/categories/CategoryCard";
@@ -35,6 +36,7 @@ export default function Home() {
 					</div>
 				</section>
 			</main>
+			<Footer />
 		</>
 	);
 }
