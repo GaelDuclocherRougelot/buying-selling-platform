@@ -21,7 +21,7 @@ export default function ProfileForm({ user }: { user: User }) {
 					type="text"
 					placeholder="Nom d'utilisateur"
 					className="w-full max-w-md"
-					defaultValue={user.username || ""}
+					defaultValue={user.name || ""}
 				/>
 			</div>
 		</form>

@@ -1,9 +1,9 @@
 import Footer from "@/components/global/Footer";
 import Header from "@/components/global/Header";
-import CategoriesNavbar from "@/features/categories/CategoriesNavbar";
-import CategoryCard from "@/features/categories/CategoryCard";
+import CategoriesNavbar from "@/features/category/CategoriesNavbar";
+import CategoryCard from "@/features/category/CategoryCard";
 import Banner from "@/features/home/Banner";
-import ProductCard from "@/features/products/ProductCard";
+import ProductCard from "@/features/product/ProductCard";
 
 export default function Home() {
 	return (

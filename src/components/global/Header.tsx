@@ -7,8 +7,16 @@ import Tchat from "../svg/Tchat";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
-const Header = () => {
+/**
+ * Header component for the main navigation bar.
+ * Shows navigation links and user actions.
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+const Header = (): JSX.Element => {
 	const user = useSession().data?.user;
+
 	return (
 		<header className="flex items-center justify-between h-20 border sticky top-0 bg-background z-50 shadow-sm">
 			<div className="max-w-[85rem] mx-auto py-4 px-4 lg:px-10 flex items-center justify-between w-full">

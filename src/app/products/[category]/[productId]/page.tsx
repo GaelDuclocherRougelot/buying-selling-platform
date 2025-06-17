@@ -3,8 +3,8 @@ import Heart from "@/components/svg/Heart";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CardTitle } from "@/components/ui/card";
-import ProductImageCarousel from "@/features/products/ProductImageCarousel";
-import ProductNavBar from "@/features/products/ProductNavBar";
+import ProductImageCarousel from "@/features/product/ProductImageCarousel";
+import ProductNavBar from "@/features/product/ProductNavBar";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
