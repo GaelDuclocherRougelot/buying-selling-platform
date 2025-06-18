@@ -1,3 +1,20 @@
+/**
+ * Renders the product detail page for a specific product within a given category.
+ *
+ * This page displays the product's images, title, price, description, seller information,
+ * and provides actions such as contacting the seller and favoriting the product.
+ * It uses server-side async logic to retrieve route parameters for category and productId.
+ *
+ * @param props - The props object containing route parameters as a Promise.
+ * @param props.params - A Promise resolving to an object with `category` and `productId` strings.
+ *
+ * @returns The product detail page as a React component.
+ *
+ * @remarks
+ * - Integrates several UI components such as Header, ProductNavBar, ProductImageCarousel, and Avatar.
+ * - Uses Next.js dynamic routing for category and productId.
+ * - The chatId is currently hardcoded for demonstration purposes.
+ */
 import Header from "@/components/global/Header";
 import Heart from "@/components/svg/Heart";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

@@ -5,6 +5,17 @@ import CategoryCard from "@/features/category/CategoryCard";
 import Banner from "@/features/home/Banner";
 import ProductCard from "@/features/product/ProductCard";
 
+
+/**
+ * The main Home page component for the application.
+ *
+ * Renders the global Header and Footer, a categories navigation bar,
+ * a banner, a section displaying a feed of product cards, and a section
+ * showcasing top category cards. Product and category cards are currently
+ * rendered with example static data and should be replaced with dynamic data.
+ *
+ * @returns {JSX.Element} The rendered Home page.
+ */
 export default function Home() {
 	return (
 		<>
