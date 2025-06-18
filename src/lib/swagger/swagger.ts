@@ -2,6 +2,12 @@ import { createSwaggerSpec } from "next-swagger-doc";
 import { Product } from "./schemas/Product";
 import { Products } from "./schemas/Products";
 
+/**
+ * Generates the OpenAPI specification for the API documentation.
+ * This function uses next-swagger-doc to create a Swagger spec based on the API folder and definition.
+ *
+ * @returns {Promise<Record<string, unknown>>} A Promise that resolves to the OpenAPI specification object.
+ */
 export const getApiDocs = async () => {
 	const spec = createSwaggerSpec({
 		apiFolder: "src/app/api",

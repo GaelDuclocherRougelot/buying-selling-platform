@@ -28,7 +28,13 @@ type FormValues = {
 	image: FileList;
 };
 
-export default function SignUp() {
+/**
+ * SignUp component renders a registration form for new users.
+ * It includes fields for first name, last name, email, password, and an optional profile image.
+ * 
+ * @returns {JSX.Element} The SignUp component
+ */
+export default function SignUp(): JSX.Element {
 	const {
 		register,
 		handleSubmit,

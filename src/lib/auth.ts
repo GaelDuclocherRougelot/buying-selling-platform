@@ -4,6 +4,12 @@ import { username } from "better-auth/plugins";
 import { Pool } from "pg";
 import { resend } from "./resend";
 
+/**
+ * Authentication configuration for the application.
+ * This configuration uses BetterAuth for user management and authentication.
+ * It includes email and password authentication, social login with Google,
+ * and username validation.
+ */
 export const auth = betterAuth({
 	database: new Pool({
 		connectionString: process.env.CONNECTION_STRING,

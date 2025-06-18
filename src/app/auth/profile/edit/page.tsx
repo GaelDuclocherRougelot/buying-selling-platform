@@ -9,6 +9,14 @@ import { getUser } from "@/lib/auth-session";
 import { AlertDialogDelete } from "./_components/AlertDialogDelete";
 import ProfileForm from "./_components/ProfileForm";
 
+/**
+ * Profile Edit Page
+ * 
+ * This page displays the user's profile information.
+ * Allows the user to edit their profile and delete their account.
+ * @protected
+ * @requiresAuthentication
+ */
 const ProfileEditPage = async () => {
 	const user = await getUser();
 

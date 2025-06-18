@@ -1,7 +1,13 @@
 import Link from "next/link";
 import React from "react";
 
-const Footer: React.FC = () => {
+/**
+ * Footer component displays the footer section of the application.
+ * It includes links to legal pages such as terms of service, privacy policy, and legal mentions.
+ *
+ * @returns {JSX.Element} The Footer component
+ */
+const Footer: React.FC = (): JSX.Element => {
 	return (
 		<footer className="py-4 bg-muted text-center text-sm border-t border-border w-full h-16">
 			<nav className="flex justify-center gap-6">

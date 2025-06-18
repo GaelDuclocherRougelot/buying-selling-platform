@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils"; // Assuming you have a utility for className concatenation
 
+/**
+ * CategoriesNavbar component displays a navigation bar for categories.
+ * It includes a list of categories and a button to navigate to the "All Categories" page.
+ */
 export default function CategoriesNavbar() {
 	const [isVisible, setIsVisible] = useState(false);
 

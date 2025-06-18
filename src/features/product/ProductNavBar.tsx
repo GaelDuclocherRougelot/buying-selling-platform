@@ -7,6 +7,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+/**
+ * ProductNavBar component displays a navigation bar for product details.
+ * It includes product image, title, price, and a button to contact the seller.
+ * The navbar becomes visible when the user scrolls down the page.
+ *
+ * @param {Object} props - Component properties
+ * @param {string} props.image - URL of the product image
+ * @param {string} props.title - Title of the product
+ * @param {number} props.price - Price of the product
+ * @param {string} props.chatId - Chat ID for contacting the seller
+ */
 export default function ProductNavBar({
 	image,
 	title,

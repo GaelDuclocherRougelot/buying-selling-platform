@@ -7,6 +7,13 @@ interface CategoryCardProps {
 	imageUrl: string;
 }
 
+/**
+ * CategoryCard component displays a card with category details.
+ * It includes an image and title for the category.
+ *
+ * @param {CategoryCardProps} props - Component properties
+ * @returns {JSX.Element} The CategoryCard component
+ */
 const CategoryCard: React.FC<CategoryCardProps> = ({ title, imageUrl }) => {
 	return (
 		<Card className="w-full max-w-[18rem] p-0 gap-0 pb-4 cursor-pointer">

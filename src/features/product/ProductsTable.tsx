@@ -60,6 +60,13 @@ export type Produit = {
 	createdAt?: string;
 };
 
+/**
+ * Data table columns definition for managing products.
+ * This includes columns for product title, status, creation date, price, and actions.
+ * Each column can be sorted and filtered, and actions can be performed on each row.
+ * 
+ * @returns {ColumnDef<Produit>[]}
+ */
 export const columns: ColumnDef<Produit>[] = [
 	{
 		accessorKey: "title",

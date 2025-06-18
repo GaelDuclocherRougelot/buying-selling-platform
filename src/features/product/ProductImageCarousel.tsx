@@ -8,6 +8,14 @@ import {
 } from "@/components/ui/carousel";
 import Image from "next/image";
 
+/**
+ * ProductImageCarousel component displays a carousel of product images.
+ * It uses the Carousel component from the UI library and includes navigation buttons.
+ *
+ * @param {Object} props - Component properties (not used in this case).
+ * @param {string[]} props.images - Array of image URLs to display in the carousel.
+ * @returns {JSX.Element} The ProductImageCarousel component.
+ */
 export default function ProductImageCarousel() {
 	return (
 		<Carousel

@@ -18,6 +18,13 @@ interface ProductCardProps {
 	productId: string;
 }
 
+/**
+ * ProductCard component displays a card with product details.
+ * It includes an image, title, description, price, and links to the product page.
+ *
+ * @param {ProductCardProps} props - Component properties
+ * @returns {JSX.Element} The ProductCard component
+ */
 const ProductCard: React.FC<ProductCardProps> = ({
 	title,
 	description,

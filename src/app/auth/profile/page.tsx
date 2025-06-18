@@ -4,9 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getUser } from "@/lib/auth-session";
 import LogOutButton from "./_components/LogOutButton";
-import { ProductsTable } from "./_components/ProductsTable";
+import { ProductsTable } from "../../../features/product/ProductsTable";
 import Link from "next/link";
 
+/**
+ * Profile Page
+ * 
+ * This page displays the user's profile information.
+ * @protected
+ * @requiresAuthentication
+ */
 const ProfilePage = async () => {
 	const user = await getUser();
 

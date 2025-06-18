@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 
-export default function Banner() {
+/**
+ * Banner component displays a full-screen banner section.
+ * It includes a title, subtitle, and a call-to-action button.
+ * 
+ * @returns {JSX.Element} The Banner component
+ */
+export default function Banner(): JSX.Element {
 	return (
 		<section className="w-full h-[calc(100vh-5rem)] bg-[url('/images/banner.webp')] bg-cover bg-center flex items-center">
 			<div className="max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
