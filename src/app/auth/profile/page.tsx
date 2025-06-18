@@ -3,13 +3,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getUser } from "@/lib/auth-session";
-import LogOutButton from "./_components/LogOutButton";
-import { ProductsTable } from "../../../features/product/ProductsTable";
 import Link from "next/link";
+import { ProductsTable } from "../../../features/product/ProductsTable";
+import LogOutButton from "./_components/LogOutButton";
 
 /**
  * Profile Page
- * 
+ *
  * This page displays the user's profile information.
  * @protected
  * @requiresAuthentication

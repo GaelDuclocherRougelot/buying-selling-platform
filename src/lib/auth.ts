@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
-import { username } from "better-auth/plugins";
+import { openAPI, username } from "better-auth/plugins";
 import { Pool } from "pg";
 import { resend } from "./resend";
 
@@ -38,12 +38,27 @@ export const auth = betterAuth({
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
 		},
 	},
+	user: {
+		additionalFields: {
+			username: {
+				type: "string",
+			},
+			role: {
+				type: "string",
+				default: "user", // Default role for new users
+			},
+		},
+	},
 	plugins: [
 		nextCookies(),
+		openAPI(),
 		username({
 			minUsernameLength: 5,
 			maxUsernameLength: 20,
 			usernameValidator: (username) => {
+				if (username === "admin") {
+					return false; // Prevent using 'admin' as a username
+				}
 				return /^[a-zA-Z0-9_]+$/.test(username); // Only allow alphanumeric characters and underscores
 			},
 		}),

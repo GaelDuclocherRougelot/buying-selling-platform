@@ -1,5 +1,9 @@
-import { usernameClient } from "better-auth/client/plugins";
+import {
+	inferAdditionalFields,
+	usernameClient,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
+import { auth } from "./auth";
 
 /**
  * Auth client configuration for the application.
@@ -8,7 +12,7 @@ import { createAuthClient } from "better-auth/react";
  */
 export const authClient = createAuthClient({
 	baseURL: process.env.NEXT_PUBLIC_APP_URL,
-	plugins: [usernameClient()],
+	plugins: [usernameClient(), inferAdditionalFields<typeof auth>()],
 });
 
 /**
