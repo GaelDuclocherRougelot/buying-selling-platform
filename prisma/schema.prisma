@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../prisma/generated/prisma"
 }
 
 datasource db {
@@ -14,7 +13,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
+/** * Product model representing items for sale in the marketplace.
+ * 
+ * @model Product
+ * @field id - Unique identifier for the product.
+ * @field title - Title of the product.
+ * @field description - Optional description of the product.
+ * @field price - Price of the product.
+ * @field condition - Condition of the product (e.g., new, used).
+ * @field imagesUrl - Array of image URLs for the product.
+ * @field createdAt - Timestamp when the product was created.
+ * @field updatedAt - Timestamp when the product was last updated.
+ */
 model Product {
   id          String   @id @default(cuid())
   title       String
