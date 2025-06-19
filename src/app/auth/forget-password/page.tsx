@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { authClient } from "@/lib/auth-client";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 export default function ForgetPassword() {
@@ -17,7 +16,7 @@ export default function ForgetPassword() {
 	if (!token) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen p-0">
-				<div className="w-full max-w-md p-6 space-y-4 text-center">
+				<div className="w-full max-w-md p-6 space-y-4 text-center border rounded-md bg-white">
 					<h1 className="text-3xl font-bold">
 						Réinitialiser mon mot de passe
 					</h1>
@@ -26,6 +25,7 @@ export default function ForgetPassword() {
 						lien de réinitialisation de mot de passe.
 					</p>
 					<form
+						className="flex flex-col gap-4"
 						action={async (formData) => {
 							const email = formData.get("email");
 							await authClient.forgetPassword(
@@ -37,13 +37,14 @@ export default function ForgetPassword() {
 									onSuccess: () => {
 										toast.success(
 											"Un lien de réinitialisation a été envoyé à votre adresse e-mail."
-                                        );
-                                        router.push(`/auth/verify?email=${email}`);
+										);
+										router.push(
+											`/auth/verify?email=${email}`
+										);
 									},
 								}
 							);
 						}}
-						className="space-y-4"
 					>
 						<Input type="email" name="email" placeholder="Email" />
 						<SubmitButton

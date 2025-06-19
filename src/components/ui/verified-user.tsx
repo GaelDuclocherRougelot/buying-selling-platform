@@ -2,36 +2,51 @@
 import { BadgeCheck } from "lucide-react";
 import { useState } from "react";
 
+/**
+ * Affiche une icône utilisateur vérifié avec un tooltip
+ * Le tooltip est toujours positionné de façon absolue par rapport à la page (viewport)
+ */
 export default function VerifiedUser() {
 	const [hovered, setHovered] = useState(false);
 
 	return (
-		<>
+		<span style={{ position: "relative", display: "inline-block" }}>
 			<BadgeCheck
-				onMouseOver={() => setHovered(true)}
-				onMouseOut={() => setHovered(false)}
-				className="size-4 relative"
+				onMouseEnter={() => setHovered(true)}
+				onMouseLeave={() => setHovered(false)}
+				className="size-4"
 				color="#00b3ff"
 			/>
-			<div
-				className={`
-					bg-[#00b3ff] text-white font-semibold text-xs absolute translate-x-18
-					transition-all duration-200 py-1 px-2 rounded-sm
-					${hovered ? "opacity-100 translate-x-0 pointer-events-auto" : "opacity-0 pointer-events-none"}
-				`}
-			>
-				Utilisateur vérifié
+			{hovered && (
 				<div
-					className="absolute -left-1.5 bottom-2.5"
 					style={{
-						width: 0,
-						height: 0,
-						borderLeft: "8px solid transparent",
-						borderRight: "2px solid transparent",
-						borderTop: "8px solid #00b3ff",
+						position: "absolute",
+						top: "120%",
+						left: "50%",
+						transform: "translateX(-50%)",
+						zIndex: 9999,
+						whiteSpace: "nowrap",
 					}}
-				/>
-			</div>
-		</>
+					className={`
+					bg-[#00b3ff] text-white font-semibold text-xs
+					transition-all duration-200 py-1 px-2 rounded-sm
+					opacity-100 pointer-events-auto
+					shadow-lg
+				`}
+				>
+					Utilisateur vérifié
+					<div
+						className="absolute"
+						style={{
+							left: "50%",
+							transform: "translateX(-50%)",
+							top: "-20%",
+							width: 0,
+							height: 0,
+						}}
+					/>
+				</div>
+			)}
+		</span>
 	);
 }

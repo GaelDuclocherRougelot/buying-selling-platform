@@ -6,9 +6,9 @@ import {
 	CardHeader,
 } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
+import VerifiedUser from "@/components/ui/verified-user";
 import { auth } from "@/lib/auth";
 import { getUser } from "@/lib/auth-session";
-import { BadgeCheck } from "lucide-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AlertDialogDelete } from "./_components/AlertDialogDelete";
@@ -48,10 +48,7 @@ const ProfileEditPage = async () => {
 						<div className="flex gap-4 items-center">
 							<p>Email: {user.email}</p>
 							{user.emailVerified ? (
-								<BadgeCheck
-									className="size-4"
-									color="#00b3ff"
-								/>
+								<VerifiedUser />
 							) : (
 								<form>
 									<SubmitButton

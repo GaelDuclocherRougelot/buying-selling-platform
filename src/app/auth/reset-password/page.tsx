@@ -1,11 +1,4 @@
-"use client"
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+"use client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -44,15 +37,16 @@ export default function ResetPasswordPage() {
 	}
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Réinitialiser le mot de passe</CardTitle>
-				<CardDescription>
+		<main className="flex flex-col items-center justify-center min-h-screen p-0">
+			<div className="w-full max-w-md p-6 space-y-4 text-center border rounded-md bg-white">
+				<h1 className="text-3xl font-bold">
+					Réinitialiser le mot de passe
+				</h1>
+				<p className="text-sm text-gray-600">
 					Réinitialisez votre mot de passe en entrant votre nouveau
 					mot de passe ci-dessous.
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
+				</p>
+
 				<form action={onSubmit} className="flex flex-col gap-4">
 					<div className="space-y-2">
 						<Label htmlFor="password">Nouveau mot de passe</Label>
@@ -60,7 +54,7 @@ export default function ResetPasswordPage() {
 					</div>
 					<SubmitButton>Réinitialiser le mot de passe</SubmitButton>
 				</form>
-			</CardContent>
-		</Card>
+			</div>
+		</main>
 	);
 }
