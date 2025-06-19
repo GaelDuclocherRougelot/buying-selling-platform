@@ -5,13 +5,18 @@ import {
 	CardFooter,
 	CardHeader,
 } from "@/components/ui/card";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { auth } from "@/lib/auth";
 import { getUser } from "@/lib/auth-session";
+import { BadgeCheck } from "lucide-react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { AlertDialogDelete } from "./_components/AlertDialogDelete";
 import ProfileForm from "./_components/ProfileForm";
 
 /**
  * Profile Edit Page
- * 
+ *
  * This page displays the user's profile information.
  * Allows the user to edit their profile and delete their account.
  * @protected
@@ -38,7 +43,39 @@ const ProfileEditPage = async () => {
 							<ProfileForm user={user} />
 						</div>
 
-						<h2>Mes informations personnelles</h2>
+						<h2 className="mb-4">Mes informations personnelles</h2>
+
+						<div className="flex gap-4 items-center">
+							<p>Email: {user.email}</p>
+							{user.emailVerified ? (
+								<BadgeCheck
+									className="size-4"
+									color="#00b3ff"
+								/>
+							) : (
+								<form>
+									<SubmitButton
+										formAction={async () => {
+											"use server";
+											await auth.api.sendVerificationEmail(
+												{
+													headers: await headers(),
+													body: {
+														email: user.email,
+														callbackURL: `/auth/login`,
+													},
+												}
+											);
+											redirect(
+												`/auth/verify?email=${user.email}`
+											);
+										}}
+									>
+										Vérifier mon email
+									</SubmitButton>
+								</form>
+							)}
+						</div>
 					</CardContent>
 					<CardFooter className="flex justify-end gap-4">
 						<AlertDialogDelete />

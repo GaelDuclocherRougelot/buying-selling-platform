@@ -21,13 +21,23 @@ export const auth = betterAuth({
 	},
 	emailAndPassword: {
 		enabled: true,
-		requireEmailVerification: true,
 		async sendResetPassword(data) {
 			await resend.emails.send({
-				from: "gaelduclocher.rougelot@gmail.com",
-				to: data.user.email,
+				from: "ZONE <noreply@noreply.gael-dr.fr>",
+				to: [data.user.email],
 				subject: "Réinitialiser votre mot de passe",
 				text: `Réinitialiser votre mot de passe en cliquant sur ce lien : ${data.url}`,
+			});
+		},
+	},
+	emailVerification: {
+		sendOnSignUp: true,
+		sendVerificationEmail: async ({ user, url }) => {
+			await resend.emails.send({
+				from: "ZONE <noreply@noreply.gael-dr.fr>",
+				to: [user.email],
+				subject: "Vérifiez votre adresse email",
+				text: `Merci de vérifier votre adresse email en cliquant sur ce lien : ${url}`,
 			});
 		},
 	},

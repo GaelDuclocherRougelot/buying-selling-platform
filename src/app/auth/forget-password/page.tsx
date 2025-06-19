@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -29,7 +30,7 @@ export default function ForgetPassword() {
 							const email = formData.get("email");
 							await authClient.forgetPassword(
 								{
-									email: email as string,
+									email: String(email),
 									redirectTo: "/auth/reset-password",
 								},
 								{
@@ -37,7 +38,7 @@ export default function ForgetPassword() {
 										toast.success(
 											"Un lien de réinitialisation a été envoyé à votre adresse e-mail."
                                         );
-                                        router.push("/auth/reset-password");
+                                        router.push(`/auth/verify?email=${email}`);
 									},
 								}
 							);
@@ -45,13 +46,12 @@ export default function ForgetPassword() {
 						className="space-y-4"
 					>
 						<Input type="email" name="email" placeholder="Email" />
-						<Button
+						<SubmitButton
 							type="submit"
-							variant="default"
 							className="w-full rounded-md py-5"
 						>
 							Recevoir le lien de réinitialisation
-						</Button>
+						</SubmitButton>
 					</form>
 				</div>
 			</div>

@@ -2,6 +2,7 @@ import Header from "@/components/global/Header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import VerifiedUser from "@/components/ui/verified-user";
 import { getUser } from "@/lib/auth-session";
 import Link from "next/link";
 import { ProductsTable } from "../../../features/product/ProductsTable";
@@ -47,8 +48,9 @@ const ProfilePage = async () => {
 								</AvatarFallback>
 							</Avatar>
 							<div className="text-lg font-semibold">
-								<CardTitle>
+								<CardTitle className="flex gap-2">
 									{user.username || user?.name.split(" ")[0]}
+									{user.emailVerified && <VerifiedUser />}
 								</CardTitle>
 							</div>
 						</div>
