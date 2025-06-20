@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function SignIn() {
 	const [email, setEmail] = useState("");
@@ -60,7 +61,7 @@ export default function SignIn() {
 					if (ctx.error.status === 403) {
 						alert("Veuillez vérifier votre addresse email");
 					}
-					alert(ctx.error.message);
+					toast.error("Le mot de passe ou l'email est incorrect");
 				},
 			}
 		);

@@ -14,11 +14,6 @@ export const auth = betterAuth({
 	database: new Pool({
 		connectionString: process.env.CONNECTION_STRING,
 	}),
-	account: {
-		accountLinking: {
-			enabled: true,
-		},
-	},
 	emailAndPassword: {
 		enabled: true,
 		async sendResetPassword(data) {
@@ -52,12 +47,46 @@ export const auth = betterAuth({
 		additionalFields: {
 			username: {
 				type: "string",
+				unique: true, // Ensure usernames are unique
 			},
 			role: {
 				type: "string",
 				default: "user", // Default role for new users
 			},
+			deletedAt: {
+				type: "date",
+				default: null, // Field to mark user deletion
+				required: false,
+			},
 		},
+		deleteUser: {
+			enabled: true,
+		},
+	},
+	rateLimit: {
+		enabled: true,
+		window: 10,
+		max: 100,
+		customRules: {
+			"/auth/register": {
+				window: 10,
+				max: 100
+			},
+			"/auth/login": {
+				window: 10,
+				max: 100
+			},
+			"/auth/reset-password": {
+				window: 10,
+				max: 100
+			},
+			"/auth/verify-email": {
+				window: 10,
+				max: 100
+			}
+		},
+		storage: "memory",
+		modelName: "rateLimit"
 	},
 	plugins: [
 		nextCookies(),

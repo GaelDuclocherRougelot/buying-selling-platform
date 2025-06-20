@@ -1,6 +1,6 @@
+"use client";
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -10,25 +10,50 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
-export function AlertDialogDelete() {
+export function AlertDialogDelete({ userId }: { userId: string }) {
+	const router = useRouter();
+
+	const handleDelete = async () => {
+		const res = await fetch("/api/auth/soft-delete-user", {
+			method: "POST",
+			body: JSON.stringify({ userId }),
+			headers: { "Content-Type": "application/json" },
+		});
+		if (res.ok) {
+			router.refresh();
+		} else {
+			console.error("Failed to delete account");
+		}
+	};
+
 	return (
 		<AlertDialog>
 			<AlertDialogTrigger asChild>
-				<Button variant="destructive" className="font-bold cursor-pointer">Supprimer mon compte</Button>
+				<Button
+					variant="destructive"
+					className="font-bold cursor-pointer"
+				>
+					Supprimer mon compte
+				</Button>
 			</AlertDialogTrigger>
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>
-						Êtes vous sûr de vouloir supprimer votre compte ?
+						Êtes-vous sûr de vouloir supprimer votre compte ?
 					</AlertDialogTitle>
 					<AlertDialogDescription>
-                        Cette action est irréversible.
+						Cette action est irréversible.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
-					<AlertDialogAction className="bg-destructive hover:bg-destructive hover:opacity-80 text-white font-bold">Supprimer mon compte</AlertDialogAction>
+					<AlertDialogCancel className="cursor-pointer">
+						Annuler
+					</AlertDialogCancel>
+					<Button variant="destructive" onClick={handleDelete}>
+						Supprimer mon compte
+					</Button>
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>

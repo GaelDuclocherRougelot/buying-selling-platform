@@ -22,6 +22,7 @@ import { toast } from "sonner";
 type FormValues = {
 	firstName: string;
 	lastName: string;
+	username: string;
 	email: string;
 	password: string;
 	passwordConfirmation: string;
@@ -31,7 +32,7 @@ type FormValues = {
 /**
  * SignUp component renders a registration form for new users.
  * It includes fields for first name, last name, email, password, and an optional profile image.
- * 
+ *
  * @returns {JSX.Element} The SignUp component
  */
 export default function SignUp(): JSX.Element {
@@ -70,13 +71,18 @@ export default function SignUp(): JSX.Element {
 			email: data.email,
 			password: data.password,
 			name: `${data.firstName} ${data.lastName}`,
+			username: data.username, // or use another unique identifier
+			role: "user", // or another default role as required by your backend
 			image: imageFile ? await convertImageToBase64(imageFile) : "",
 			fetchOptions: {
 				onResponse: () => setLoading(false),
 				onRequest: () => setLoading(true),
-				onError: (ctx) => { toast.error(ctx.error.message); },
+				onError: (ctx) => {
+					toast.error(ctx.error.message);
+				},
 				onSuccess: async () => router.push("/auth/login"),
 			},
+			deletedAt: null, // Add this line to satisfy the required property
 		});
 		setLoading(false);
 		if (error) {
@@ -131,6 +137,19 @@ export default function SignUp(): JSX.Element {
 								</span>
 							)}
 						</div>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="username">Nom d&apos;utilisateur</Label>
+						<Input
+							id="username"
+							placeholder="john_doe"
+							{...register("username")}
+						/>
+						{errors.username && (
+							<span className="text-xs text-red-500">
+								Le nom d&apos;utilisateur est requis.
+							</span>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="email">Email</Label>

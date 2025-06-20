@@ -26,7 +26,8 @@ const ProfileEditPage = async () => {
 	const user = await getUser();
 
 	if (!user) {
-		return <div>Vous n&apos;êtes pas connecté</div>;
+		redirect("/auth/login");
+		return null; // Prevents further rendering if user is not authenticated
 	}
 
 	return (
@@ -75,7 +76,7 @@ const ProfileEditPage = async () => {
 						</div>
 					</CardContent>
 					<CardFooter className="flex justify-end gap-4">
-						<AlertDialogDelete />
+						<AlertDialogDelete userId={user.id} />
 					</CardFooter>
 				</Card>
 			</main>
