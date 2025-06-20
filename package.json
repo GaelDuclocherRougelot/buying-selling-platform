@@ -8,12 +8,7 @@
 		"start": "next start",
 		"lint": "next lint",
 		"test": "jest",
-		"typedoc": "pnpx typedoc --entryPoints src --entryPointStrategy expand",
-		"postinstall": "npx prisma generate --schema ./prisma-user-database/schema.prisma --no-engine && npx prisma generate --schema ./prisma-main-database/schema.prisma --no-engine",
-		"generate": "npx prisma generate --schema ./prisma-user-database/schema.prisma --no-engine && npx prisma generate --schema ./prisma-main-database/schema.prisma --no-engine",
-		"migrate": "npx prisma migrate dev --schema ./prisma-user-database/schema.prisma && npx prisma migrate dev --schema ./prisma-main-database/schema.prisma",
-		"deploy": "npx prisma migrate deploy --schema ./prisma-user-database/schema.prisma && npx prisma migrate deploy --schema ./prisma-main-database/schema.prisma",
-		"studio": "npx prisma studio --schema ./prisma-user-database/schema.prisma --port 5555 & npx prisma studio --schema ./prisma-main-database/schema.prisma --port 5556"
+		"typedoc": "pnpx typedoc --entryPoints src --entryPointStrategy expand"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",

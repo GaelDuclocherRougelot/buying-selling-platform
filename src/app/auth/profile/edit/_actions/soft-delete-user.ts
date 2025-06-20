@@ -1,4 +1,3 @@
-// /_actions/delete-user.ts
 "use server";
 
 import { deleteUserAccount } from "@/services/user";
