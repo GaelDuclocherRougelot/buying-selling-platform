@@ -4,9 +4,10 @@ import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { toast } from "sonner";
 
-export default function ResetPasswordPage() {
+function ResetPasswordInner() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const token = searchParams.get("token");
@@ -56,5 +57,13 @@ export default function ResetPasswordPage() {
 				</form>
 			</div>
 		</main>
+	);
+}
+
+export default function ResetPassword() {
+	return (
+		<Suspense>
+			<ResetPasswordInner />
+		</Suspense>
 	);
 }

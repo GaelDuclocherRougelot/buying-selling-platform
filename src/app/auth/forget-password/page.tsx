@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { toast } from "sonner";
 
-export default function ForgetPassword() {
+function ForgetPasswordInner() {
 	const searchParams = useSearchParams();
 	const token = searchParams.get("token");
-
 	const router = useRouter();
 
 	if (!token) {
@@ -107,5 +107,13 @@ export default function ForgetPassword() {
 				</form>
 			</div>
 		</div>
+	);
+}
+
+export default function ForgetPassword() {
+	return (
+		<Suspense>
+			<ForgetPasswordInner />
+		</Suspense>
 	);
 }

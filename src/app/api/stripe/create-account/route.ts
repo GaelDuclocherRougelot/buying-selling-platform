@@ -1,11 +1,10 @@
 import { stripe } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
-
 /**
  * @swagger
  * /api/stripe/create-account:
- *   post:
+ *   get:
  *     description: Create a new Stripe account
  *     responses:
  *       200:
@@ -21,10 +20,9 @@ import { NextResponse } from "next/server";
  *       500:
  *         description: Internal Server Error
  */
-export default async function POST() {
+export async function GET() {
 	try {
 		const account = await stripe.accounts.create({});
-
 		return NextResponse.json(account);
 	} catch {
 		return NextResponse.json(

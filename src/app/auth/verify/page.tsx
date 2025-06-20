@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import {
 	Card,
 	CardDescription,
@@ -6,8 +6,9 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function VerifyPage() {
+function VerifyInner() {
 	const searchParams = useSearchParams();
 	const email = searchParams.get("email");
 
@@ -22,5 +23,13 @@ export default function VerifyPage() {
 				) : null}
 			</CardHeader>
 		</Card>
+	);
+}
+
+export default function VerifyPage() {
+	return (
+		<Suspense>
+			<VerifyInner />
+		</Suspense>
 	);
 }

@@ -1,11 +1,6 @@
 import { getProductById } from "@/services/product";
 import { NextResponse } from "next/server";
 
-import { z } from "zod";
-const productIdSchema = z.object({
-	productId: z.string(),
-});
-
 /**
  * @swagger
  * /api/products/{productId}:
@@ -22,7 +17,7 @@ const productIdSchema = z.object({
  *         description: Product details
  *         content:
  *           application/json:
- *             schema: 
+ *             schema:
  *               $ref: '#/components/schemas/Product'
  *       404:
  *         description: Product not found
@@ -32,14 +27,10 @@ const productIdSchema = z.object({
  *         description: Internal Server Error
  *
  */
-export async function GET(
-	request: Request,
-	{ params }: { params: { productId: string } }
-) {
+export async function GET(request: Request) {
 	try {
-		const { productId } = productIdSchema.parse({
-			productId: params.productId,
-		});
+		const url = new URL(request.url);
+		const productId = url.pathname.split("/").pop() as string;
 		const product = await getProductById(productId);
 		if (!product) {
 			return NextResponse.json(
@@ -48,10 +39,7 @@ export async function GET(
 			);
 		}
 		return NextResponse.json(product);
-	} catch (error) {
-		if (error instanceof z.ZodError) {
-			return NextResponse.json({ error: error.errors }, { status: 400 });
-		}
+	} catch {
 		return NextResponse.json(
 			{ error: "Internal Server Error" },
 			{ status: 500 }
