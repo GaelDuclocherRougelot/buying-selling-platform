@@ -7,6 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { toast } from "sonner";
 
+/**
+ * This component handles the reset password functionality.
+ * It allows users to reset their password using a token provided in the URL.
+ * It includes a form for entering the new password and handles the submission.
+ * If the token is invalid or the password reset fails, it displays an error message.
+ * On successful password reset, it redirects the user to the login page.
+ */
 function ResetPasswordInner() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -60,7 +67,12 @@ function ResetPasswordInner() {
 	);
 }
 
-export default function ResetPassword() {
+/**
+ * ResetPassword component renders the ResetPasswordInner component asynchronously.
+ *
+ * @returns {JSX.Element} The ResetPassword component
+ */
+export default function ResetPassword(): JSX.Element {
 	return (
 		<Suspense>
 			<ResetPasswordInner />
