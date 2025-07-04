@@ -22,7 +22,7 @@ type UserWithUsername = User & { username: string };
 export default function ProfileForm({ user }: { user: UserWithUsername }) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [editedUser, setEditedUser] = useState<UserWithUsername>(user);
-	const [imagePreview, setImagePreview] = useState<string | null>(
+	const [imagePreview, setImagePreview] = useState<string | null | undefined>(
 		user.image || null
 	);
 
@@ -113,7 +113,7 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 							return;
 						}
 						toast.error(
-							error.message ||
+							(error.error?.message as string) ||
 								"Une erreur s'est produite lors de la mise à jour du profil. Le pseudo peut être déjà utilisé."
 						);
 						setIsEditing(false);
@@ -122,10 +122,12 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 			);
 
 			// Mettre à jour le profil utilisateur
-		} catch (error: any) {
-			toast.error(
-				error.message || "Une erreur s'est produite lors de l'upload."
-			);
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Une erreur s'est produite lors de l'upload.";
+			toast.error(errorMessage);
 		}
 	});
 

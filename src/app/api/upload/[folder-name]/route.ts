@@ -1,5 +1,5 @@
 import { getUser } from "@/lib/auth-session";
-import cloudinary  from "@/lib/cloudinary";
+import cloudinary from "@/lib/cloudinary";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -47,21 +47,37 @@ export async function POST(req: NextRequest) {
 		}
 	}
 
+	// Paramètres de l'upload vers l'API Cloudinary
+	const payload: {
+		folder: string;
+		upload_preset?: string;
+		public_id?: string;
+	} = {
+		folder: folderName,
+		upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME,
+	};
+
+	// ajoute l'ID de l'utilisateur à la liste des paramètres de l'upload (si le dossier est "profile-pictures")
+	if (folderName === "profile-pictures") {
+		payload.public_id = user.id;
+	}
+
+	// Définir le type pour le résultat de l'upload Cloudinary
+	type CloudinaryUploadResult = {
+		secure_url: string;
+		// Ajoutez d'autres propriétés si nécessaire
+	};
+
 	// Fonction utilitaire pour uploader un fichier
 	const uploadToCloudinary = (file: File) =>
-		new Promise((resolve, reject) => {
+		new Promise<CloudinaryUploadResult>((resolve, reject) => {
 			file.arrayBuffer().then((arrayBuffer) => {
 				const buffer = Buffer.from(arrayBuffer);
 				const stream = cloudinary.uploader.upload_stream(
-					{
-						folder: folderName,
-						public_id: user.id, // ID unique par user
-						upload_preset:
-							process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME,
-					},
+					payload,
 					(error, result) => {
 						if (error) reject(error);
-						else resolve(result);
+						else resolve(result as CloudinaryUploadResult);
 					}
 				);
 				stream.end(buffer);
@@ -69,16 +85,21 @@ export async function POST(req: NextRequest) {
 		});
 
 	try {
+		// Upload plusieurs fichiers
 		const uploadResults = await Promise.all(
 			files.map((file) => uploadToCloudinary(file as File))
 		);
-		const urls = uploadResults.map((result: any) => result.secure_url);
+		const urls = uploadResults.map((result) => result.secure_url);
 
 		return NextResponse.json({ urls });
-	} catch (error: any) {
+	} catch (error: unknown) {
 		console.error("Erreur lors de l'upload:", error);
+		const errorMessage =
+			typeof error === "object" && error !== null && "message" in error
+				? (error as { message?: string }).message
+				: "Échec de l'upload";
 		return NextResponse.json(
-			{ error: error.message || "Échec de l'upload" },
+			{ error: errorMessage },
 			{ status: 500 }
 		);
 	}
