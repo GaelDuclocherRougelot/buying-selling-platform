@@ -47,7 +47,7 @@ export const auth = betterAuth({
 		additionalFields: {
 			username: {
 				type: "string",
-				unique: true, // Ensure usernames are unique
+				unique: false,
 			},
 			role: {
 				type: "string",
@@ -70,23 +70,23 @@ export const auth = betterAuth({
 		customRules: {
 			"/auth/register": {
 				window: 10,
-				max: 100
+				max: 100,
 			},
 			"/auth/login": {
 				window: 10,
-				max: 100
+				max: 100,
 			},
 			"/auth/reset-password": {
 				window: 10,
-				max: 100
+				max: 100,
 			},
 			"/auth/verify-email": {
 				window: 10,
-				max: 100
-			}
+				max: 100,
+			},
 		},
 		storage: "memory",
-		modelName: "rateLimit"
+		modelName: "rateLimit",
 	},
 	plugins: [
 		nextCookies(),

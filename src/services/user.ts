@@ -39,3 +39,10 @@ export async function deleteUserAccount(userId: string) {
 	}
 	return result.rows[0];
 }
+
+export async function getUserByUsername(username: string) {
+    const query = `SELECT * FROM "user" WHERE "username" = $1`;
+    const result = await pool.query(query, [username]);
+    console.log(result.rows[0]);
+    return result.rows[0];
+}

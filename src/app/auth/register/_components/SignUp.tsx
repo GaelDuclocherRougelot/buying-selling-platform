@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUp } from "@/lib/auth-client";
+import checkUsernameAvailability from "@/utils/checkUsernameAvailability";
 import { Loader2, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -66,6 +67,17 @@ export default function SignUp(): JSX.Element {
 			return;
 		}
 		setLoading(true);
+
+		const usernameIsAvailable = await checkUsernameAvailability(
+			data.username
+		);
+
+		if (!usernameIsAvailable) {
+			toast.error("Ce pseudo est déjà utilisé.");
+			setLoading(false);
+			return;
+		}
+
 		const imageFile = data.image?.[0];
 		const { error } = await signUp.email({
 			email: data.email,
