@@ -46,3 +46,15 @@ export async function getUserByUsername(username: string) {
     console.log(result.rows[0]);
     return result.rows[0];
 }
+
+export async function getAllUsers() {
+    const query = `SELECT * FROM "user"`;
+    const result = await pool.query(query);
+    return result.rows;
+}
+
+export async function getAllUsersCount() {
+    const query = `SELECT COUNT(*) FROM "user"`;
+    const result = await pool.query(query);
+    return result.rows[0].count;
+}

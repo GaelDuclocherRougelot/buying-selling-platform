@@ -21,6 +21,10 @@ export default async function ProductPage(props: {
 }) {
 	const params = await props.params;
 	const chatId = "123456789";
+
+	
+
+
 	return (
 		<>
 			<Header />

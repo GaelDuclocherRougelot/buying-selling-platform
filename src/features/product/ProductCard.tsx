@@ -11,8 +11,8 @@ import React from "react";
 
 interface ProductCardProps {
 	title: string;
-	description: string;
-	price: string;
+	description: string | null;
+	price: number;
 	imageUrl: string;
 	category: string;
 	productId: string;

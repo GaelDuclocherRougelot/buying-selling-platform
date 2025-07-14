@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { getAllProducts } from "@/services/product";
-import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 // Zod schema for product creation
 const createProductSchema = z.object({
@@ -13,63 +12,7 @@ const createProductSchema = z.object({
 	categoryId: z.string().min(1, "Category ID is required"),
 });
 
-/**
- * @swagger
- * /api/products:
- *   get:
- *     description: Get all products
- *     responses:
- *       200:
- *         description: List of products
- *         content:
- *           application/json:
- *             schema: 
- *               $ref: '#/components/schemas/Products'
- *       400:
- *         description: Bad Request
- *       404:
- *         description: No products found
- *       500:
- *         description: Internal Server Error
- *
- */
-export async function GET() {
-	try {
-		const products = await getAllProducts();
-		return NextResponse.json(products);
-	} catch {
-		return NextResponse.json(
-			{ error: "Internal Server Error" },
-			{ status: 500 }
-		);
-	}
-}
-
-/**
- * @swagger
- * /api/products:
- *   post:
- *     description: Create a new product
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Product'
- *     responses:
- *       201:
- *         description: Product created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Product'
- *       400:
- *         description: Bad Request
- *       404:
- *         description: Category not found
- *       500:
- *         description: Internal Server Error
- */
+// POST /api/admin/products - Create a new product
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();

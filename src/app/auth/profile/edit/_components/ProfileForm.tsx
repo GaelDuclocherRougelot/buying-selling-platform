@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import checkUsernameAvailability from "@/utils/checkUsernameAvailability";
 import { User } from "better-auth";
-import { Edit, X } from "lucide-react";
+import { Edit } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -131,11 +131,6 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 		}
 	});
 
-	const handleRemoveImage = () => {
-		setValue("image", null);
-		setImagePreview(null);
-	};
-
 	return (
 		<form className="flex flex-col gap-4" onSubmit={onSubmit}>
 			<div
@@ -177,9 +172,10 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 					</p>
 				)}
 			</div>
-			<div className="flex items-center gap-4">
+			<div className="flex flex-col gap-4">
+				<label>Photo de profil</label>
 				{imagePreview && (
-					<div className="relative w-full max-w-16 h-16 rounded-full overflow-hidden">
+					<div className="relative w-full max-w-16 h-16 rounded-full overflow-hidden border flex items-center justify-center p-1">
 						<Image
 							src={imagePreview}
 							alt="Image de profil"
@@ -201,12 +197,6 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 							onChange={handleImageChange}
 							className="w-fit h-fit cursor-pointer"
 						/>
-						{imagePreview && (
-							<X
-								className="cursor-pointer"
-								onClick={handleRemoveImage}
-							/>
-						)}
 					</div>
 				)}
 			</div>

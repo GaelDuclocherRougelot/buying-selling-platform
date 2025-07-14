@@ -29,6 +29,7 @@ export async function getAllProducts() {
 export async function getLastTenProducts() {
 	return await prisma.product.findMany({
 		orderBy: { id: "desc" },
+		where: { status: "approved" },
 		take: 10,
 	});
 }

@@ -32,8 +32,22 @@ model Product {
   price       Float
   condition   String
   imagesUrl   String[]
+  status      String  @default("pending")
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("products")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  displayName String
+  name        String   @unique
+  products    Product[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
 }

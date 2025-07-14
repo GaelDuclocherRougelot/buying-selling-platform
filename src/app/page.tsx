@@ -1,10 +1,12 @@
+"use client";
 import Footer from "@/components/global/Footer";
 import Header from "@/components/global/Header";
 import CategoriesNavbar from "@/features/category/CategoriesNavbar";
 import CategoryCard from "@/features/category/CategoryCard";
 import Banner from "@/features/home/Banner";
 import ProductCard from "@/features/product/ProductCard";
-
+import { Product } from "@prisma/client";
+import { useEffect, useState } from "react";
 
 /**
  * The main Home page component for the application.
@@ -16,7 +18,18 @@ import ProductCard from "@/features/product/ProductCard";
  *
  * @returns {JSX.Element} The rendered Home page.
  */
-export default function Home() {
+export default function Home(): JSX.Element {
+	const [products, setProducts] = useState<Product[]>([]);
+
+	useEffect(() => {
+		const fetchProducts = async () => {
+			const response = await fetch("/api/products/featured");
+			const data = await response.json();
+			setProducts(data);
+		};
+		fetchProducts();
+	}, []);
+
 	return (
 		<>
 			<Header />
@@ -29,14 +42,21 @@ export default function Home() {
 					</h2>
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-8">
 						{/*TODO: Example product cards, replace with dynamic data as needed */}
-						<ProductCard
-							title="Product 1"
-							description="Description"
-							price="100"
-							imageUrl=""
-							category="decoration"
-							productId="1"
-						/>
+						{products.length > 0 ? (
+							products.map((product) => (
+								<ProductCard
+									key={product.id}
+									title={product.title}
+									description={product.description}
+									price={product.price}
+									imageUrl={product.imagesUrl[0]}
+									category={product.categoryId}
+									productId={product.id}
+								/>
+							))
+						) : (
+							<p>Aucun produit trouvé ...</p>
+						)}
 					</div>
 				</section>
 				<section className="max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full">
