@@ -9,6 +9,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import profile_default from "@/public/images/profile_default.webp";
 import {
 	ArrowLeft,
 	Edit,
@@ -83,9 +84,9 @@ export default function AdminUsersPage() {
 		}
 	};
 
-    // const filteredUsers = users
-    
-    // .filter(
+	// const filteredUsers = users
+
+	// .filter(
 	// 	(user) =>
 	// 		user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 	// 		user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,7 +104,7 @@ export default function AdminUsersPage() {
 								<Button
 									variant="outline"
 									size="sm"
-									className="flex items-center space-x-2"
+									className="flex items-center space-x-2 cursor-pointer"
 								>
 									<ArrowLeft size={16} />
 									<span>Retour</span>
@@ -176,7 +177,10 @@ export default function AdminUsersPage() {
 									<thead>
 										<tr className="bg-gray-50">
 											<th className="border border-gray-200 px-4 py-2 text-left">
-												Utilisateur
+												Photo
+											</th>
+											<th className="border border-gray-200 px-4 py-2 text-left">
+												Nom
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
 												Email
@@ -204,33 +208,25 @@ export default function AdminUsersPage() {
 												<td className="border border-gray-200 px-4 py-2">
 													<div className="flex items-center space-x-3">
 														<div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-															{user.image ? (
-																<img
-																	src={
-																		user.image
-																	}
-																	alt={
-																		user.name
-																	}
-																	className="w-10 h-10 rounded-full object-cover"
-																/>
-															) : (
-																<User
-																	size={20}
-																	className="text-gray-400"
-																/>
-															)}
+															<img
+																src={
+																	user.image ||
+																	profile_default.src
+																}
+																alt={user.name}
+																className="w-10 h-10 rounded-full object-cover"
+															/>
 														</div>
-														<div>
-															<div className="font-medium">
-																{user.name}
-															</div>
-															<div className="text-sm text-gray-500">
-																@
-																{user.username ||
-																	"sans-pseudo"}
-															</div>
-														</div>
+													</div>
+												</td>
+												<td className="border border-gray-200 px-4 py-2 whitespace-nowrap">
+													<div className="font-medium">
+														{user.name}
+													</div>
+													<div className="text-sm text-gray-500">
+														@
+														{user.username ||
+															"sans-pseudo"}
 													</div>
 												</td>
 												<td className="border border-gray-200 px-4 py-2">

@@ -19,6 +19,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import profile_default from "../../../../../public/images/profile_default.webp";
+
 
 type FormValues = {
 	firstName: string;
@@ -78,12 +80,21 @@ export default function SignUp(): JSX.Element {
 			return;
 		}
 
-		const imageFile = data.image?.[0];
+		let imageFile: File | null = null;
+		if (data.image && data.image[0]) {
+			imageFile = data.image[0];
+		} else {
+			// Convert the default image (profile_default) to a File object
+			const response = await fetch(profile_default.src);
+			const blob = await response.blob();
+			imageFile = new File([blob], "profile_default.webp", { type: blob.type });
+		}
 		const { error } = await signUp.email({
 			email: data.email,
 			password: data.password,
 			name: `${data.firstName} ${data.lastName}`,
 			username: data.username, // or use another unique identifier
+			displayUsername: data.username, // Add displayUsername field
 			role: "user", // or another default role as required by your backend
 			image: imageFile ? await convertImageToBase64(imageFile) : "",
 			fetchOptions: {

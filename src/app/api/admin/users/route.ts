@@ -98,26 +98,21 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// Create user using better-auth
-		const result = await auth.api.createUser({
-			headers: request.headers,
-			body: {
+		// Create user directly with Prisma since BetterAuth doesn't have createUser API
+		const newUser = await prisma.user.create({
+			data: {
+				id: crypto.randomUUID(), // Generate a unique ID
 				name: validatedData.name,
 				email: validatedData.email,
-				password: validatedData.password,
+				emailVerified: false, // Admin-created users need to verify email
 				username: validatedData.username,
+				displayUsername: validatedData.username,
 				role: validatedData.role,
+				// Note: Password will need to be handled separately since BetterAuth manages passwords
 			},
 		});
 
-		if (result.error) {
-			return NextResponse.json(
-				{ error: result.error.message },
-				{ status: 400 }
-			);
-		}
-
-		return NextResponse.json(result.user, { status: 201 });
+		return NextResponse.json(newUser, { status: 201 });
 	} catch (error) {
 		if (error instanceof z.ZodError) {
 			return NextResponse.json(

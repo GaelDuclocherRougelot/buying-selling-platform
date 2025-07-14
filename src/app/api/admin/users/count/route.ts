@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getAllUsersCount } from "@/services/user";
+import { getAllVerifiedUsersCount } from "@/services/user";
 import { NextRequest, NextResponse } from "next/server";
 
 // Helper function to check admin access
@@ -19,7 +19,7 @@ async function checkAdminAccess(request: NextRequest) {
 	return { user: session.user };
 }
 
-// GET /api/admin/users - Get all users
+
 export async function GET(request: NextRequest) {
 	try {
 		const authCheck = await checkAdminAccess(request);
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		const users = await getAllUsersCount();
-
+		const users = await getAllVerifiedUsersCount();
+		console.log(users);
 		return NextResponse.json({
 			users,
 		});

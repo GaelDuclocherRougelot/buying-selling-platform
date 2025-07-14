@@ -1,4 +1,4 @@
-import { getProductById } from "@/services/product";
+import { getProductWithOwnerById } from "@/services/product";
 import { NextResponse } from "next/server";
 
 /**
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 	try {
 		const url = new URL(request.url);
 		const productId = url.pathname.split("/").pop() as string;
-		const product = await getProductById(productId);
+		const product = await getProductWithOwnerById(productId);
 		if (!product) {
 			return NextResponse.json(
 				{ error: "Product not found" },

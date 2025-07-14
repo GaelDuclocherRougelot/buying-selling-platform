@@ -134,7 +134,7 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 	return (
 		<form className="flex flex-col gap-4" onSubmit={onSubmit}>
 			<div
-				className="flex items-center gap-2 cursor-pointer font-semibold"
+				className="flex items-center gap-2 cursor-pointer"
 				onClick={() => setIsEditing(!isEditing)}
 			>
 				<p>Modifier mon profil</p>
@@ -151,7 +151,7 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 						{...register("username")}
 					/>
 				) : (
-					<p className="w-full max-w-md font-semibold">
+					<p className="w-full max-w-md">
 						{editedUser.username}
 					</p>
 				)}
@@ -167,7 +167,7 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 						{...register("name")}
 					/>
 				) : (
-					<p className="w-full max-w-md font-semibold">
+					<p className="w-full max-w-md">
 						{editedUser.name}
 					</p>
 				)}

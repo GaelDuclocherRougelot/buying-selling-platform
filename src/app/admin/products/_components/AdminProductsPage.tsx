@@ -9,6 +9,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Category } from "@prisma/client";
 import {
 	ArrowLeft,
 	Edit,
@@ -32,6 +33,8 @@ interface Product {
 	categoryId: string;
 	createdAt: string;
 	updatedAt: string;
+	status: string;
+	category: Category;
 }
 
 export default function AdminProductsPage() {
@@ -99,19 +102,19 @@ export default function AdminProductsPage() {
 								<Button
 									variant="outline"
 									size="sm"
-									className="flex items-center space-x-2"
+									className="flex items-center space-x-2 cursor-pointer"
 								>
 									<ArrowLeft size={16} />
 									<span>Retour</span>
 								</Button>
 							</Link>
 							<h1 className="text-xl font-semibold text-gray-900">
-								Gestion des produits
+								Gestion des annonces
 							</h1>
 						</div>
 						<Button className="flex items-center space-x-2">
 							<Plus size={16} />
-							<span>Ajouter un produit</span>
+							<span>Ajouter une annonce</span>
 						</Button>
 					</div>
 				</div>
@@ -120,9 +123,9 @@ export default function AdminProductsPage() {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				<Card>
 					<CardHeader>
-						<CardTitle>Produits</CardTitle>
+						<CardTitle>Annonces</CardTitle>
 						<CardDescription>
-							Gérez les produits en vente sur votre plateforme
+							Gérez les annonces en vente sur votre plateforme
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -135,7 +138,7 @@ export default function AdminProductsPage() {
 								/>
 								<Input
 									type="text"
-									placeholder="Rechercher un produit..."
+									placeholder="Rechercher une annonce..."
 									value={searchTerm}
 									onChange={(e) =>
 										setSearchTerm(e.target.value)
@@ -184,7 +187,13 @@ export default function AdminProductsPage() {
 												État
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
+												Catégorie
+											</th>
+											<th className="border border-gray-200 px-4 py-2 text-left">
 												Date de création
+											</th>
+											<th className="border border-gray-200 px-4 py-2 text-left">
+												Statut
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
 												Actions
@@ -233,30 +242,75 @@ export default function AdminProductsPage() {
 												<td className="border border-gray-200 px-4 py-2 font-medium">
 													{product.price}€
 												</td>
+												<td className="border border-gray-200 px-4 py-2 whitespace-nowrap">
+													{product.condition ===
+													"pristine" ? (
+														<span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+															Neuf
+														</span>
+													) : product.condition ===
+													  "good" ? (
+														<span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+															Bon état
+														</span>
+													) : product.condition ===
+													  "mid" ? (
+														<span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
+															État moyen
+														</span>
+													) : (
+														<span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+															Mauvais état
+														</span>
+													)}
+												</td>
 												<td className="border border-gray-200 px-4 py-2">
-													<span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-														{product.condition}
-													</span>
+													{
+														product.category
+															.displayName
+													}
 												</td>
 												<td className="border border-gray-200 px-4 py-2 text-sm text-gray-500">
 													{new Date(
 														product.createdAt
 													).toLocaleDateString()}
 												</td>
-												<td className="border border-gray-200 px-4 py-2">
+												<td className="border border-gray-200 px-4 py-2 whitespace-nowrap">
+													{product.status ===
+													"pending" ? (
+														<span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800 w-full">
+															En attente de
+															validation
+														</span>
+													) : product.status ===
+													  "active" ? (
+														<span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 w-full">
+															Actif
+														</span>
+													) : (
+														<span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 w-full">
+															Brouillon
+														</span>
+													)}
+												</td>
+												<td className="border border-gray-200 px-4 py-2 w-full">
 													<div className="flex space-x-2">
 														<Button
 															variant="outline"
 															size="sm"
-															className="flex items-center space-x-1"
+															className="flex items-center space-x-1 cursor-pointer"
 														>
 															<Eye size={14} />
-															<span>Voir</span>
+															<Link
+																href={`/products/${product.category.name}/${product.id}`}
+															>
+																Voir
+															</Link>
 														</Button>
 														<Button
 															variant="outline"
 															size="sm"
-															className="flex items-center space-x-1"
+															className="flex items-center space-x-1 cursor-pointer"
 														>
 															<Edit size={14} />
 															<span>
@@ -271,7 +325,7 @@ export default function AdminProductsPage() {
 																	product.id
 																)
 															}
-															className="flex items-center space-x-1 text-red-600 hover:text-red-700"
+															className="flex items-center space-x-1 text-red-600 hover:text-red-700 cursor-pointer"
 														>
 															<Trash2 size={14} />
 															<span>

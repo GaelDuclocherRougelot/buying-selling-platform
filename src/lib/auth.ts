@@ -1,8 +1,11 @@
+import { PrismaClient } from "@prisma/client";
 import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { openAPI, username } from "better-auth/plugins";
-import { Pool } from "pg";
 import { resend } from "./resend";
+
+const prisma = new PrismaClient();
 
 /**
  * Authentication configuration for the application.
@@ -11,8 +14,8 @@ import { resend } from "./resend";
  * and username validation.
  */
 export const auth = betterAuth({
-	database: new Pool({
-		connectionString: process.env.CONNECTION_STRING,
+	database: prismaAdapter(prisma, {
+		provider: "postgresql",
 	}),
 	emailAndPassword: {
 		enabled: true,
@@ -46,6 +49,10 @@ export const auth = betterAuth({
 	user: {
 		additionalFields: {
 			username: {
+				type: "string",
+				unique: false,
+			},
+			displayUsername: {
 				type: "string",
 				unique: false,
 			},

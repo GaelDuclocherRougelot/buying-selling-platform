@@ -11,6 +11,7 @@ const createProductSchema = z.object({
 	condition: z.string().min(1, "Condition is required"),
 	imagesUrl: z.array(z.string().url("Each image must be a valid URL")),
 	categoryId: z.string().min(1, "Category ID is required"),
+	ownerId: z.string().min(1, "Owner ID is required"),
 });
 
 /**
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const { title, description, price, condition, imagesUrl, categoryId } =
+		const { title, description, price, condition, imagesUrl, categoryId, ownerId } =
 			parseResult.data;
 
 		// Check if category exists
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
 				condition,
 				imagesUrl,
 				categoryId,
+				ownerId,
 			},
 		});
 

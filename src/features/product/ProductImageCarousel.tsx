@@ -16,7 +16,7 @@ import Image from "next/image";
  * @param {string[]} props.images - Array of image URLs to display in the carousel.
  * @returns {JSX.Element} The ProductImageCarousel component.
  */
-export default function ProductImageCarousel() {
+export default function ProductImageCarousel(props: { images: string[] }) {
 	return (
 		<Carousel
 			opts={{
@@ -25,24 +25,17 @@ export default function ProductImageCarousel() {
 			className="w-[670px] h-[500px]"
 		>
 			<CarouselContent>
-				<CarouselItem>
-					<Image
-						src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-						alt="product"
-						className="object-cover max-w-2xl"
-						width={1920}
-						height={1080}
-					/>
-				</CarouselItem>
-				<CarouselItem>
-					<Image
-						src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-						alt="product"
-						className="object-cover max-w-2xl"
-						width={1920}
-						height={1080}
-					/>
-				</CarouselItem>
+				{props.images.map((image) => (
+					<CarouselItem key={image}>
+						<Image
+							src={image}
+							alt="product"
+							className="object-cover max-w-2xl"
+							width={1920}
+							height={1080}
+						/>
+					</CarouselItem>
+				))}
 			</CarouselContent>
 			<CarouselPrevious />
 			<CarouselNext />

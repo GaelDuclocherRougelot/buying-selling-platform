@@ -8,7 +8,11 @@
 		"start": "next start",
 		"lint": "next lint",
 		"test": "jest",
-		"typedoc": "pnpx typedoc --entryPoints src --entryPointStrategy expand"
+		"typedoc": "pnpx typedoc --entryPoints src --entryPointStrategy expand",
+		"migrate:unified": "tsx scripts/migrate-unified-db.ts",
+		"db:generate": "npx prisma generate",
+		"db:push": "npx prisma db push",
+		"db:migrate": "npx prisma migrate dev"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",

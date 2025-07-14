@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 /**
  * Banner component displays a full-screen banner section.
@@ -16,8 +17,8 @@ export default function Banner(): JSX.Element {
 				<p className="text-5xl font-bold text-white">
 					Le grand nettoyage de printemps, <br /> toute l’année.
 				</p>
-				<Button className="w-fit text-xl py-6 cursor-pointer">
-					Vendre maintenant
+				<Button className="w-fit text-lg py-6 cursor-pointer">
+					<Link href="/auth/publish">Vendre maintenant</Link>
 				</Button>
 			</div>
 		</section>

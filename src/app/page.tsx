@@ -5,7 +5,7 @@ import CategoriesNavbar from "@/features/category/CategoriesNavbar";
 import CategoryCard from "@/features/category/CategoryCard";
 import Banner from "@/features/home/Banner";
 import ProductCard from "@/features/product/ProductCard";
-import { Product } from "@prisma/client";
+import { Category, Product } from "@prisma/client";
 import { useEffect, useState } from "react";
 
 /**
@@ -20,14 +20,23 @@ import { useEffect, useState } from "react";
  */
 export default function Home(): JSX.Element {
 	const [products, setProducts] = useState<Product[]>([]);
-
+	const [categories, setCategories] = useState<Category[]>([]);
+	
 	useEffect(() => {
 		const fetchProducts = async () => {
 			const response = await fetch("/api/products/featured");
 			const data = await response.json();
 			setProducts(data);
 		};
+
+		const fetchCategories = async () => {
+			const response = await fetch("/api/categories/featured");
+			const data = await response.json();
+			setCategories(data);
+		};
+
 		fetchProducts();
+		fetchCategories();
 	}, []);
 
 	return (
@@ -63,7 +72,17 @@ export default function Home(): JSX.Element {
 					<h2 className="text-2xl font-bold pb-6">Top catégories</h2>
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-8">
 						{/*TODO: Example category cards, replace with dynamic data as needed */}
-						<CategoryCard title="Category 1" imageUrl="" />
+						{categories.length > 0 ? (
+							categories.map((category) => (
+								<CategoryCard
+									key={category.id}
+									displayName={category.displayName}
+									imageUrl={category.imageUrl}
+								/>
+							))
+						) : (
+							<p>Aucune catégorie trouvée ...</p>
+						)}
 					</div>
 				</section>
 			</main>

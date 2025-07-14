@@ -27,9 +27,18 @@ interface AdminDashboardProps {
 	user: User;
 }
 
+interface AdminStats {
+	productCount: number;
+	categoryCount: number;
+}
+
 export default function AdminDashboard({ user }: AdminDashboardProps) {
 	const router = useRouter();
 	const [usersCount, setUsersCount] = useState<number>(0);
+	const [stats, setStats] = useState<AdminStats>({
+		productCount: 0,
+		categoryCount: 0,
+	});
 	const [loading, setLoading] = useState(true);
 	const handleSignOut = async () => {
 		await signOut();
@@ -39,6 +48,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 	useEffect(() => {
 		fetchUsers();
+		fetchStats();
 	}, []);
 
 	const fetchUsers = async () => {
@@ -53,6 +63,22 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 			setLoading(false);
 		} catch {
 			toast.error("Erreur lors du chargement des utilisateurs");
+			setLoading(false);
+		}
+	};
+
+	const fetchStats = async () => {
+		try {
+			const response = await fetch("/api/admin/dashboard");
+			if (response.ok) {
+				const data = await response.json();
+				setStats(data);
+			} else {
+				toast.error("Erreur lors du chargement des stats");
+			}
+			setLoading(false);
+		} catch {
+			toast.error("Erreur lors du chargement des stats");
 			setLoading(false);
 		}
 	};
@@ -105,7 +131,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 								)}
 							</div>
 							<p className="text-xs text-muted-foreground">
-								Utilisateurs inscrits
+								Utilisateurs vérifiés
 							</p>
 						</CardContent>
 					</Card>
@@ -113,14 +139,20 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-sm font-medium">
-								Produits
+								Annonces
 							</CardTitle>
 							<Package className="h-4 w-4 text-muted-foreground" />
 						</CardHeader>
 						<CardContent>
-							<div className="text-2xl font-bold">0</div>
+							<div className="text-2xl font-bold">
+								{loading ? (
+									<Loader2Icon className="h-4 w-4 animate-spin" />
+								) : (
+									stats.productCount
+								)}
+							</div>
 							<p className="text-xs text-muted-foreground">
-								Produits en vente
+								Annonces actives
 							</p>
 						</CardContent>
 					</Card>
@@ -133,7 +165,13 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 							<Tag className="h-4 w-4 text-muted-foreground" />
 						</CardHeader>
 						<CardContent>
-							<div className="text-2xl font-bold">0</div>
+							<div className="text-2xl font-bold">
+								{loading ? (
+									<Loader2Icon className="h-4 w-4 animate-spin" />
+								) : (
+									stats.categoryCount
+								)}
+							</div>
 							<p className="text-xs text-muted-foreground">
 								Catégories actives
 							</p>
@@ -191,12 +229,12 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 									<CardHeader>
 										<CardTitle className="flex items-center space-x-2">
 											<Package size={20} />
-											<span>Gérer les produits</span>
+											<span>Gérer les annonces</span>
 										</CardTitle>
 									</CardHeader>
 									<CardContent>
 										<p className="text-sm text-muted-foreground">
-											Consultez et gérez les produits en
+											Consultez et gérez les annonces en
 											vente
 										</p>
 									</CardContent>
@@ -213,8 +251,8 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 									</CardHeader>
 									<CardContent>
 										<p className="text-sm text-muted-foreground">
-											Consultez et gérez les catégories de
-											produits
+											Consultez et gérez les catégories
+											d&apos;annonces
 										</p>
 									</CardContent>
 								</Card>

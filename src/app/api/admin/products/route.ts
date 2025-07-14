@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
 				condition,
 				imagesUrl,
 				categoryId,
+				ownerId: "default-user-id", // Add default owner ID for admin-created products
 			},
 		});
 

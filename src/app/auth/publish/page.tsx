@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useSession } from "@/lib/auth-client";
 import { ProductWithCategory } from "@/types/product";
+import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 // Form type that overrides imagesUrl to be File[] for upload handling
 type ProductFormData = Omit<ProductWithCategory, "imagesUrl"> & {
 	imagesUrl: File[];
+	category: string; // Add category field for form handling
 };
 
 const CreateProductPage = () => {
@@ -20,7 +23,14 @@ const CreateProductPage = () => {
 
 	const [categories, setCategories] = useState<
 		Array<{ id: string; name: string; displayName: string }>
-	>([]);
+		>([]);
+
+	const { data: session } = useSession();
+	const currentUser = session?.user || null;	
+
+	if (!currentUser) {
+		redirect("/auth/signin");
+	}
 
 	// Fetch categories from /api/category on mount
 	useEffect(() => {
@@ -55,7 +65,7 @@ const CreateProductPage = () => {
 	const onSubmit = async (data: ProductFormData) => {
 		console.log(data);
 
-		if (data.imagesUrl && data.imagesUrl.length > 0) {
+		if (data.imagesUrl.length > 0) {
 			const formData = new FormData();
 			// Append each file individually
 			data.imagesUrl.forEach((file) => {
@@ -74,13 +84,14 @@ const CreateProductPage = () => {
 
 			const images = await uploadResponse.json();
 
-			const { categoryId, ...productData } = data;
+			const { category, ...productData } = data;
 
 			const formatedData = {
 				...productData,
 				price: Number(productData.price),
 				imagesUrl: images.urls,
-				categoryId: categoryId,
+				categoryId: category,
+				ownerId: currentUser?.id,
 			};
 
 			console.log(formatedData);
@@ -96,6 +107,7 @@ const CreateProductPage = () => {
 		}
 
 		reset();
+		redirect(`/auth/profile`);
 	};
 
 	return (
@@ -153,8 +165,10 @@ const CreateProductPage = () => {
 							</div>
 							<div className="flex flex-col gap-2">
 								<label htmlFor="category">Catégorie</label>
-								<select id="category" {...register("categoryId")}>
-									<option value="">Sélectionnez une catégorie</option>
+								<select id="category" {...register("category")}>
+									<option value="">
+										Sélectionnez une catégorie
+									</option>
 									{categories.map((category) => (
 										<option
 											key={category.id}
@@ -171,7 +185,9 @@ const CreateProductPage = () => {
 									id="condition"
 									{...register("condition")}
 								>
-									<option value="">Sélectionnez un état</option>
+									<option value="">
+										Sélectionnez un état
+									</option>
 									<option value="pristine">Neuf</option>
 									<option value="good">Bon état</option>
 									<option value="mid">État moyen</option>

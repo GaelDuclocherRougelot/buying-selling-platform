@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,34 +10,73 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/** * Product model representing items for sale in the marketplace.
- * 
- * @model Product
- * @field id - Unique identifier for the product.
- * @field title - Title of the product.
- * @field description - Optional description of the product.
- * @field price - Price of the product.
- * @field condition - Condition of the product (e.g., new, used).
- * @field imagesUrl - Array of image URLs for the product.
- * @field createdAt - Timestamp when the product was created.
- * @field updatedAt - Timestamp when the product was last updated.
- */
-model Product {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  price       Float
-  condition   String
-  imagesUrl   String[]
-  status      String  @default("pending")
-  category   Category @relation(fields: [categoryId], references: [id])
-  categoryId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// Modèles Better-Auth
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  username      String?   @unique
+  displayUsername String?
+  role          String    @default("user")
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  @@map("products")
+  // Relations
+  sessions      Session[]
+  accounts      Account[]
+  products      Product[]
+
+  @@map("user")
 }
 
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                     String    @id
+  accountId              String
+  providerId             String
+  userId                 String
+  accessToken            String?
+  refreshToken           String?
+  idToken                String?
+  accessTokenExpiresAt   DateTime?
+  refreshTokenExpiresAt  DateTime?
+  scope                  String?
+  password               String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// Modèles métier
 model Category {
   id          String   @id @default(cuid())
   displayName String
@@ -50,4 +86,22 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  price       Float
+  condition   String
+  imagesUrl   String[]
+  status      String  @default("pending")
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
 }

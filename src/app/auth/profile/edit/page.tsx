@@ -13,6 +13,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AlertDialogDelete } from "./_components/AlertDialogDelete";
 import ProfileForm from "./_components/ProfileForm";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 /**
  * Profile Edit Page
@@ -47,7 +49,8 @@ const ProfileEditPage = async () => {
 						<h2 className="mb-4">Mes informations personnelles</h2>
 
 						<div className="flex gap-4 items-center">
-							<p>Email: {user.email}</p>
+							<label>Email</label>
+							<p>{user.email}</p>
 							{user.emailVerified ? (
 								<VerifiedUser />
 							) : (
@@ -73,6 +76,11 @@ const ProfileEditPage = async () => {
 									</SubmitButton>
 								</form>
 							)}
+						</div>
+						<div className="flex flex-col gap-2 mt-4">
+							<label>Mot de passe </label>
+							<Button className="w-fit"><Link href="/auth/forget-password">Réinitialiser mon mot de passe</Link></Button>
+
 						</div>
 					</CardContent>
 					<CardFooter className="flex justify-end gap-4">
