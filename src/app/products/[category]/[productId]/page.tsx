@@ -3,6 +3,7 @@ import Heart from "@/components/svg/Heart";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CardTitle } from "@/components/ui/card";
+import VerifiedUser from "@/components/ui/verified-user";
 import ProductImageCarousel from "@/features/product/ProductImageCarousel";
 import ProductNavBar from "@/features/product/ProductNavBar";
 import { cn } from "@/lib/utils";
@@ -63,9 +64,12 @@ export default async function ProductPage(props: {
 								/>
 							</Avatar>
 							<div className="text-lg font-semibold">
-								<CardTitle>
+								<CardTitle className="flex gap-2">
 									{product.owner.username ||
 										product.owner.name}
+									{product.owner.emailVerified && (
+										<VerifiedUser />
+									)}
 								</CardTitle>
 							</div>
 						</div>
@@ -93,7 +97,7 @@ export default async function ProductPage(props: {
 						</div>
 						<div>
 							<h2>Lieu</h2>
-							<p>Clamart 92140</p>
+							<p>{product.city}</p>
 						</div>
 					</div>
 				</section>

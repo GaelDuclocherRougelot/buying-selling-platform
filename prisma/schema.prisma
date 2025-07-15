@@ -96,6 +96,9 @@ model Product {
   condition   String
   imagesUrl   String[]
   status      String  @default("pending")
+  delivery    String  @default("pickup")
+  weight      Float?
+  city        String?
   ownerId     String
   owner       User     @relation(fields: [ownerId], references: [id])
   category    Category @relation(fields: [categoryId], references: [id])

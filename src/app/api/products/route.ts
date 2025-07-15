@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getAllProducts } from "@/services/product";
-import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 // Zod schema for product creation
 const createProductSchema = z.object({
@@ -12,6 +12,8 @@ const createProductSchema = z.object({
 	imagesUrl: z.array(z.string().url("Each image must be a valid URL")),
 	categoryId: z.string().min(1, "Category ID is required"),
 	ownerId: z.string().min(1, "Owner ID is required"),
+	delivery: z.string().min(1, "Delivery is required"),
+	city: z.string().optional(),
 });
 
 /**
@@ -24,7 +26,7 @@ const createProductSchema = z.object({
  *         description: List of products
  *         content:
  *           application/json:
- *             schema: 
+ *             schema:
  *               $ref: '#/components/schemas/Products'
  *       400:
  *         description: Bad Request
@@ -86,8 +88,18 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const { title, description, price, condition, imagesUrl, categoryId, ownerId } =
-			parseResult.data;
+		const {
+			title,
+			description,
+			price,
+			condition,
+			imagesUrl,
+			categoryId,
+			ownerId,
+			delivery,
+			city,
+			weight,
+		} = parseResult.data;
 
 		// Check if category exists
 		const category = await prisma.category.findUnique({
@@ -109,6 +121,9 @@ export async function POST(request: NextRequest) {
 				imagesUrl,
 				categoryId,
 				ownerId,
+				delivery,
+				city,
+				weight,
 			},
 		});
 
