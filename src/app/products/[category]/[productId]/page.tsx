@@ -1,4 +1,5 @@
 import Header from "@/components/global/Header";
+import PaymentButton from "@/components/stripe/PaymentButton";
 import Heart from "@/components/svg/Heart";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -43,9 +44,9 @@ export default async function ProductPage(props: {
 		<>
 			<Header />
 			<ProductNavBar
-				image="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-				title="Product 1"
-				price={200}
+				image={product.imagesUrl[0]}
+				title={product.title}
+				price={product.price}
 				chatId="123456789"
 			/>
 			<main className="flex flex-col items-center justify-center p-0">
@@ -79,6 +80,11 @@ export default async function ProductPage(props: {
 									Contacter le vendeur
 								</Button>
 							</Link>
+							<PaymentButton
+								productId={product.id}
+								amount={product.price}
+								productTitle={product.title}
+							/>
 							<Button>
 								<Heart />
 							</Button>

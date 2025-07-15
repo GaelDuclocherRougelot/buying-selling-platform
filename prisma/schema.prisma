@@ -24,12 +24,19 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Stripe Connect fields
+  stripeAccountId String? @unique
+  stripeAccountStatus String? @default("pending") // pending, active, restricted, disabled
+
   // Relations
   sessions      Session[]
   accounts      Account[]
   products      Product[]
+  payments      Payment[]
 
   @@map("user")
+  PaymentBuyer Payment[] @relation("Buyer")
+  PaymentSeller Payment[] @relation("Seller")
 }
 
 model Session {
@@ -106,5 +113,30 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Add payments relation
+  payments    Payment[]
+
   @@map("products")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  stripePaymentIntentId String @unique
+  amount        Float
+  currency      String   @default("eur")
+  status        String   @default("pending") // pending, succeeded, failed, canceled
+  productId     String
+  buyerId       String
+  sellerId      String
+  applicationFeeAmount Float? // Platform fee
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  product       Product  @relation(fields: [productId], references: [id])
+  buyer         User     @relation("Buyer", fields: [buyerId], references: [id])
+  seller        User     @relation("Seller", fields: [sellerId], references: [id])
+
+  @@map("payments")
+  User User[]
 }

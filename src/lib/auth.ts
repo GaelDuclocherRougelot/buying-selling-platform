@@ -56,6 +56,14 @@ export const auth = betterAuth({
 				type: "string",
 				unique: false,
 			},
+			stripeAccountId: {
+				type: "string",
+				unique: false,
+			},
+			stripeAccountStatus: {
+				type: "string",
+				unique: false,
+			},
 			role: {
 				type: "string",
 				default: "user", // Default role for new users

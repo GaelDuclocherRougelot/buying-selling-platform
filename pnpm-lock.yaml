@@ -41,6 +41,9 @@ dependencies:
   '@radix-ui/react-tabs':
     specifier: ^1.1.12
     version: 1.1.12(@types/react-dom@18.3.7)(@types/react@18.3.23)(react-dom@18.3.1)(react@18.3.1)
+  '@stripe/stripe-js':
+    specifier: ^7.4.0
+    version: 7.4.0
   '@tanstack/react-query':
     specifier: ^5.80.10
     version: 5.80.10(react@18.3.1)
@@ -2506,6 +2509,11 @@ packages:
 
   /@standard-schema/utils@0.3.0:
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+    dev: false
+
+  /@stripe/stripe-js@7.4.0:
+    resolution: {integrity: sha512-lQHQPfXPTBeh0XFjq6PqSBAyR7umwcJbvJhXV77uGCUDD6ymXJU/f2164ydLMLCCceNuPlbV9b+1smx98efwWQ==}
+    engines: {node: '>=12.16'}
     dev: false
 
   /@swagger-api/apidom-ast@1.0.0-beta.43:
