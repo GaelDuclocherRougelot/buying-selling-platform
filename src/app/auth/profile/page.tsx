@@ -67,7 +67,6 @@ const ProfilePage = async () => {
 						<h2>Mes annonces</h2>
 						<ProductsTable />
 					</CardContent>
-					{/* <CardFooter className="flex justify-end gap-4"></CardFooter> */}
 				</Card>
 			</main>
 		</>

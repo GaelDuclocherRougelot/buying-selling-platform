@@ -15,7 +15,7 @@ type ProductFormData = Omit<ProductWithCategory, "imagesUrl"> & {
 	imagesUrl: File[];
 	category: string; // Add category field for form handling
 	delivery: string;
-	weight: number;
+	deliveryPrice: number;
 	city: string;
 };
 
@@ -30,11 +30,7 @@ const CreateProductPage = () => {
 	>([]);
 
 	const { data: session } = useSession();
-	const currentUser = session?.user || null;
-
-	if (!currentUser) {
-		redirect("/auth/signin");
-	}
+	const currentUser = session?.user;
 
 	// Fetch categories from /api/category on mount
 	useEffect(() => {
@@ -140,6 +136,9 @@ const CreateProductPage = () => {
 				imagesUrl: images.urls,
 				categoryId: category,
 				ownerId: currentUser?.id,
+				deliveryPrice: productData.deliveryPrice
+					? Number(productData.deliveryPrice)
+					: 0,
 			};
 
 			console.log(formatedData);
@@ -252,21 +251,26 @@ const CreateProductPage = () => {
 							<div className="flex flex-col gap-2 w-fit">
 								<label htmlFor="city">Ville</label>
 								<Input
-									id="city"
 									onChange={handleCityChange}
 									placeholder="ex: Paris"
 								/>
 								<select
-									id="autocomplete-city"
+									id="city"
 									{...register("city")}
+									onChange={(e) => {
+										setValue("city", e.target.value);
+									}}
+									required
 								>
 									{cityOptions.map((option, index) => (
 										<option
 											key={`${option.name}-${index}`}
-											value={`${option.name} ${option.postalCode}`}
+											value={`${option.name} ${option.postalCode ? `(${option.postalCode})` : ""}`}
 										>
 											{option.name} &nbsp;
-											{option.postalCode}
+											{option.postalCode
+												? `(${option.postalCode})`
+												: ""}
 										</option>
 									))}
 								</select>
@@ -305,44 +309,44 @@ const CreateProductPage = () => {
 							</div>
 							{delivery === "delivery" && (
 								<div className="flex flex-col gap-2 w-fit">
-									<label htmlFor="weight">
+									<label htmlFor="deliveryPrice">
 										Poids du colis (selon la grille
 										tarifaire la poste pour une livraison à
 										domicile)
 									</label>
 									<select
-										id="weight"
-										{...register("weight")}
+										id="deliveryPrice"
+										{...register("deliveryPrice")}
 										required
 									>
 										<option value="">
 											Sélectionnez un poids
 										</option>
-										<option value="5,25">
+										<option value="5.25">
 											250 g (5,25€)
 										</option>
-										<option value="7,25">
+										<option value="7.25">
 											500 g (7,25€)
 										</option>
-										<option value="8,65">
+										<option value="8.65">
 											750 g (8,65€)
 										</option>
-										<option value="9,40">
+										<option value="9.40">
 											1 kg (9,40€)
 										</option>
-										<option value="10,70">
+										<option value="10.70">
 											2 kg (10,70€)
 										</option>
-										<option value="16,60">
+										<option value="16.60">
 											5 kg (16,60€)
 										</option>
-										<option value="24,20">
+										<option value="24.20">
 											10 kg (24,20€)
 										</option>
-										<option value="30,55">
+										<option value="30.55">
 											15 kg (30,55€)
 										</option>
-										<option value="37,85">
+										<option value="37.85">
 											30 kg (37,85€)
 										</option>
 									</select>
@@ -350,35 +354,35 @@ const CreateProductPage = () => {
 							)}
 							{delivery === "pickup" && (
 								<div className="flex flex-col gap-2 w-full">
-									<label htmlFor="weight">
+									<label htmlFor="deliveryPrice">
 										Poids du colis (selon la grille
 										tarifaire la poste pour un retrait en
 										point relais)
 									</label>
 									<select
-										id="weight"
-										{...register("weight")}
+										id="deliveryPrice"
+										{...register("deliveryPrice")}
 										required
 									>
 										<option value="">
 											Sélectionnez un poids
 										</option>
-										<option value="4,55">
+										<option value="4.55">
 											250 g (4,55€)
 										</option>
-										<option value="6,95">
+										<option value="6.95">
 											500 g (6,95€)
 										</option>
-										<option value="7,95">
+										<option value="7.95">
 											750 g (7,95€)
 										</option>
-										<option value="8,70">
+										<option value="8.70">
 											1 kg (8,70€)
 										</option>
-										<option value="10,00">
+										<option value="10.00">
 											2 kg (10,00€)
 										</option>
-										<option value="15,90">
+										<option value="15.90">
 											5 kg (15,90€)
 										</option>
 									</select>

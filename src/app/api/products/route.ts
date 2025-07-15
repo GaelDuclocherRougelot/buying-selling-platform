@@ -14,6 +14,7 @@ const createProductSchema = z.object({
 	ownerId: z.string().min(1, "Owner ID is required"),
 	delivery: z.string().min(1, "Delivery is required"),
 	city: z.string().optional(),
+	deliveryPrice: z.number().default(0),
 });
 
 /**
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
 			ownerId,
 			delivery,
 			city,
-			weight,
+			deliveryPrice,
 		} = parseResult.data;
 
 		// Check if category exists
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
 				ownerId,
 				delivery,
 				city,
-				weight,
+				deliveryPrice,
 			},
 		});
 

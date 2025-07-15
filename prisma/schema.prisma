@@ -97,7 +97,7 @@ model Product {
   imagesUrl   String[]
   status      String  @default("pending")
   delivery    String  @default("pickup")
-  weight      Float?
+  deliveryPrice Float? @default(0)
   city        String?
   ownerId     String
   owner       User     @relation(fields: [ownerId], references: [id])
