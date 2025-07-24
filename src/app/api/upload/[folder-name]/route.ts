@@ -1,14 +1,19 @@
 import { getUser } from "@/lib/auth-session";
 import cloudinary from "@/lib/cloudinary";
+import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+	// Handle CORS preflight
+	const corsPreflightResponse = handleCors(req);
+	if (corsPreflightResponse) return corsPreflightResponse;
+
 	const user = await getUser();
 
 	if (!user) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		return corsResponse({ error: "Unauthorized" }, 401);
 	}
 
 	const url = new URL(req.url);
@@ -17,10 +22,7 @@ export async function POST(req: NextRequest) {
 	const files = formData.getAll("files");
 
 	if (!files.length) {
-		return NextResponse.json(
-			{ error: "Aucun fichier envoyé" },
-			{ status: 400 }
-		);
+		return corsResponse({ error: "Aucun fichier envoyé" }, 400);
 	}
 
 	// Valider les fichiers (par exemple, taille max 10MB, formats acceptés)
@@ -28,21 +30,18 @@ export async function POST(req: NextRequest) {
 	const maxSize = 10 * 1024 * 1024; // 10MB
 	for (const file of files) {
 		if (!(file instanceof File)) {
-			return NextResponse.json(
-				{ error: "Fichier invalide" },
-				{ status: 400 }
-			);
+			return corsResponse({ error: "Fichier invalide" }, 400);
 		}
 		if (!allowedTypes.includes(file.type)) {
-			return NextResponse.json(
+			return corsResponse(
 				{ error: "Format de fichier non supporté" },
-				{ status: 400 }
+				400
 			);
 		}
 		if (file.size > maxSize) {
-			return NextResponse.json(
+			return corsResponse(
 				{ error: "Fichier trop volumineux (max 10MB)" },
-				{ status: 400 }
+				400
 			);
 		}
 	}
@@ -91,16 +90,14 @@ export async function POST(req: NextRequest) {
 		);
 		const urls = uploadResults.map((result) => result.secure_url);
 
-		return NextResponse.json({ urls });
+		const response = NextResponse.json({ urls });
+		return addCorsHeaders(response);
 	} catch (error: unknown) {
 		console.error("Erreur lors de l'upload:", error);
 		const errorMessage =
 			typeof error === "object" && error !== null && "message" in error
 				? (error as { message?: string }).message
 				: "Échec de l'upload";
-		return NextResponse.json(
-			{ error: errorMessage },
-			{ status: 500 }
-		);
+		return corsResponse({ error: errorMessage }, 500);
 	}
 }

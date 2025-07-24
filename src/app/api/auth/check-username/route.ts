@@ -1,39 +1,41 @@
+import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
 import { getUserByUsername } from "@/services/user";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 export async function GET(req: NextRequest) {
+	// Handle CORS preflight
+	const corsPreflightResponse = handleCors(req);
+	if (corsPreflightResponse) return corsPreflightResponse;
+
 	const username = req.nextUrl.searchParams.get("username");
 
 	if (!username) {
-		return NextResponse.json(
-			{ error: "Aucun nom d'utilisateur fourni" },
-			{
-				status: 400,
-			}
-		);
+		return corsResponse({ error: "Aucun nom d'utilisateur fourni" }, 400);
 	}
 
 	try {
 		const user = await getUserByUsername(username);
 		if (!user) {
-			return NextResponse.json(
+			const response = NextResponse.json(
 				{ avalaible: true },
 				{
 					status: 200,
 				}
 			);
+			return addCorsHeaders(response);
 		}
-		return NextResponse.json(
+		const response = NextResponse.json(
 			{ available: false },
 			{
 				status: 200,
 			}
 		);
+		return addCorsHeaders(response);
 	} catch (error) {
 		if (error instanceof z.ZodError) {
-			return NextResponse.json({ error: error.errors }, { status: 400 });
+			return corsResponse({ error: error.errors }, 400);
 		}
-		return NextResponse.json({ error: "Erreur interne" }, { status: 500 });
+		return corsResponse({ error: "Erreur interne" }, 500);
 	}
 }

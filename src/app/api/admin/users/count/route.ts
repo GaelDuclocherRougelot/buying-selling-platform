@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
 import { getAllVerifiedUsersCount } from "@/services/user";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -19,27 +20,25 @@ async function checkAdminAccess(request: NextRequest) {
 	return { user: session.user };
 }
 
-
 export async function GET(request: NextRequest) {
+	// Handle CORS preflight
+	const corsPreflightResponse = handleCors(request);
+	if (corsPreflightResponse) return corsPreflightResponse;
+
 	try {
 		const authCheck = await checkAdminAccess(request);
 		if ("error" in authCheck) {
-			return NextResponse.json(
-				{ error: authCheck.error },
-				{ status: authCheck.status }
-			);
+			return corsResponse({ error: authCheck.error }, authCheck.status);
 		}
 
 		const users = await getAllVerifiedUsersCount();
 		console.log(users);
-		return NextResponse.json({
+		const response = NextResponse.json({
 			users,
 		});
+		return addCorsHeaders(response);
 	} catch (error) {
 		console.error("Error fetching users:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 }
-		);
+		return corsResponse({ error: "Internal server error" }, 500);
 	}
 }
