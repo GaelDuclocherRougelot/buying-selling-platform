@@ -81,7 +81,7 @@ dependencies:
     specifier: ^6.16.0
     version: 6.16.0(next@15.3.1)(react@18.3.1)
   next-swagger-doc:
-    specifier: ^0.4.1
+    specifier: ^0.4.0
     version: 0.4.1(next@15.3.1)(openapi-types@12.1.3)
   next-zod-route:
     specifier: ^0.2.6
@@ -2627,6 +2627,7 @@ packages:
 
   /@swagger-api/apidom-ns-json-schema-draft-4@1.0.0-beta.43:
     resolution: {integrity: sha512-eQobpiECGLd0SwyJYNsnliIU33UcwubbIOl0HlWAM0kS/F7PUeA36beq4nZnpArTySBra4Ye+S9NW9nhQ8UHsw==}
+    requiresBuild: true
     dependencies:
       '@babel/runtime-corejs3': 7.27.6
       '@swagger-api/apidom-ast': 1.0.0-beta.43
