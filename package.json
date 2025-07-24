@@ -13,7 +13,8 @@
 		"db:generate": "npx prisma generate",
 		"db:push": "npx prisma db push",
 		"db:migrate": "npx prisma migrate dev",
-		"delete-expired-users": "tsx scripts/delete-expired-users.ts"
+		"delete-expired-users": "tsx scripts/delete-expired-users.ts",
+		"postinstall": "prisma generate"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",
