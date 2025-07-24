@@ -1,3 +1,4 @@
+import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
 import { prisma } from "@/lib/prisma";
 import { getAllProducts } from "@/services/product";
 import { NextRequest, NextResponse } from "next/server";
@@ -37,15 +38,21 @@ const createProductSchema = z.object({
  *         description: Internal Server Error
  *
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+	// Handle CORS preflight
+	const corsPreflightResponse = handleCors(request);
+	if (corsPreflightResponse) return corsPreflightResponse;
+
 	try {
 		const products = await getAllProducts();
-		return NextResponse.json(products);
+		const response = NextResponse.json(products);
+		return addCorsHeaders(response);
 	} catch {
-		return NextResponse.json(
+		const response = NextResponse.json(
 			{ error: "Internal Server Error" },
 			{ status: 500 }
 		);
+		return addCorsHeaders(response);
 	}
 }
 
@@ -75,17 +82,21 @@ export async function GET() {
  *         description: Internal Server Error
  */
 export async function POST(request: NextRequest) {
+	// Handle CORS preflight
+	const corsPreflightResponse = handleCors(request);
+	if (corsPreflightResponse) return corsPreflightResponse;
+
 	try {
 		const body = await request.json();
 
 		const parseResult = createProductSchema.safeParse(body);
 		if (!parseResult.success) {
-			return NextResponse.json(
+			return corsResponse(
 				{
 					error: "Validation failed",
 					details: parseResult.error.flatten(),
 				},
-				{ status: 400 }
+				400
 			);
 		}
 
@@ -106,11 +117,9 @@ export async function POST(request: NextRequest) {
 		const category = await prisma.category.findUnique({
 			where: { id: categoryId },
 		});
+
 		if (!category) {
-			return NextResponse.json(
-				{ error: "Category not found" },
-				{ status: 404 }
-			);
+			return corsResponse({ error: "Category not found" }, 404);
 		}
 
 		const product = await prisma.product.create({
@@ -128,12 +137,10 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		return NextResponse.json(product, { status: 201 });
+		const response = NextResponse.json(product, { status: 201 });
+		return addCorsHeaders(response);
 	} catch (error) {
 		console.error("Error creating product:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 }
-		);
+		return corsResponse({ error: "Internal Server Error" }, 500);
 	}
 }

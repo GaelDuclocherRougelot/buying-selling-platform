@@ -1,6 +1,6 @@
+import { addCorsHeaders, handleCors } from "@/lib/cors";
 import { getLastTenProducts } from "@/services/product";
-import { NextResponse } from "next/server";
-
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * @swagger
@@ -12,19 +12,25 @@ import { NextResponse } from "next/server";
  *         description: List of products
  *         content:
  *           application/json:
- *             schema: 
+ *             schema:
  *               $ref: '#/components/schemas/Products'
  *       500:
  *         description: Internal Server Error
  */
-export async function GET() {
-    try {
-        const products = await getLastTenProducts();
-        return NextResponse.json(products);
-    } catch {
-        return NextResponse.json(
-            { error: "Internal Server Error" },
-            { status: 500 }
-        );
-    }
+export async function GET(request: NextRequest) {
+	// Handle CORS preflight
+	const corsPreflightResponse = handleCors(request);
+	if (corsPreflightResponse) return corsPreflightResponse;
+
+	try {
+		const products = await getLastTenProducts();
+		const response = NextResponse.json(products);
+		return addCorsHeaders(response);
+	} catch {
+		const response = NextResponse.json(
+			{ error: "Internal Server Error" },
+			{ status: 500 }
+		);
+		return addCorsHeaders(response);
+	}
 }
