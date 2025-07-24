@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -28,7 +29,7 @@ export default function PaymentButton({
 		setLoading(true);
 		try {
 			// Créer une session de paiement Stripe Checkout
-			const response = await fetch(
+			const response = await apiFetch(
 				"/api/stripe/checkout/create-session",
 				{
 					method: "POST",

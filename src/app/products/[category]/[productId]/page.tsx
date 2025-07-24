@@ -7,6 +7,7 @@ import { CardTitle } from "@/components/ui/card";
 import VerifiedUser from "@/components/ui/verified-user";
 import ProductImageCarousel from "@/features/product/ProductImageCarousel";
 import ProductNavBar from "@/features/product/ProductNavBar";
+import { createApiURL } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -25,9 +26,8 @@ export default async function ProductPage(props: {
 	const chatId = "123456789";
 
 	// Construct the full URL for the API request
-	const baseURL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 	const productResponse = await fetch(
-		`${baseURL}/api/products/${params.productId}`,
+		createApiURL(`/api/products/${params.productId}`),
 		{
 			method: "GET",
 			headers: {

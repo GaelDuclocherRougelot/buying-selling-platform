@@ -9,6 +9,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { apiFetch } from "@/lib/api";
 import {
 	ArrowLeft,
 	Edit,
@@ -41,7 +42,7 @@ export default function AdminCategoriesPage() {
 
 	const fetchCategories = async () => {
 		try {
-			const response = await fetch("/api/category");
+			const response = await apiFetch("/api/category");
 			if (response.ok) {
 				const data = await response.json();
 				setCategories(data);
@@ -61,7 +62,7 @@ export default function AdminCategoriesPage() {
 		}
 
 		try {
-			const response = await fetch(
+			const response = await apiFetch(
 				`/api/admin/categories/${categoryId}`,
 				{
 					method: "DELETE",

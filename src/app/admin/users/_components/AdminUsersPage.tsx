@@ -9,6 +9,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { apiFetch } from "@/lib/api";
 import { User } from "@prisma/client";
 import {
 	ArrowLeft,
@@ -48,7 +49,7 @@ export default function AdminUsersPage() {
 
 	const fetchUsers = async () => {
 		try {
-			const response = await fetch("/api/admin/users");
+			const response = await apiFetch("/api/admin/users");
 			if (response.ok) {
 				const users = await response.json();
 				setUsers(users.users);
@@ -68,7 +69,7 @@ export default function AdminUsersPage() {
 		}
 
 		try {
-			const response = await fetch(`/api/admin/users/${userId}`, {
+			const response = await apiFetch(`/api/admin/users/${userId}`, {
 				method: "DELETE",
 			});
 

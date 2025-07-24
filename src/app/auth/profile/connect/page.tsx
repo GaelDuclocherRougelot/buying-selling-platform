@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -26,7 +27,7 @@ export default function ConnectReturnPage() {
 
 			try {
 				// Vérifier le statut du compte Stripe
-				const response = await fetch(
+				const response = await apiFetch(
 					"/api/stripe/connect/account-status"
 				);
 
@@ -69,9 +70,12 @@ export default function ConnectReturnPage() {
 	const handleRetryOnboarding = async () => {
 		setStatus("loading");
 		try {
-			const response = await fetch("/api/stripe/connect/account-link", {
-				method: "POST",
-			});
+			const response = await apiFetch(
+				"/api/stripe/connect/account-link",
+				{
+					method: "POST",
+				}
+			);
 
 			if (!response.ok) {
 				throw new Error("Failed to create account link");

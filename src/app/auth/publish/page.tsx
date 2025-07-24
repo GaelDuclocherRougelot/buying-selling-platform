@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { ProductWithCategory } from "@/types/product";
 import { redirect } from "next/navigation";
@@ -34,7 +35,7 @@ const CreateProductPage = () => {
 
 	// Fetch categories from /api/category on mount
 	useEffect(() => {
-		fetch("/api/categories")
+		apiFetch("/api/categories")
 			.then((res) => res.json())
 			.then((data) => {
 				if (Array.isArray(data)) {
@@ -63,7 +64,7 @@ const CreateProductPage = () => {
 			setTimeout(async () => {
 				if (!city) return;
 				console.log(city);
-				const response = await fetch(`/api/geoapify?text=${city}`);
+				const response = await apiFetch(`/api/geoapify?text=${city}`);
 				const data = await response.json();
 				console.log(data);
 				setCityOptions(
@@ -116,10 +117,13 @@ const CreateProductPage = () => {
 				formData.append("files", file);
 			});
 
-			const uploadResponse = await fetch("/api/upload/product-pictures", {
-				method: "POST",
-				body: formData,
-			});
+			const uploadResponse = await apiFetch(
+				"/api/upload/product-pictures",
+				{
+					method: "POST",
+					body: formData,
+				}
+			);
 
 			if (!uploadResponse.ok) {
 				console.error("Upload failed");
@@ -142,7 +146,7 @@ const CreateProductPage = () => {
 			};
 
 			console.log(formatedData);
-			const response = await fetch("/api/products", {
+			const response = await apiFetch("/api/products", {
 				method: "POST",
 				body: JSON.stringify(formatedData),
 			});

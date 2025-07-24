@@ -20,6 +20,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { apiFetch } from "@/lib/api";
 import { Category } from "@prisma/client";
 import {
 	ArrowLeft,
@@ -63,7 +64,7 @@ export default function AdminProductsPage() {
 
 	const fetchProducts = async () => {
 		try {
-			const response = await fetch("/api/admin/products");
+			const response = await apiFetch("/api/admin/products");
 			if (response.ok) {
 				const data = await response.json();
 				setProducts(data);
@@ -79,9 +80,12 @@ export default function AdminProductsPage() {
 
 	const handleDeleteProduct = async (product: Product) => {
 		try {
-			const response = await fetch(`/api/admin/products/${product.id}`, {
-				method: "DELETE",
-			});
+			const response = await apiFetch(
+				`/api/admin/products/${product.id}`,
+				{
+					method: "DELETE",
+				}
+			);
 
 			if (response.ok) {
 				toast.success("Produit supprimé avec succès");

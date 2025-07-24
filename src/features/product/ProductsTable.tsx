@@ -33,6 +33,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
 
@@ -204,7 +205,7 @@ export function ProductsTable() {
 			if (!session?.user?.id) return;
 
 			try {
-				const response = await fetch(
+				const response = await apiFetch(
 					`/api/user/products/${session.user.id}`
 				);
 				if (response.ok) {

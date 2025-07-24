@@ -8,6 +8,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { apiFetch } from "@/lib/api";
 import { signOut } from "@/lib/auth-client";
 import { User } from "better-auth";
 import {
@@ -53,7 +54,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 	const fetchUsers = async () => {
 		try {
-			const response = await fetch("/api/admin/users/count");
+			const response = await apiFetch("/api/admin/users/count");
 			if (response.ok) {
 				const data = await response.json();
 				setUsersCount(data.users);
@@ -69,7 +70,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 	const fetchStats = async () => {
 		try {
-			const response = await fetch("/api/admin/dashboard");
+			const response = await apiFetch("/api/admin/dashboard");
 			if (response.ok) {
 				const data = await response.json();
 				setStats(data);

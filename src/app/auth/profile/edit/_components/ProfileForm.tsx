@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { apiFetch } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import checkUsernameAvailability from "@/utils/checkUsernameAvailability";
 import { User } from "better-auth";
@@ -58,10 +59,13 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 			if (data.image) {
 				const formData = new FormData();
 				formData.append("files", data.image);
-				const response = await fetch("/api/upload/profile-pictures", {
-					method: "POST",
-					body: formData,
-				});
+				const response = await apiFetch(
+					"/api/upload/profile-pictures",
+					{
+						method: "POST",
+						body: formData,
+					}
+				);
 
 				if (!response.ok) {
 					const errorData = await response.json();
@@ -151,9 +155,7 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 						{...register("username")}
 					/>
 				) : (
-					<p className="w-full max-w-md">
-						{editedUser.username}
-					</p>
+					<p className="w-full max-w-md">{editedUser.username}</p>
 				)}
 			</div>
 			<div className="flex flex-col gap-2">
@@ -167,9 +169,7 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 						{...register("name")}
 					/>
 				) : (
-					<p className="w-full max-w-md">
-						{editedUser.name}
-					</p>
+					<p className="w-full max-w-md">{editedUser.name}</p>
 				)}
 			</div>
 			<div className="flex flex-col gap-4">

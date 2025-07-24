@@ -10,13 +10,14 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export function AlertDialogDelete({ userId }: { userId: string }) {
 	const router = useRouter();
 
 	const handleDelete = async () => {
-		const res = await fetch("/api/auth/soft-delete-user", {
+		const res = await apiFetch("/api/auth/soft-delete-user", {
 			method: "POST",
 			body: JSON.stringify({ userId }),
 			headers: { "Content-Type": "application/json" },

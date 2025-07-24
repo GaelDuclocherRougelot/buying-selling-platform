@@ -1,5 +1,7 @@
+import { apiFetch } from "@/lib/api";
+
 const checkUsernameAvailability = async (username: string) => {
-	const response = await fetch(
+	const response = await apiFetch(
 		`/api/auth/check-username?username=${username}`,
 		{
 			method: "GET",

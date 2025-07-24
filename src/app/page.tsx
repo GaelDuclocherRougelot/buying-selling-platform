@@ -5,6 +5,7 @@ import CategoriesNavbar from "@/features/category/CategoriesNavbar";
 import CategoryCard from "@/features/category/CategoryCard";
 import Banner from "@/features/home/Banner";
 import ProductCard from "@/features/product/ProductCard";
+import { apiFetch } from "@/lib/api";
 import { Category, Product } from "@prisma/client";
 import { useEffect, useState } from "react";
 
@@ -21,16 +22,16 @@ import { useEffect, useState } from "react";
 export default function Home(): JSX.Element {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
-	
+
 	useEffect(() => {
 		const fetchProducts = async () => {
-			const response = await fetch("/api/products/featured");
+			const response = await apiFetch("/api/products/featured");
 			const data = await response.json();
 			setProducts(data);
 		};
 
 		const fetchCategories = async () => {
-			const response = await fetch("/api/categories/featured");
+			const response = await apiFetch("/api/categories/featured");
 			const data = await response.json();
 			setCategories(data);
 		};

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -27,7 +28,7 @@ export default function ConnectAccountButton({
 		try {
 			if (mode === "create") {
 				// Créer le compte Stripe s'il n'existe pas
-				const createResponse = await fetch(
+				const createResponse = await apiFetch(
 					"/api/stripe/connect/create-account",
 					{
 						method: "POST",
@@ -81,7 +82,7 @@ export default function ConnectAccountButton({
 				// Seulement continuer vers l'onboarding si la création a réussi
 				if (createData.needsOnboarding) {
 					// Rediriger vers l'onboarding
-					const linkResponse = await fetch(
+					const linkResponse = await apiFetch(
 						"/api/stripe/connect/account-link",
 						{
 							method: "POST",
@@ -103,7 +104,7 @@ export default function ConnectAccountButton({
 				}
 			} else {
 				// Mode onboarding - rediriger directement
-				const linkResponse = await fetch(
+				const linkResponse = await apiFetch(
 					"/api/stripe/connect/account-link",
 					{
 						method: "POST",
