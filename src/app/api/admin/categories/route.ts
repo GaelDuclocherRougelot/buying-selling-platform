@@ -89,7 +89,7 @@ async function checkAdminAccess(request: NextRequest) {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Forbidden: Admin access required
+ *                   example: "Forbidden: Admin access required"
  *       500:
  *         description: Internal server error
  *         content:
