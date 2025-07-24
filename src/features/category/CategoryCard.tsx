@@ -9,12 +9,12 @@ import React from "react";
  * @param {Category} props - Component properties
  * @returns {JSX.Element} The CategoryCard component
  */
-const CategoryCard: React.FC<Category> = ({ displayName, imageUrl }: Category): JSX.Element => {
+const CategoryCard: React.FC<Category> = ({ displayName }: Category): JSX.Element => {
 	return (
 		<Card className="w-full max-w-[18rem] p-0 gap-0 pb-4 cursor-pointer">
 			<CardHeader className="p-0 h-72">
 				<Image
-					src={imageUrl || "/images/product_default.webp"}
+					src={"/images/product_default.webp"}
 					alt={displayName}
 					width={300}
 					height={300}

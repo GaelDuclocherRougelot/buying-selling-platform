@@ -33,41 +33,25 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useSession } from "@/lib/auth-client";
+import { useEffect, useState } from "react";
 
-const data: Produit[] = [
-	{
-		id: "m5gr84i9",
-		amount: 30500,
-		status: "active",
-		title: "Audi A8",
-		createdAt: "2025-05-01T00:00:00.000Z",
-	},
-	{
-		id: "m5gr84i5",
-		amount: 1500,
-		status: "active",
-		title: "Mac book pro",
-		createdAt: "2025-05-10T00:00:00.000Z",
-	},
-];
-
-export type Produit = {
+interface Product {
 	id: string;
-	amount: number;
-	status: "pending" | "processing" | "active" | "failed" | "sold";
 	title: string;
-	condition?: string;
-	createdAt?: string;
-};
+	description: string | null;
+	price: number;
+	condition: string;
+	imagesUrl: string[];
+	status: string;
+	category: {
+		id: string;
+		displayName: string;
+	};
+	createdAt: string;
+}
 
-/**
- * Data table columns definition for managing products.
- * This includes columns for product title, status, creation date, price, and actions.
- * Each column can be sorted and filtered, and actions can be performed on each row.
- * 
- * @returns {ColumnDef<Produit>[]}
- */
-export const columns: ColumnDef<Produit>[] = [
+const columns: ColumnDef<Product>[] = [
 	{
 		accessorKey: "title",
 		header: ({ column }) => {
@@ -78,85 +62,124 @@ export const columns: ColumnDef<Produit>[] = [
 						column.toggleSorting(column.getIsSorted() === "asc")
 					}
 				>
-					Titre de l&apos;annonce
-					<ArrowUpDown />
+					Titre
+					<ArrowUpDown className="ml-2 h-4 w-4" />
 				</Button>
 			);
 		},
-		cell: ({ row }) => <div>{row.getValue("title")}</div>,
+		cell: ({ row }) => (
+			<div className="font-medium">{row.getValue("title")}</div>
+		),
 	},
 	{
-		accessorKey: "status",
-		header: "Statut",
-		cell: ({ row }) => (
-			<div className="capitalize">{row.getValue("status")}</div>
-        ),
-        },
-        {
-        accessorKey: "createdAt",
-        header: ({ column }) => {
-            return (
-            <Button
-                variant="ghost"
-                onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-                }
-            >
-                Date de création
-                <ArrowUpDown />
-            </Button>
-            );
-        },
-        cell: ({ row }) => (
-            <div>
-            {new Date(row.getValue("createdAt")).toLocaleDateString('fr-FR')}
-            </div>
-        ),
-        sortDescFirst: true,
-        },
-        {
-        accessorKey: "amount",
-        header: () => <div className="text-right">Prix</div>,
+		accessorKey: "price",
+		header: ({ column }) => {
+			return (
+				<Button
+					variant="ghost"
+					onClick={() =>
+						column.toggleSorting(column.getIsSorted() === "asc")
+					}
+				>
+					Prix
+					<ArrowUpDown className="ml-2 h-4 w-4" />
+				</Button>
+			);
+		},
 		cell: ({ row }) => {
-			const amount = parseFloat(row.getValue("amount"));
-
-			// Format the amount as a dollar amount
+			const amount = parseFloat(row.getValue("price"));
 			const formatted = new Intl.NumberFormat("fr-FR", {
 				style: "currency",
 				currency: "EUR",
 			}).format(amount);
 
-			return <div className="text-right font-medium">{formatted}</div>;
+			return <div className="font-medium">{formatted}</div>;
+		},
+	},
+	{
+		accessorKey: "status",
+		header: "Statut",
+		cell: ({ row }) => {
+			const status = row.getValue("status") as string;
+			return (
+				<div className="flex items-center">
+					{status === "active" ? (
+						<span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+							Actif
+						</span>
+					) : status === "pending" ? (
+						<span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+							En attente
+						</span>
+					) : status === "sold" ? (
+						<span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+							Vendu
+						</span>
+					) : (
+						<span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+							{status}
+						</span>
+					)}
+				</div>
+			);
+		},
+	},
+	{
+		accessorKey: "category",
+		header: "Catégorie",
+		cell: ({ row }) => {
+			const category = row.getValue("category") as {
+				displayName: string;
+			};
+			return <div>{category.displayName}</div>;
+		},
+	},
+	{
+		accessorKey: "createdAt",
+		header: ({ column }) => {
+			return (
+				<Button
+					variant="ghost"
+					onClick={() =>
+						column.toggleSorting(column.getIsSorted() === "asc")
+					}
+				>
+					Date de création
+					<ArrowUpDown className="ml-2 h-4 w-4" />
+				</Button>
+			);
+		},
+		cell: ({ row }) => {
+			const date = new Date(row.getValue("createdAt"));
+			return <div>{date.toLocaleDateString("fr-FR")}</div>;
 		},
 	},
 	{
 		id: "actions",
 		enableHiding: false,
 		cell: ({ row }) => {
-			const payment = row.original;
+			const product = row.original;
 
 			return (
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button variant="ghost" className="h-8 w-8 p-0">
-							<span className="sr-only">Open menu</span>
-							<MoreHorizontal />
+							<span className="sr-only">Ouvrir le menu</span>
+							<MoreHorizontal className="h-4 w-4" />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuLabel>Actions</DropdownMenuLabel>
 						<DropdownMenuItem
 							onClick={() =>
-								navigator.clipboard.writeText(payment.id)
+								navigator.clipboard.writeText(product.id)
 							}
 						>
-							Copy payment ID
+							Copier l&apos;ID du produit
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem>View customer</DropdownMenuItem>
-						<DropdownMenuItem>
-							View payment details
-						</DropdownMenuItem>
+						<DropdownMenuItem>Voir le produit</DropdownMenuItem>
+						<DropdownMenuItem>Modifier</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			);
@@ -165,12 +188,38 @@ export const columns: ColumnDef<Produit>[] = [
 ];
 
 export function ProductsTable() {
+	const { data: session } = useSession();
+	const [data, setData] = useState<Product[]>([]);
+	const [loading, setLoading] = useState(true);
+
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] =
 		React.useState<ColumnFiltersState>([]);
 	const [columnVisibility, setColumnVisibility] =
 		React.useState<VisibilityState>({});
 	const [rowSelection, setRowSelection] = React.useState({});
+
+	useEffect(() => {
+		const fetchProducts = async () => {
+			if (!session?.user?.id) return;
+
+			try {
+				const response = await fetch(
+					`/api/user/products/${session.user.id}`
+				);
+				if (response.ok) {
+					const products = await response.json();
+					setData(products);
+				}
+			} catch (error) {
+				console.error("Error fetching products:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchProducts();
+	}, [session?.user?.id]);
 
 	const table = useReactTable({
 		data,
@@ -191,11 +240,15 @@ export function ProductsTable() {
 		},
 	});
 
+	if (loading) {
+		return <div>Chargement de vos produits...</div>;
+	}
+
 	return (
 		<div className="w-full">
 			<div className="flex items-center py-4">
 				<Input
-					placeholder="Filtrer par annonces..."
+					placeholder="Filtrer par titre..."
 					value={
 						(table
 							.getColumn("title")
@@ -255,7 +308,7 @@ export function ProductsTable() {
 									colSpan={columns.length}
 									className="h-24 text-center"
 								>
-									Pas d&apos;annonces trouvées.
+									Aucun produit trouvé.
 								</TableCell>
 							</TableRow>
 						)}
@@ -263,6 +316,11 @@ export function ProductsTable() {
 				</Table>
 			</div>
 			<div className="flex items-center justify-end space-x-2 py-4">
+				<div className="flex-1 text-sm text-muted-foreground">
+					{table.getFilteredSelectedRowModel().rows.length} sur{" "}
+					{table.getFilteredRowModel().rows.length} ligne(s)
+					sélectionnée(s).
+				</div>
 				<div className="space-x-2">
 					<Button
 						variant="outline"

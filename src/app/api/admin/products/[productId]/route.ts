@@ -22,7 +22,7 @@ async function checkAdminAccess(request: NextRequest) {
 // DELETE /api/admin/products/[productId] - Delete a product
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: { productId: string } }
+	{ params }: { params: Promise<{ productId: string }> }
 ) {
 	try {
 		const authCheck = await checkAdminAccess(request);
@@ -33,7 +33,7 @@ export async function DELETE(
 			);
 		}
 
-		const { productId } = params;
+		const { productId } = await params;
 
 		// Check if product exists
 		const existingProduct = await prisma.product.findUnique({

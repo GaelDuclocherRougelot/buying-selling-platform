@@ -22,11 +22,31 @@ export async function getProductWithOwnerById(productId: string) {
 }
 
 /**
- * getAllProducts function retrieves all products from the database.
+ * getAllProducts function retrieves all active products from the database.
+ * Excludes sold products from public searches.
  *
  * @returns {Promise<Product[]>} A Promise that resolves to an array of product objects.
  */
 export async function getAllProducts() {
+	return await prisma.product.findMany({
+		where: {
+			status: {
+				not: "sold", // Exclure les produits vendus
+			},
+		},
+		include: {
+			category: true,
+		},
+	});
+}
+
+/**
+ * getAllProductsForAdmin function retrieves ALL products including sold ones.
+ * Used for admin views and user profiles.
+ *
+ * @returns {Promise<Product[]>} A Promise that resolves to an array of all product objects.
+ */
+export async function getAllProductsForAdmin() {
 	return await prisma.product.findMany({
 		include: {
 			category: true,
@@ -35,14 +55,37 @@ export async function getAllProducts() {
 }
 
 /**
- * getLastTenProducts function retrieves the last ten products from the database.
+ * getProductsByUserId function retrieves all products for a specific user.
+ * Includes sold products for profile display.
+ *
+ * @param {string} userId - The ID of the user.
+ * @returns {Promise<Product[]>} A Promise that resolves to an array of product objects.
+ */
+export async function getProductsByUserId(userId: string) {
+	return await prisma.product.findMany({
+		where: {
+			ownerId: userId,
+		},
+		include: {
+			category: true,
+		},
+		orderBy: {
+			createdAt: "desc",
+		},
+	});
+}
+
+/**
+ * getLastTenProducts function retrieves the last ten active products from the database.
  *
  * @returns {Promise<Product[]>} A Promise that resolves to an array of product objects.
  */
 export async function getLastTenProducts() {
 	return await prisma.product.findMany({
 		orderBy: { id: "desc" },
-		where: { status: "active" },
+		where: {
+			status: "active",
+		},
 		take: 10,
 	});
 }

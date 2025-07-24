@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getAllProductsForAdmin } from "@/services/product";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -11,6 +12,20 @@ const createProductSchema = z.object({
 	imagesUrl: z.array(z.string().url("Each image must be a valid URL")),
 	categoryId: z.string().min(1, "Category ID is required"),
 });
+
+// GET /api/admin/products - Get all products (including sold ones)
+export async function GET() {
+	try {
+		const products = await getAllProductsForAdmin();
+		return NextResponse.json(products);
+	} catch (error) {
+		console.error("Error fetching products:", error);
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 }
+		);
+	}
+}
 
 // POST /api/admin/products - Create a new product
 export async function POST(request: NextRequest) {

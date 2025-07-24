@@ -77,7 +77,10 @@ export default function Home(): JSX.Element {
 								<CategoryCard
 									key={category.id}
 									displayName={category.displayName}
-									imageUrl={category.imageUrl}
+									id={category.id}
+									name={category.name}
+									createdAt={category.createdAt}
+									updatedAt={category.updatedAt}
 								/>
 							))
 						) : (

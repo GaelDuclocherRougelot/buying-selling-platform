@@ -22,7 +22,7 @@ async function checkAdminAccess(request: NextRequest) {
 // DELETE /api/admin/categories/[categoryId] - Delete a category
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: { categoryId: string } }
+	{ params }: { params: Promise<{ categoryId: string }> }
 ) {
 	try {
 		const authCheck = await checkAdminAccess(request);
@@ -33,7 +33,7 @@ export async function DELETE(
 			);
 		}
 
-		const { categoryId } = params;
+		const { categoryId } = await params;
 
 		// Check if category exists
 		const existingCategory = await prisma.category.findUnique({

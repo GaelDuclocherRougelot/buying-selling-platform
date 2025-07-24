@@ -3,15 +3,42 @@ import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
+// Fonction simple pour logger les webhooks (évite les problèmes d'import)
+function logWebhookEvent(
+	eventType: string,
+	eventId: string,
+	status: string,
+	details: Record<string, unknown>
+) {
+	console.log(
+		`📝 Webhook Log - ${eventType} (${eventId}): ${status}`,
+		details
+	);
+}
+
 export async function POST(request: NextRequest) {
 	const body = await request.text();
 	const signature = request.headers.get("stripe-signature");
 
+	console.log(
+		"🔔 Webhook reçu - Headers:",
+		Object.fromEntries(request.headers.entries())
+	);
+	console.log("🔔 Webhook reçu - Body length:", body.length);
+
 	if (!signature) {
-		console.error("Missing stripe signature");
+		console.error("❌ Missing stripe signature");
 		return NextResponse.json(
 			{ error: "Missing stripe signature" },
 			{ status: 400 }
+		);
+	}
+
+	if (!process.env.STRIPE_WEBHOOK_SECRET) {
+		console.error("❌ STRIPE_WEBHOOK_SECRET not configured");
+		return NextResponse.json(
+			{ error: "Webhook secret not configured" },
+			{ status: 500 }
 		);
 	}
 
@@ -21,10 +48,11 @@ export async function POST(request: NextRequest) {
 		event = stripe.webhooks.constructEvent(
 			body,
 			signature,
-			process.env.STRIPE_WEBHOOK_SECRET!
+			process.env.STRIPE_WEBHOOK_SECRET
 		);
+		console.log("✅ Webhook signature verified successfully");
 	} catch (error) {
-		console.error("Webhook signature verification failed:", error);
+		console.error("❌ Webhook signature verification failed:", error);
 		return NextResponse.json(
 			{ error: "Invalid signature" },
 			{ status: 400 }
@@ -32,28 +60,54 @@ export async function POST(request: NextRequest) {
 	}
 
 	console.log(`🔔 Webhook reçu: ${event.type}`);
+	console.log(`📋 Event data:`, JSON.stringify(event.data, null, 2));
+
+	// Enregistrer le webhook dans les logs
+	const object = event.data.object as Stripe.Checkout.Session | Stripe.PaymentIntent | Stripe.PaymentMethod | Stripe.Account | { id?: string; object?: string };
+	logWebhookEvent(event.type, event.id, "received", {
+		objectId: object.id,
+		objectType: object.object,
+		livemode: event.livemode,
+	});
 
 	try {
 		switch (event.type) {
 			case "checkout.session.completed":
+				console.log("🛒 Traitement de checkout.session.completed");
 				await handleCheckoutSessionCompleted(
 					event.data.object as Stripe.Checkout.Session
 				);
 				break;
 
 			case "payment_intent.succeeded":
+				console.log("💳 Traitement de payment_intent.succeeded");
 				await handlePaymentIntentSucceeded(
 					event.data.object as Stripe.PaymentIntent
 				);
 				break;
 
 			case "payment_intent.payment_failed":
+				console.log("❌ Traitement de payment_intent.payment_failed");
 				await handlePaymentIntentFailed(
 					event.data.object as Stripe.PaymentIntent
 				);
 				break;
 
+			case "payment_method.attached":
+			case "payment_method.updated":
+			case "payment_method.detached":
+				console.log(`💳 Événement payment_method reçu: ${event.type}`);
+				console.log(
+					`📋 Payment Method ID: ${(event.data.object as Stripe.PaymentMethod).id}`
+				);
+				console.log(
+					`👤 Customer: ${(event.data.object as Stripe.PaymentMethod).customer || "Aucun"}`
+				);
+				// Ces événements ne nécessitent pas de traitement spécial pour notre logique métier
+				break;
+
 			case "account.updated":
+				console.log("👤 Traitement de account.updated");
 				await handleAccountUpdated(event.data.object as Stripe.Account);
 				break;
 
@@ -66,6 +120,10 @@ export async function POST(request: NextRequest) {
 
 			default:
 				console.log(`⚠️ Événement inconnu: ${event.type}`);
+				console.log(
+					`📋 Objet reçu:`,
+					JSON.stringify(event.data.object, null, 2)
+				);
 		}
 
 		return NextResponse.json({ received: true });
@@ -83,10 +141,16 @@ async function handleCheckoutSessionCompleted(
 ) {
 	console.log(`✅ Session Checkout complétée: ${checkoutSession.id}`);
 	console.log(`📋 Métadonnées:`, checkoutSession.metadata);
+	console.log(`💰 Montant total:`, checkoutSession.amount_total);
+	console.log(`💳 Payment Intent ID:`, checkoutSession.payment_intent);
 
 	try {
 		// Mettre à jour le paiement en base
 		if (checkoutSession.payment_intent) {
+			console.log(
+				`🔍 Recherche du paiement existant: ${checkoutSession.payment_intent}`
+			);
+
 			// Vérifier si le paiement existe déjà
 			const existingPayment = await prisma.payment.findUnique({
 				where: {
@@ -96,6 +160,7 @@ async function handleCheckoutSessionCompleted(
 			});
 
 			if (existingPayment) {
+				console.log(`📝 Paiement existant trouvé, mise à jour...`);
 				// Mettre à jour le paiement existant
 				await prisma.payment.update({
 					where: {
@@ -111,9 +176,18 @@ async function handleCheckoutSessionCompleted(
 					`📝 Paiement mis à jour: ${checkoutSession.payment_intent}`
 				);
 			} else {
+				console.log(
+					`📝 Aucun paiement existant trouvé, création d'un nouveau...`
+				);
 				// Créer un nouveau paiement si il n'existe pas
 				const { productId, buyerId, sellerId } =
 					checkoutSession.metadata || {};
+
+				console.log(`📋 Métadonnées extraites:`, {
+					productId,
+					buyerId,
+					sellerId,
+				});
 
 				if (productId && buyerId && sellerId) {
 					await prisma.payment.create({
@@ -134,10 +208,38 @@ async function handleCheckoutSessionCompleted(
 					);
 				} else {
 					console.log(
-						`⚠️ Métadonnées manquantes pour créer le paiement`
+						`⚠️ Métadonnées manquantes pour créer le paiement: productId=${productId}, buyerId=${buyerId}, sellerId=${sellerId}`
 					);
 				}
 			}
+
+			// Marquer le produit comme vendu
+			const { productId } = checkoutSession.metadata || {};
+			console.log(
+				`🏷️ Tentative de marquage du produit comme vendu: ${productId}`
+			);
+
+			if (productId) {
+				try {
+					const updatedProduct = await prisma.product.update({
+						where: { id: productId },
+						data: { status: "sold" },
+					});
+					console.log(
+						`🏷️ Produit marqué comme vendu avec succès: ${productId}`
+					);
+					console.log(`📋 Produit mis à jour:`, updatedProduct);
+				} catch (productError) {
+					console.error(
+						`❌ Erreur lors de la mise à jour du produit:`,
+						productError
+					);
+				}
+			} else {
+				console.log(`⚠️ Aucun productId trouvé dans les métadonnées`);
+			}
+		} else {
+			console.log(`⚠️ Aucun payment_intent trouvé dans la session`);
 		}
 	} catch (error) {
 		console.error(`❌ Erreur lors du traitement de la session:`, error);
@@ -171,6 +273,16 @@ async function handlePaymentIntentSucceeded(
 				},
 			});
 			console.log(`📝 Paiement mis à jour: ${paymentIntent.id}`);
+
+			// Marquer le produit comme vendu
+			const { productId } = paymentIntent.metadata || {};
+			if (productId) {
+				await prisma.product.update({
+					where: { id: productId },
+					data: { status: "sold" },
+				});
+				console.log(`🏷️ Produit marqué comme vendu: ${productId}`);
+			}
 		}
 	} catch (error) {
 		console.error(`❌ Erreur:`, error);

@@ -9,7 +9,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import profile_default from "@/public/images/profile_default.webp";
+import { User } from "@prisma/client";
 import {
 	ArrowLeft,
 	Edit,
@@ -20,23 +20,22 @@ import {
 	Search,
 	Shield,
 	Trash2,
-	User,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-interface User {
-	id: string;
-	name: string;
-	email: string;
-	emailVerified: boolean;
-	image: string | null;
-	username: string | null;
-	role: string;
-	createdAt: string;
-	updatedAt: string;
-}
+// interface User {
+// 	id: string;
+// 	name: string;
+// 	email: string;
+// 	emailVerified: boolean;
+// 	image: string | null;
+// 	username: string | null;
+// 	role: string;
+// 	createdAt: string;
+// 	updatedAt: string;
+// }
 
 export default function AdminUsersPage() {
 	const [users, setUsers] = useState<User[]>([]);
@@ -189,7 +188,10 @@ export default function AdminUsersPage() {
 												Rôle
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
-												Statut
+												Vérifié
+											</th>
+											<th className="border border-gray-200 px-4 py-2 text-left">
+												Supprimé?
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
 												Date d&apos;inscription
@@ -208,10 +210,11 @@ export default function AdminUsersPage() {
 												<td className="border border-gray-200 px-4 py-2">
 													<div className="flex items-center space-x-3">
 														<div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+															{/* eslint-disable-next-line @next/next/no-img-element */}
 															<img
 																src={
 																	user.image ||
-																	profile_default.src
+																	"/images/profile_default.webp"
 																}
 																alt={user.name}
 																className="w-10 h-10 rounded-full object-cover"
@@ -275,9 +278,16 @@ export default function AdminUsersPage() {
 													</span>
 												</td>
 												<td className="border border-gray-200 px-4 py-2 text-sm text-gray-500">
+													{user.deletedAt
+														? new Date(
+																user.deletedAt
+															).toLocaleString()
+														: "Non supprimé"}
+												</td>
+												<td className="border border-gray-200 px-4 py-2 text-sm text-gray-500">
 													{new Date(
 														user.createdAt
-													).toLocaleDateString()}
+													).toLocaleString()}
 												</td>
 												<td className="border border-gray-200 px-4 py-2">
 													<div className="flex space-x-2">

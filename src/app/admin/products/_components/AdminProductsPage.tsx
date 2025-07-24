@@ -1,5 +1,16 @@
 "use client";
 
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -41,6 +52,10 @@ export default function AdminProductsPage() {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [statusFilter, setStatusFilter] = useState<string>("all");
+	const [productToDelete, setProductToDelete] = useState<Product | null>(
+		null
+	);
 
 	useEffect(() => {
 		fetchProducts();
@@ -48,7 +63,7 @@ export default function AdminProductsPage() {
 
 	const fetchProducts = async () => {
 		try {
-			const response = await fetch("/api/products");
+			const response = await fetch("/api/admin/products");
 			if (response.ok) {
 				const data = await response.json();
 				setProducts(data);
@@ -62,13 +77,9 @@ export default function AdminProductsPage() {
 		}
 	};
 
-	const handleDeleteProduct = async (productId: string) => {
-		if (!confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
-			return;
-		}
-
+	const handleDeleteProduct = async (product: Product) => {
 		try {
-			const response = await fetch(`/api/admin/products/${productId}`, {
+			const response = await fetch(`/api/admin/products/${product.id}`, {
 				method: "DELETE",
 			});
 
@@ -80,16 +91,64 @@ export default function AdminProductsPage() {
 			}
 		} catch {
 			toast.error("Erreur lors de la suppression du produit");
+		} finally {
+			setProductToDelete(null);
 		}
 	};
 
-	const filteredProducts = products.filter(
-		(product) =>
+	const openDeleteDialog = (product: Product) => {
+		setProductToDelete(product);
+	};
+
+	const closeDeleteDialog = () => {
+		setProductToDelete(null);
+	};
+
+	const filteredProducts = products.filter((product) => {
+		const matchesSearch =
 			product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			product.description
 				?.toLowerCase()
-				.includes(searchTerm.toLowerCase())
-	);
+				.includes(searchTerm.toLowerCase());
+
+		const matchesStatus =
+			statusFilter === "all" || product.status === statusFilter;
+
+		return matchesSearch && matchesStatus;
+	});
+
+	const getStatusBadge = (status: string) => {
+		switch (status) {
+			case "active":
+				return (
+					<span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+						Actif
+					</span>
+				);
+			case "pending":
+				return (
+					<span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+						En attente
+					</span>
+				);
+			case "sold":
+				return (
+					<span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+						Vendu
+					</span>
+				);
+			default:
+				return (
+					<span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+						{status}
+					</span>
+				);
+		}
+	};
+
+	if (loading) {
+		return <div>Chargement...</div>;
+	}
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -109,12 +168,12 @@ export default function AdminProductsPage() {
 								</Button>
 							</Link>
 							<h1 className="text-xl font-semibold text-gray-900">
-								Gestion des annonces
+								Gestion des produits
 							</h1>
 						</div>
 						<Button className="flex items-center space-x-2">
 							<Plus size={16} />
-							<span>Ajouter une annonce</span>
+							<span>Ajouter un produit</span>
 						</Button>
 					</div>
 				</div>
@@ -123,9 +182,9 @@ export default function AdminProductsPage() {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				<Card>
 					<CardHeader>
-						<CardTitle>Annonces</CardTitle>
+						<CardTitle>Produits</CardTitle>
 						<CardDescription>
-							Gérez les annonces en vente sur votre plateforme
+							Gérez les produits de votre plateforme
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -138,7 +197,7 @@ export default function AdminProductsPage() {
 								/>
 								<Input
 									type="text"
-									placeholder="Rechercher une annonce..."
+									placeholder="Rechercher un produit..."
 									value={searchTerm}
 									onChange={(e) =>
 										setSearchTerm(e.target.value)
@@ -146,6 +205,18 @@ export default function AdminProductsPage() {
 									className="pl-10"
 								/>
 							</div>
+							<select
+								value={statusFilter}
+								onChange={(e) =>
+									setStatusFilter(e.target.value)
+								}
+								className="px-3 py-2 border border-gray-300 rounded-md"
+							>
+								<option value="all">Tous les statuts</option>
+								<option value="active">Actifs</option>
+								<option value="pending">En attente</option>
+								<option value="sold">Vendus</option>
+							</select>
 							<Button
 								variant="outline"
 								className="flex items-center space-x-2"
@@ -165,7 +236,7 @@ export default function AdminProductsPage() {
 							</div>
 						) : filteredProducts.length === 0 ? (
 							<div className="text-center py-8 text-gray-500">
-								{searchTerm
+								{searchTerm || statusFilter !== "all"
 									? "Aucun produit trouvé"
 									: "Aucun produit disponible"}
 							</div>
@@ -181,19 +252,19 @@ export default function AdminProductsPage() {
 												Titre
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
-												Prix
+												Description
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
-												État
+												Prix
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
 												Catégorie
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
-												Date de création
+												Statut
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
-												Statut
+												Date de création
 											</th>
 											<th className="border border-gray-200 px-4 py-2 text-left">
 												Actions
@@ -207,9 +278,11 @@ export default function AdminProductsPage() {
 												className="hover:bg-gray-50"
 											>
 												<td className="border border-gray-200 px-4 py-2">
-													<div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-														{product.imagesUrl
+													<div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+														{product.imagesUrl &&
+														product.imagesUrl
 															.length > 0 ? (
+															// eslint-disable-next-line @next/next/no-img-element
 															<img
 																src={
 																	product
@@ -218,120 +291,156 @@ export default function AdminProductsPage() {
 																alt={
 																	product.title
 																}
-																className="w-12 h-12 object-cover rounded"
+																className="w-16 h-16 object-cover"
 															/>
 														) : (
-															<span className="text-gray-400 text-xs">
-																Aucune image
-															</span>
+															<div className="w-16 h-16 bg-gray-300 rounded-lg flex items-center justify-center">
+																<span className="text-gray-500 text-xs">
+																	Aucune image
+																</span>
+															</div>
 														)}
 													</div>
 												</td>
 												<td className="border border-gray-200 px-4 py-2">
-													<div>
-														<div className="font-medium">
-															{product.title}
-														</div>
-														<div className="text-sm text-gray-500 truncate max-w-xs">
-															{
-																product.description
-															}
-														</div>
+													<div className="font-medium">
+														{product.title}
+													</div>
+													<div className="text-sm text-gray-500">
+														{product.condition}
 													</div>
 												</td>
-												<td className="border border-gray-200 px-4 py-2 font-medium">
-													{product.price}€
-												</td>
-												<td className="border border-gray-200 px-4 py-2 whitespace-nowrap">
-													{product.condition ===
-													"pristine" ? (
-														<span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-															Neuf
-														</span>
-													) : product.condition ===
-													  "good" ? (
-														<span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-															Bon état
-														</span>
-													) : product.condition ===
-													  "mid" ? (
-														<span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
-															État moyen
-														</span>
-													) : (
-														<span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
-															Mauvais état
-														</span>
-													)}
+												<td className="border border-gray-200 px-4 py-2">
+													<div className="max-w-xs truncate">
+														{product.description ||
+															"Aucune description"}
+													</div>
 												</td>
 												<td className="border border-gray-200 px-4 py-2">
-													{
-														product.category
-															.displayName
-													}
+													<span className="font-semibold">
+														{product.price}€
+													</span>
+												</td>
+												<td className="border border-gray-200 px-4 py-2">
+													<span className="text-sm text-gray-600">
+														{
+															product.category
+																.displayName
+														}
+													</span>
+												</td>
+												<td className="border border-gray-200 px-4 py-2">
+													{getStatusBadge(
+														product.status
+													)}
 												</td>
 												<td className="border border-gray-200 px-4 py-2 text-sm text-gray-500">
 													{new Date(
 														product.createdAt
 													).toLocaleDateString()}
 												</td>
-												<td className="border border-gray-200 px-4 py-2 whitespace-nowrap">
-													{product.status ===
-													"pending" ? (
-														<span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800 w-full">
-															En attente de
-															validation
-														</span>
-													) : product.status ===
-													  "active" ? (
-														<span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 w-full">
-															Actif
-														</span>
-													) : (
-														<span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 w-full">
-															Brouillon
-														</span>
-													)}
-												</td>
-												<td className="border border-gray-200 px-4 py-2 w-full">
+												<td className="border border-gray-200 px-4 py-2">
 													<div className="flex space-x-2">
-														<Button
-															variant="outline"
-															size="sm"
-															className="flex items-center space-x-1 cursor-pointer"
+														<Link
+															href={`/products/${product.categoryId}/${product.id}`}
 														>
-															<Eye size={14} />
-															<Link
-																href={`/products/${product.category.name}/${product.id}`}
+															<Button
+																variant="outline"
+																size="sm"
+																className="flex items-center space-x-1"
 															>
-																Voir
-															</Link>
-														</Button>
+																<Eye
+																	size={14}
+																/>
+																<span>
+																	Voir
+																</span>
+															</Button>
+														</Link>
 														<Button
 															variant="outline"
 															size="sm"
-															className="flex items-center space-x-1 cursor-pointer"
+															className="flex items-center space-x-1"
 														>
 															<Edit size={14} />
 															<span>
 																Modifier
 															</span>
 														</Button>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() =>
-																handleDeleteProduct(
-																	product.id
-																)
+														<AlertDialog
+															open={
+																productToDelete?.id ===
+																product.id
 															}
-															className="flex items-center space-x-1 text-red-600 hover:text-red-700 cursor-pointer"
+															onOpenChange={(
+																open
+															) => {
+																if (!open) {
+																	closeDeleteDialog();
+																}
+															}}
 														>
-															<Trash2 size={14} />
-															<span>
-																Supprimer
-															</span>
-														</Button>
+															<AlertDialogTrigger
+																asChild
+															>
+																<Button
+																	variant="outline"
+																	size="sm"
+																	onClick={() =>
+																		openDeleteDialog(
+																			product
+																		)
+																	}
+																	className="flex items-center space-x-1 text-red-600 hover:text-red-700"
+																>
+																	<Trash2
+																		size={
+																			14
+																		}
+																	/>
+																	<span>
+																		Supprimer
+																	</span>
+																</Button>
+															</AlertDialogTrigger>
+															<AlertDialogContent>
+																<AlertDialogHeader>
+																	<AlertDialogTitle>
+																		Êtes-vous
+																		sûr de
+																		vouloir
+																		supprimer
+																		ce
+																		produit
+																		?
+																	</AlertDialogTitle>
+																	<AlertDialogDescription>
+																		Cette
+																		action
+																		ne
+																		pouvra
+																		plus
+																		être
+																		annulée.
+																	</AlertDialogDescription>
+																</AlertDialogHeader>
+																<AlertDialogFooter>
+																	<AlertDialogCancel>
+																		Annuler
+																	</AlertDialogCancel>
+																	<AlertDialogAction
+																		onClick={() =>
+																			productToDelete &&
+																			handleDeleteProduct(
+																				productToDelete
+																			)
+																		}
+																	>
+																		Supprimer
+																	</AlertDialogAction>
+																</AlertDialogFooter>
+															</AlertDialogContent>
+														</AlertDialog>
 													</div>
 												</td>
 											</tr>

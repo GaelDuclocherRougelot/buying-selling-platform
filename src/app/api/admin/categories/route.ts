@@ -21,32 +21,55 @@ async function checkAdminAccess(request: NextRequest) {
 
 /**
  * @swagger
- * /api/admin/categories/{categoryId}:
- *   delete:
- *     summary: Delete a category by ID (Admin only)
- *     description: Deletes a category from the database. Only accessible by admin users.
+ * /api/admin/categories:
+ *   post:
+ *     summary: Create a new category (Admin only)
+ *     description: Creates a new category in the database. Only accessible by admin users.
  *     tags:
  *       - Admin - Categories
  *     security:
  *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: categoryId
- *         required: true
- *         schema:
- *           type: string
- *         description: The unique identifier of the category to delete.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - displayName
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: The unique name/slug for the category
+ *                 example: electronics
+ *               displayName:
+ *                 type: string
+ *                 description: The display name for the category
+ *                 example: Electronics
  *     responses:
- *       200:
- *         description: Category deleted successfully
+ *       201:
+ *         description: Category created successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 message:
+ *                 id:
  *                   type: string
- *                   example: Category deleted successfully
+ *                   example: clx1234567890abcdef
+ *                 name:
+ *                   type: string
+ *                   example: electronics
+ *                 displayName:
+ *                   type: string
+ *                   example: Electronics
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
  *       401:
  *         description: Unauthorized - User is not authenticated
  *         content:
@@ -67,16 +90,6 @@ async function checkAdminAccess(request: NextRequest) {
  *                 error:
  *                   type: string
  *                   example: Forbidden: Admin access required
- *       404:
- *         description: Category not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Category not found
  *       500:
  *         description: Internal server error
  *         content:
@@ -90,11 +103,32 @@ async function checkAdminAccess(request: NextRequest) {
  */
 
 export async function POST(request: NextRequest) {
-	checkAdminAccess(request);
+	try {
+		const authCheck = await checkAdminAccess(request);
+		if ("error" in authCheck) {
+			return NextResponse.json(
+				{ error: authCheck.error },
+				{ status: authCheck.status }
+			);
+		}
 
-	const { name, displayName } = await request.json();
+		const { name, displayName } = await request.json();
 
-	const category = await createCategory(name, displayName);
+		if (!name || !displayName) {
+			return NextResponse.json(
+				{ error: "Name and displayName are required" },
+				{ status: 400 }
+			);
+		}
 
-	return NextResponse.json(category, { status: 201 });
+		const category = await createCategory(name, displayName);
+
+		return NextResponse.json(category, { status: 201 });
+	} catch (error) {
+		console.error("Error creating category:", error);
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 }
+		);
+	}
 }

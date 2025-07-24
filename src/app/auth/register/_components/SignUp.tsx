@@ -21,7 +21,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import profile_default from "../../../../../public/images/profile_default.webp";
 
-
 type FormValues = {
 	firstName: string;
 	lastName: string;
@@ -87,7 +86,9 @@ export default function SignUp(): JSX.Element {
 			// Convert the default image (profile_default) to a File object
 			const response = await fetch(profile_default.src);
 			const blob = await response.blob();
-			imageFile = new File([blob], "profile_default.webp", { type: blob.type });
+			imageFile = new File([blob], "profile_default.webp", {
+				type: blob.type,
+			});
 		}
 		const { error } = await signUp.email({
 			email: data.email,
@@ -105,7 +106,9 @@ export default function SignUp(): JSX.Element {
 				},
 				onSuccess: async () => router.push("/auth/login"),
 			},
-			deletedAt: null, // Add this line to satisfy the required property
+			deletedAt: null,
+			stripeAccountId: "",
+			stripeAccountStatus: ""
 		});
 		setLoading(false);
 		if (error) {
