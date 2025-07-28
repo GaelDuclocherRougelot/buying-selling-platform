@@ -9,7 +9,87 @@ import ProductImageCarousel from "@/features/product/ProductImageCarousel";
 import ProductNavBar from "@/features/product/ProductNavBar";
 import { createApiURL } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ category: string; productId: string }>;
+}): Promise<Metadata> {
+	const resolvedParams = await params;
+
+	try {
+		const productResponse = await fetch(
+			createApiURL(`/api/products/${resolvedParams.productId}`),
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			}
+		);
+
+		if (!productResponse.ok) {
+			return {
+				title: "Produit non trouvé",
+				description:
+					"Le produit que vous recherchez n'existe pas ou a été supprimé.",
+			};
+		}
+
+		const product = await productResponse.json();
+
+		return {
+			title: product.title,
+			description:
+				product.description ||
+				`Découvrez ${product.title} à ${product.price}€. Achetez en toute sécurité sur notre plateforme.`,
+			keywords: [
+				product.title,
+				product.category?.name,
+				"achat",
+				"vente",
+				"produit",
+				"prix",
+			],
+			openGraph: {
+				title: `${product.title} - ${product.price}€`,
+				description:
+					product.description ||
+					`Découvrez ${product.title} à ${product.price}€.`,
+				url: `/products/${resolvedParams.category}/${resolvedParams.productId}`,
+				images:
+					product.imagesUrl?.length > 0
+						? [
+								{
+									url: product.imagesUrl[0],
+									width: 800,
+									height: 600,
+									alt: product.title,
+								},
+							]
+						: undefined,
+			},
+			twitter: {
+				title: `${product.title} - ${product.price}€`,
+				description:
+					product.description ||
+					`Découvrez ${product.title} à ${product.price}€.`,
+				images:
+					product.imagesUrl?.length > 0
+						? [product.imagesUrl[0]]
+						: undefined,
+			},
+		};
+	} catch {
+		return {
+			title: "Erreur",
+			description:
+				"Une erreur s'est produite lors du chargement du produit.",
+		};
+	}
+}
 
 /**
  * ProductPage component displays the details of a specific product.

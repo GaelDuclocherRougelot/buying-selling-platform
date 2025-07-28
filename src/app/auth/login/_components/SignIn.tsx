@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth-client";
+import { LoginLogger } from "@/lib/login-logger";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -38,6 +39,25 @@ export default function SignIn() {
 				onResponse: () => {
 					setLoading(false);
 				},
+				onSuccess: async () => {
+					// Log successful Google login
+					// The API will get the user ID from the session and IP from headers
+					await LoginLogger.logSuccessfulLogin(
+						"google_user", // Placeholder, API will get real user ID
+						undefined, // IP will be extracted from headers by the API
+						undefined // User-Agent will be extracted from headers by the API
+					);
+				},
+				onError: async (ctx) => {
+					// Log failed Google login
+					await LoginLogger.logFailedLogin(
+						email || "unknown",
+						ctx.error.message || "Google login failed",
+						undefined, // IP will be extracted from headers by the API
+						undefined // User-Agent will be extracted from headers by the API
+					);
+					toast.error("Erreur lors de la connexion avec Google");
+				},
 			}
 		);
 	};
@@ -57,7 +77,24 @@ export default function SignIn() {
 				onResponse: () => {
 					setLoading(false);
 				},
-				onError: (ctx) => {
+				onSuccess: async () => {
+					// Log successful email login
+					// The API will get the user ID from the session and IP from headers
+					await LoginLogger.logSuccessfulLogin(
+						"email_user", // Placeholder, API will get real user ID
+						undefined, // IP will be extracted from headers by the API
+						undefined // User-Agent will be extracted from headers by the API
+					);
+				},
+				onError: async (ctx) => {
+					// Log failed email login
+					await LoginLogger.logFailedLogin(
+						email,
+						ctx.error.message || "Invalid credentials",
+						undefined, // IP will be extracted from headers by the API
+						undefined // User-Agent will be extracted from headers by the API
+					);
+
 					if (ctx.error.status === 403) {
 						alert("Veuillez vérifier votre addresse email");
 					}

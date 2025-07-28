@@ -1,19 +1,10 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import { signOut } from "@/lib/auth-client";
-import { redirect } from "next/navigation";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 export default function LogOutButton() {
 	return (
-		<Button
-            variant="outline"
-            className="cursor-pointer"
-			onClick={() => {
-				signOut();
-				redirect("/");
-			}}
-		>
+		<LogoutButton variant="outline" className="cursor-pointer">
 			Déconnexion
-		</Button>
+		</LogoutButton>
 	);
 }

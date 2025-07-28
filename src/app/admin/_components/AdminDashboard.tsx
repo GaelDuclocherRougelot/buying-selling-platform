@@ -14,6 +14,7 @@ import { User } from "better-auth";
 import {
 	BarChart3,
 	Loader2Icon,
+	LogIn,
 	LogOut,
 	Package,
 	Tag,
@@ -92,7 +93,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 					<div className="flex justify-between items-center h-16">
 						<div className="flex items-center">
 							<h1 className="text-xl font-semibold text-gray-900">
-								Admin Dashboard
+								Tableau de bord Administrateur
 							</h1>
 						</div>
 						<div className="flex items-center space-x-4">
@@ -254,6 +255,24 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 										<p className="text-sm text-muted-foreground">
 											Consultez et gérez les catégories
 											d&apos;annonces
+										</p>
+									</CardContent>
+								</Card>
+							</Link>
+							<Link href="/admin/login-logs">
+								<Card className="hover:shadow-md transition-shadow cursor-pointer">
+									<CardHeader>
+										<CardTitle className="flex items-center space-x-2">
+											<LogIn size={20} />
+											<span>
+												Historique des connexions
+											</span>
+										</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<p className="text-sm text-muted-foreground">
+											Consultez et gérez le
+											historique des connexions utilisateurs
 										</p>
 									</CardContent>
 								</Card>

@@ -1,5 +1,31 @@
 import Footer from "@/components/global/Footer";
 import Header from "@/components/global/Header";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Conditions Générales d'Utilisation",
+	description:
+		"Consultez nos conditions générales d'utilisation pour comprendre les règles et obligations lors de l'utilisation de notre plateforme d'achat et de vente.",
+	keywords: [
+		"CGU",
+		"conditions générales",
+		"utilisation",
+		"règles",
+		"obligations",
+		"plateforme",
+	],
+	openGraph: {
+		title: "Conditions Générales d'Utilisation - Plateforme d'Achat et de Vente",
+		description:
+			"Consultez nos conditions générales d'utilisation pour comprendre les règles et obligations.",
+		url: "/legal/cgu",
+	},
+	twitter: {
+		title: "Conditions Générales d'Utilisation - Plateforme d'Achat et de Vente",
+		description:
+			"Consultez nos conditions générales d'utilisation pour comprendre les règles et obligations.",
+	},
+};
 
 export default function CGU() {
 	return (

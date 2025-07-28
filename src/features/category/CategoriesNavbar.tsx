@@ -1,8 +1,8 @@
 "use client";
 
+import { cn } from "@/lib/utils"; // Assuming you have a utility for className concatenation
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils"; // Assuming you have a utility for className concatenation
 
 /**
  * CategoriesNavbar component displays a navigation bar for categories.
@@ -12,14 +12,18 @@ export default function CategoriesNavbar() {
 	const [isVisible, setIsVisible] = useState(false);
 
 	const handleScroll = () => {
-		setIsVisible(window.scrollY > 50);
+		if (typeof window !== "undefined") {
+			setIsVisible(window.scrollY > 50);
+		}
 	};
 
 	useEffect(() => {
-		window.addEventListener("scroll", handleScroll);
-		return () => {
-			window.removeEventListener("scroll", handleScroll);
-		};
+		if (typeof window !== "undefined") {
+			window.addEventListener("scroll", handleScroll);
+			return () => {
+				window.removeEventListener("scroll", handleScroll);
+			};
+		}
 	}, []);
 
 	return (

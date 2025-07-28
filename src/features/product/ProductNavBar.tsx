@@ -32,14 +32,18 @@ export default function ProductNavBar({
 	const [isVisible, setIsVisible] = useState(false);
 
 	const handleScroll = () => {
-		setIsVisible(window.scrollY > 130);
+		if (typeof window !== "undefined") {
+			setIsVisible(window.scrollY > 130);
+		}
 	};
 
 	useEffect(() => {
-		window.addEventListener("scroll", handleScroll);
-		return () => {
-			window.removeEventListener("scroll", handleScroll);
-		};
+		if (typeof window !== "undefined") {
+			window.addEventListener("scroll", handleScroll);
+			return () => {
+				window.removeEventListener("scroll", handleScroll);
+			};
+		}
 	}, []);
 
 	return (

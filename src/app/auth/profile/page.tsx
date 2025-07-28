@@ -6,9 +6,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import VerifiedUser from "@/components/ui/verified-user";
 import { getUser } from "@/lib/auth-session";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductsTable } from "../../../features/product/ProductsTable";
 import LogOutButton from "./_components/LogOutButton";
+
+export const metadata: Metadata = {
+	title: "Profil",
+	description:
+		"Gérez votre profil utilisateur, vos informations personnelles, vos produits en vente et vos paramètres de compte. Accédez à votre tableau de bord personnel.",
+	keywords: [
+		"profil",
+		"compte",
+		"paramètres",
+		"utilisateur",
+		"tableau de bord",
+		"mes produits",
+	],
+	openGraph: {
+		title: "Profil - Plateforme d'Achat et de Vente",
+		description:
+			"Gérez votre profil utilisateur, vos informations personnelles et vos paramètres de compte.",
+		url: "/auth/profile",
+	},
+	twitter: {
+		title: "Profil - Plateforme d'Achat et de Vente",
+		description:
+			"Gérez votre profil utilisateur, vos informations personnelles et vos paramètres de compte.",
+	},
+};
 
 /**
  * Profile Page

@@ -1,6 +1,31 @@
 import Footer from "@/components/global/Footer";
 import Header from "@/components/global/Header";
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+	title: "Mentions Légales",
+	description:
+		"Consultez les mentions légales de notre plateforme d&apos;achat et de vente. Informations sur l&apos;éditeur, l&apos;hébergeur et les données personnelles.",
+	keywords: [
+		"mentions légales",
+		"éditeur",
+		"hébergeur",
+		"responsable",
+		"informations légales",
+	],
+	openGraph: {
+		title: "Mentions Légales - Plateforme d'Achat et de Vente",
+		description:
+			"Consultez les mentions légales de notre plateforme d&apos;achat et de vente.",
+		url: "/legal/mentions-legales",
+	},
+	twitter: {
+		title: "Mentions Légales - Plateforme d'Achat et de Vente",
+		description:
+			"Consultez les mentions légales de notre plateforme d&apos;achat et de vente.",
+	},
+};
 
 export default function MentionsLegalesPage() {
 	return (
@@ -18,7 +43,7 @@ export default function MentionsLegalesPage() {
 					gaelduclocher.rougelot@gmail.com
 					<br />
 					<strong>Finalité du site :</strong> Mise en relation entre
-					particuliers pour annonces d’achat et revente.
+					particuliers pour annonces d&apos;achat et revente.
 				</p>
 				<h2>2. Hébergeur du site</h2>
 				<p>

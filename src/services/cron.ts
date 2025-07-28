@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { LoginLogService } from "./login-log";
 
 /**
  * Deletes users that have been soft-deleted for more than 12 months
@@ -131,4 +132,27 @@ export async function getSoftDeletedUsersStats() {
 		expiredUsers,
 		retentionPeriod: "12 months",
 	};
+}
+
+// Nettoyage automatique des logs de connexion (tous les jours à 2h du matin)
+export async function cleanupLoginLogs() {
+	try {
+		console.log("🧹 Nettoyage automatique des logs de connexion...");
+
+		const deletedCount = await LoginLogService.deleteOldLogs(90);
+
+		console.log(`✅ ${deletedCount} logs de connexion supprimés`);
+
+		return {
+			success: true,
+			deletedCount,
+			message: `Nettoyage terminé: ${deletedCount} logs supprimés`,
+		};
+	} catch (error) {
+		console.error("❌ Erreur lors du nettoyage des logs:", error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : "Erreur inconnue",
+		};
+	}
 }

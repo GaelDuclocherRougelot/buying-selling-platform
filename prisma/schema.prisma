@@ -33,6 +33,7 @@ model User {
   accounts      Account[]
   products      Product[]
   payments      Payment[]
+  loginLogs     LoginLog[]
 
   @@map("user")
   PaymentBuyer Payment[] @relation("Buyer")
@@ -51,6 +52,21 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
+}
+
+model LoginLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String   // "login", "logout", "failed_login", "password_reset"
+  ipAddress   String?
+  userAgent   String?
+  location    String?  // Country/City if available
+  success     Boolean  @default(true)
+  failureReason String? // Reason for failed login
+  createdAt   DateTime @default(now())
+
+  @@map("login_logs")
 }
 
 model Account {
