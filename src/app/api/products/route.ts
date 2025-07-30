@@ -44,10 +44,42 @@ export async function GET(request: NextRequest) {
 	if (corsPreflightResponse) return corsPreflightResponse;
 
 	try {
-		const products = await getAllProducts();
+		const { searchParams } = new URL(request.url);
+		const category = searchParams.get("category");
+
+		let products;
+		if (category) {
+			// Filtrer par catégorie
+			products = await prisma.product.findMany({
+				where: {
+					category: {
+						name: category,
+					},
+					status: "active", // Seulement les produits actifs
+				},
+				include: {
+					category: true,
+					owner: {
+						select: {
+							id: true,
+							name: true,
+							username: true,
+						},
+					},
+				},
+				orderBy: {
+					createdAt: "desc",
+				},
+			});
+		} else {
+			// Tous les produits
+			products = await getAllProducts();
+		}
+
 		const response = NextResponse.json(products);
 		return addCorsHeaders(response);
-	} catch {
+	} catch (error) {
+		console.error("Error fetching products:", error);
 		const response = NextResponse.json(
 			{ error: "Internal Server Error" },
 			{ status: 500 }

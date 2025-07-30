@@ -35,7 +35,7 @@ export default function CategoriesNavbar() {
 		>
 			<ul className="flex items-center justify-center w-full gap-4 max-w-[85rem] mx-auto">
 				<li className="border-b">
-					<Link href="/categories/all">Toutes les catégories</Link>
+					<Link href="/categories">Toutes les catégories</Link>
 				</li>
 			</ul>
 		</nav>

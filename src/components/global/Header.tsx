@@ -1,8 +1,9 @@
 "use client";
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import CategorySVG from "../svg/Category";
 import Heart from "../svg/Heart";
 import Person from "../svg/Person";
 import Tchat from "../svg/Tchat";
@@ -19,7 +20,6 @@ import { Input } from "../ui/input";
 const Header = (): JSX.Element => {
 	const user = useSession().data?.user;
 	const router = useRouter();
-	const pathname = usePathname();
 
 	const handleLinkToPublish = () => {
 		if (!user) {
@@ -56,49 +56,31 @@ const Header = (): JSX.Element => {
 				</div>
 				<nav className="hidden w-full md:flex justify-end">
 					<ul className="flex items-center gap-4 [&>li]:cursor-pointer [&>li>a]:flex [&>li>a]:flex-col [&>li>a]:items-center [&>li>a]:justify-center [&>li>a>p]:text-sm">
+						<li>
+							<Link href="/categories">
+								<CategorySVG />
+								Catégories
+							</Link>
+						</li>
 						{user ? (
 							<>
 								{" "}
 								<li>
 									<Link href="/auth/favorites">
 										<Heart />
-										<p
-											className={
-												pathname === "/auth/favorites"
-													? "font-semibold"
-													: ""
-											}
-										>
-											Favoris
-										</p>
+										Favoris
 									</Link>
 								</li>
 								<li>
 									<Link href="/auth/messages">
 										<Tchat />
-										<p
-											className={
-												pathname === "/auth/messages"
-													? "font-semibold"
-													: ""
-											}
-										>
-											Messages
-										</p>
+										Messages
 									</Link>
 								</li>
 								<li>
 									<Link href="/auth/profile">
 										<Person />
-										<p
-											className={
-												pathname === "/auth/profile"
-													? "font-semibold"
-													: ""
-											}
-										>
-											Mon profil
-										</p>
+										Mon profil
 									</Link>
 								</li>
 							</>

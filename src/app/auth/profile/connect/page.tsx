@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ConnectReturnPage() {
-	const { data: session, status: sessionStatus } = useSession();
+	const { data: session } = useSession();
 	const router = useRouter();
 	const [status, setStatus] = useState<"loading" | "success" | "error">(
 		"loading"
@@ -19,13 +19,8 @@ export default function ConnectReturnPage() {
 
 	useEffect(() => {
 		const handleReturn = async () => {
-			// Attendre que la session soit chargée
-			if (sessionStatus === "loading") {
-				return;
-			}
-
-			// Si pas de session après chargement, rediriger
-			if (sessionStatus === "unauthenticated" || !session?.user) {
+			// Si pas de session, rediriger
+			if (!session?.user) {
 				console.log("Session non trouvée, redirection vers login");
 				toast.error("Vous devez être connecté");
 				router.push("/auth/login");
@@ -79,7 +74,7 @@ export default function ConnectReturnPage() {
 		// Ajouter un délai pour permettre à la session de se stabiliser
 		const timer = setTimeout(handleReturn, 1000);
 		return () => clearTimeout(timer);
-	}, [session, sessionStatus, router]);
+	}, [session, router]);
 
 	const handleContinue = () => {
 		router.push("/auth/profile");
@@ -108,7 +103,7 @@ export default function ConnectReturnPage() {
 		}
 	};
 
-	if (sessionStatus === "loading" || status === "loading") {
+	if (status === "loading") {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<Card className="w-full max-w-md">
