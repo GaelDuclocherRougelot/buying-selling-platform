@@ -26,7 +26,9 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json({
 			hasStripeAccount: !!user?.stripeAccountId,
 			stripeAccountStatus: user?.stripeAccountStatus || "none",
-			canSell: user?.stripeAccountStatus === "active",
+			canSell:
+				user?.stripeAccountStatus === "active" ||
+				user?.stripeAccountStatus === "charges_only",
 		});
 	} catch (error) {
 		console.error("Error checking Stripe status:", error);

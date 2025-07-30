@@ -65,6 +65,15 @@ const ProfilePage = async () => {
 						✅ Actif
 					</Badge>
 				);
+			case "charges_only":
+				return (
+					<Badge
+						variant="secondary"
+						className="bg-blue-100 text-blue-800"
+					>
+						💳 Paiements activés
+					</Badge>
+				);
 			case "pending":
 				return (
 					<Badge
@@ -79,7 +88,9 @@ const ProfilePage = async () => {
 		}
 	};
 
-	const canSell = user.stripeAccountStatus === "active";
+	const canSell =
+		user.stripeAccountStatus === "active" ||
+		user.stripeAccountStatus === "charges_only";
 
 	return (
 		<>
@@ -144,13 +155,28 @@ const ProfilePage = async () => {
 							) : user.stripeAccountStatus === "active" ? (
 								<div className="space-y-3">
 									<p className="text-green-600 font-medium">
-										✅ Votre compte Stripe est actif
+										✅ Votre compte Stripe est complètement
+										actif
 									</p>
 									<p className="text-sm text-gray-600">
-										Vous pouvez maintenant vendre des
-										produits et recevoir des paiements
-										directement sur votre compte bancaire.
+										Vous pouvez vendre des produits et
+										recevoir des paiements directement sur
+										votre compte bancaire.
 									</p>
+								</div>
+							) : user.stripeAccountStatus === "charges_only" ? (
+								<div className="space-y-3">
+									<p className="text-blue-600 font-medium">
+										💳 Votre compte Stripe peut recevoir des
+										paiements
+									</p>
+									<p className="text-sm text-gray-600">
+										Vous pouvez vendre des produits. Pour
+										recevoir les paiements sur votre compte
+										bancaire, complétez la configuration de
+										votre compte Stripe.
+									</p>
+									<ConnectAccountButton mode="onboard" />
 								</div>
 							) : (
 								<div className="space-y-3">

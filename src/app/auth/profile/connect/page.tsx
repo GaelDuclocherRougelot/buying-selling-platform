@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ConnectReturnPage() {
-	const { data: session } = useSession();
+	const { data: session, status: sessionStatus } = useSession();
 	const router = useRouter();
 	const [status, setStatus] = useState<"loading" | "success" | "error">(
 		"loading"
@@ -19,25 +19,41 @@ export default function ConnectReturnPage() {
 
 	useEffect(() => {
 		const handleReturn = async () => {
-			if (!session?.user) {
+			// Attendre que la session soit chargée
+			if (sessionStatus === "loading") {
+				return;
+			}
+
+			// Si pas de session après chargement, rediriger
+			if (sessionStatus === "unauthenticated" || !session?.user) {
+				console.log("Session non trouvée, redirection vers login");
 				toast.error("Vous devez être connecté");
 				router.push("/auth/login");
 				return;
 			}
 
 			try {
+				console.log(
+					"Vérification du statut Stripe pour:",
+					session.user.email
+				);
+
 				// Vérifier le statut du compte Stripe
 				const response = await apiFetch(
 					"/api/stripe/connect/account-status"
 				);
 
 				if (!response.ok) {
+					const errorData = await response.json();
+					console.error("Erreur API:", errorData);
 					throw new Error("Failed to check account status");
 				}
 
 				const data = await response.json();
+				console.log("Statut Stripe reçu:", data);
 
-				if (data.status === "active") {
+				// Vérifier si le compte est complètement configuré
+				if (data.status === "active" && data.chargesEnabled) {
 					setStatus("success");
 					setMessage(
 						"Votre compte Stripe a été configuré avec succès ! Vous pouvez maintenant vendre des produits."
@@ -60,8 +76,10 @@ export default function ConnectReturnPage() {
 			}
 		};
 
-		handleReturn();
-	}, [session, router]);
+		// Ajouter un délai pour permettre à la session de se stabiliser
+		const timer = setTimeout(handleReturn, 1000);
+		return () => clearTimeout(timer);
+	}, [session, sessionStatus, router]);
 
 	const handleContinue = () => {
 		router.push("/auth/profile");
@@ -90,7 +108,7 @@ export default function ConnectReturnPage() {
 		}
 	};
 
-	if (status === "loading") {
+	if (sessionStatus === "loading" || status === "loading") {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<Card className="w-full max-w-md">

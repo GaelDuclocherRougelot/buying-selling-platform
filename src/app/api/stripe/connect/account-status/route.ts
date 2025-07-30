@@ -31,8 +31,21 @@ export async function GET(request: NextRequest) {
 		// Get account details from Stripe
 		const account = await stripe.accounts.retrieve(user.stripeAccountId);
 
-		// Update local status
-		const status = account.charges_enabled ? "active" : "pending";
+		// Vérifier les conditions pour un compte actif
+		const chargesEnabled = account.charges_enabled;
+		const payoutsEnabled = account.payouts_enabled;
+		const detailsSubmitted = account.details_submitted;
+		const requirements = account.requirements;
+
+		// Déterminer le statut basé sur plusieurs critères
+		let status = "pending";
+		if (chargesEnabled && payoutsEnabled && detailsSubmitted) {
+			status = "active";
+		} else if (chargesEnabled && detailsSubmitted) {
+			status = "charges_only";
+		}
+
+		// Mettre à jour le statut local si différent
 		if (status !== user.stripeAccountStatus) {
 			await prisma.user.update({
 				where: { id: session.user.id },
@@ -40,12 +53,23 @@ export async function GET(request: NextRequest) {
 			});
 		}
 
+		// Analyser les exigences manquantes
+		const missingRequirements: string[] = [];
+		if (requirements?.currently_due) {
+			Object.keys(requirements.currently_due).forEach((key) => {
+				missingRequirements.push(key);
+			});
+		}
+
 		return NextResponse.json({
 			accountId: account.id,
 			status: status,
-			chargesEnabled: account.charges_enabled,
-			payoutsEnabled: account.payouts_enabled,
-			requirements: account.requirements,
+			chargesEnabled: chargesEnabled,
+			payoutsEnabled: payoutsEnabled,
+			detailsSubmitted: detailsSubmitted,
+			requirements: requirements,
+			missingRequirements: missingRequirements,
+			canSell: status === "active" || status === "charges_only",
 		});
 	} catch (error) {
 		console.error("Error retrieving account status:", error);
