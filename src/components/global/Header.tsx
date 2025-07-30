@@ -1,13 +1,13 @@
 "use client";
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import Heart from "../svg/Heart";
 import Person from "../svg/Person";
 import Tchat from "../svg/Tchat";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { toast } from "sonner";
 
 /**
  * Header component for the main navigation bar.
@@ -19,15 +19,18 @@ import { toast } from "sonner";
 const Header = (): JSX.Element => {
 	const user = useSession().data?.user;
 	const router = useRouter();
+	const pathname = usePathname();
 
 	const handleLinkToPublish = () => {
-		if(!user) {
+		if (!user) {
 			toast.error("Veuillez vous connecter pour déposer une annonce");
 			router.push("/auth/login");
 			return;
 		}
 		if (!user?.emailVerified) {
-			toast.error("Veuillez vérifier votre email pour déposer une annonce");
+			toast.error(
+				"Veuillez vérifier votre email pour déposer une annonce"
+			);
 			router.push("/auth/profile/edit");
 			return;
 		}
@@ -59,19 +62,43 @@ const Header = (): JSX.Element => {
 								<li>
 									<Link href="/auth/favorites">
 										<Heart />
-										<p>Favoris</p>
+										<p
+											className={
+												pathname === "/auth/favorites"
+													? "font-semibold"
+													: ""
+											}
+										>
+											Favoris
+										</p>
 									</Link>
 								</li>
 								<li>
 									<Link href="/auth/messages">
 										<Tchat />
-										<p>Messages</p>
+										<p
+											className={
+												pathname === "/auth/messages"
+													? "font-semibold"
+													: ""
+											}
+										>
+											Messages
+										</p>
 									</Link>
 								</li>
 								<li>
 									<Link href="/auth/profile">
 										<Person />
-										<p>Mon profil</p>
+										<p
+											className={
+												pathname === "/auth/profile"
+													? "font-semibold"
+													: ""
+											}
+										>
+											Mon profil
+										</p>
 									</Link>
 								</li>
 							</>

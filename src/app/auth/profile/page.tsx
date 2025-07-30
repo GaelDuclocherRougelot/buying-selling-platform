@@ -8,7 +8,7 @@ import VerifiedUser from "@/components/ui/verified-user";
 import { getUser } from "@/lib/auth-session";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ProductsTable } from "../../../features/product/ProductsTable";
+import { ProductsTable } from "../../../features/product/ProductUserTable";
 import LogOutButton from "./_components/LogOutButton";
 
 export const metadata: Metadata = {
@@ -223,7 +223,7 @@ const ProfilePage = async () => {
 						{canSell && (
 							<div>
 								<h2 className="text-xl font-semibold mb-4">
-									Mes produits en vente
+									Mes annonces
 								</h2>
 								<ProductsTable />
 							</div>

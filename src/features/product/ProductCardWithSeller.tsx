@@ -6,33 +6,40 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import FavoriteButton from "@/components/ui/FavoriteButton";
+import SellerLink from "@/components/ui/SellerLink";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
-interface ProductCardProps {
+interface ProductCardWithSellerProps {
 	title: string;
 	description: string | null;
 	price: number;
 	imageUrl: string;
 	category: string;
 	productId: string;
+	seller?: {
+		id: string;
+		username: string | null;
+		name: string;
+	};
 }
 
 /**
- * ProductCard component displays a card with product details.
- * It includes an image, title, description, price, and links to the product page.
+ * ProductCardWithSeller component displays a card with product details and seller information.
+ * It includes an image, title, description, price, seller link, and links to the product page.
  *
- * @param {ProductCardProps} props - Component properties
- * @returns {JSX.Element} The ProductCard component
+ * @param {ProductCardWithSellerProps} props - Component properties
+ * @returns {JSX.Element} The ProductCardWithSeller component
  */
-const ProductCard: React.FC<ProductCardProps> = ({
+const ProductCardWithSeller: React.FC<ProductCardWithSellerProps> = ({
 	title,
 	description,
 	price,
 	imageUrl,
 	category,
 	productId,
+	seller,
 }) => {
 	return (
 		<Card className="w-full max-w-[18rem] p-0 gap-0 pb-4 relative group">
@@ -58,10 +65,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
 					</CardTitle>
 					<CardDescription>{description}</CardDescription>
 					<p className="text-xl font-extrabold mt-2">{price}€</p>
+					{seller && (
+						<div className="mt-2 pt-2 border-t border-gray-100">
+							<SellerLink
+								userId={seller.id}
+								username={seller.username}
+								name={seller.name}
+							/>
+						</div>
+					)}
 				</CardContent>
 			</Link>
 		</Card>
 	);
 };
 
-export default ProductCard;
+export default ProductCardWithSeller;

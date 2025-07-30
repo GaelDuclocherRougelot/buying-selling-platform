@@ -8,6 +8,7 @@ import VerifiedUser from "@/components/ui/verified-user";
 import ProductImageCarousel from "@/features/product/ProductImageCarousel";
 import ProductNavBar from "@/features/product/ProductNavBar";
 import { createApiURL } from "@/lib/api";
+import { getUser } from "@/lib/auth-session";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -105,6 +106,9 @@ export default async function ProductPage(props: {
 	const params = await props.params;
 	const chatId = "123456789";
 
+	// Récupérer l'utilisateur connecté
+	const currentUser = await getUser();
+
 	// Construct the full URL for the API request
 	const productResponse = await fetch(
 		createApiURL(`/api/products/${params.productId}`),
@@ -119,6 +123,9 @@ export default async function ProductPage(props: {
 	const product = await productResponse.json();
 
 	console.log(product);
+
+	// Vérifier si l'utilisateur connecté est le propriétaire de l'annonce
+	const isOwner = currentUser?.id === product.ownerId;
 
 	return (
 		<>
@@ -146,29 +153,48 @@ export default async function ProductPage(props: {
 							</Avatar>
 							<div className="text-lg font-semibold">
 								<CardTitle className="flex gap-2">
-									{product.owner.username ||
-										product.owner.name}
+									<Link
+										href={`/profile/${product.owner.id}`}
+										className="hover:text-blue-600 transition-colors"
+									>
+										{product.owner.username ||
+											product.owner.name}
+									</Link>
 									{product.owner.emailVerified && (
 										<VerifiedUser />
 									)}
 								</CardTitle>
 							</div>
 						</div>
-						<div className="flex items-center gap-4">
-							<Link href={`/auth/chat/${chatId}`}>
-								<Button variant="default">
-									Contacter le vendeur
+						{!isOwner && (
+							<div className="flex items-center gap-4">
+								<Link href={`/auth/chat/${chatId}`}>
+									<Button variant="default">
+										Contacter le vendeur
+									</Button>
+								</Link>
+								<PaymentButton
+									productId={product.id}
+									amount={product.price}
+									productTitle={product.title}
+								/>
+								<Button>
+									<Heart />
 								</Button>
-							</Link>
-							<PaymentButton
-								productId={product.id}
-								amount={product.price}
-								productTitle={product.title}
-							/>
-							<Button>
-								<Heart />
-							</Button>
-						</div>
+							</div>
+						)}
+						{isOwner && (
+							<div className="flex items-center gap-4">
+								<Link href="/auth/profile">
+									<Button
+										variant="outline"
+										className="cursor-pointer"
+									>
+										Gérer mes annonces
+									</Button>
+								</Link>
+							</div>
+						)}
 					</div>
 					<hr />
 					<ProductImageCarousel images={product.imagesUrl} />

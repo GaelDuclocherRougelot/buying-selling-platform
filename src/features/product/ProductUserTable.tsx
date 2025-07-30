@@ -35,22 +35,10 @@ import {
 } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-
-interface Product {
-	id: string;
-	title: string;
-	description: string | null;
-	price: number;
-	condition: string;
-	imagesUrl: string[];
-	status: string;
-	category: {
-		id: string;
-		displayName: string;
-	};
-	createdAt: string;
-}
+import { DeleteProductModal, EditProductModal } from "./modals";
+import { Product } from "./types";
 
 const columns: ColumnDef<Product>[] = [
 	{
@@ -108,13 +96,21 @@ const columns: ColumnDef<Product>[] = [
 						<span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
 							Actif
 						</span>
+					) : status === "inactive" ? (
+						<span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+							Inactif
+						</span>
 					) : status === "pending" ? (
 						<span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-							En attente
+							En attente de validation
 						</span>
 					) : status === "sold" ? (
 						<span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
 							Vendu
+						</span>
+					) : status === "rejected" ? (
+						<span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+							Rejeté
 						</span>
 					) : (
 						<span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
@@ -171,16 +167,43 @@ const columns: ColumnDef<Product>[] = [
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuLabel>Actions</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem>
+							<Link
+								href={`/products/${product.category.id}/${product.id}`}
+							>
+								Voir l&apos;annonce
+							</Link>
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={() => row.original.onEditClick?.(product)}
+							className="cursor-pointer"
+						>
+							Modifier l&apos;annonce
+						</DropdownMenuItem>
+						{(product.status === "active" ||
+							product.status === "inactive") && (
+							<DropdownMenuItem
+								onClick={() =>
+									row.original.onToggleStatusClick?.(product)
+								}
+								className="cursor-pointer"
+							>
+								{product.status === "active"
+									? "Désactiver"
+									: "Activer"}{" "}
+								l&apos;annonce
+							</DropdownMenuItem>
+						)}
 						<DropdownMenuItem
 							onClick={() =>
-								navigator.clipboard.writeText(product.id)
+								row.original.onDeleteClick?.(product)
 							}
+							variant="destructive"
+							className="cursor-pointer"
 						>
-							Copier l&apos;ID du produit
+							Supprimer l&apos;annonce
 						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem>Voir le produit</DropdownMenuItem>
-						<DropdownMenuItem>Modifier</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			);
@@ -192,6 +215,11 @@ export function ProductsTable() {
 	const { data: session } = useSession();
 	const [data, setData] = useState<Product[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [editDialogOpen, setEditDialogOpen] = useState(false);
+	const [selectedProduct, setSelectedProduct] = useState<Product | null>(
+		null
+	);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] =
@@ -206,11 +234,28 @@ export function ProductsTable() {
 
 			try {
 				const response = await apiFetch(
-					`/api/user/products/${session.user.id}`
+					`/api/products/user/${session.user.id}`
 				);
 				if (response.ok) {
 					const products = await response.json();
-					setData(products);
+					// Ajouter la fonction onEditClick à chaque produit
+					const productsWithEditHandler = products.map(
+						(product: Product) => ({
+							...product,
+							onEditClick: (product: Product) => {
+								setSelectedProduct(product);
+								setEditDialogOpen(true);
+							},
+							onDeleteClick: (product: Product) => {
+								setSelectedProduct(product);
+								setDeleteDialogOpen(true);
+							},
+							onToggleStatusClick: (product: Product) => {
+								handleToggleStatus(product);
+							},
+						})
+					);
+					setData(productsWithEditHandler);
 				}
 			} catch (error) {
 				console.error("Error fetching products:", error);
@@ -221,6 +266,74 @@ export function ProductsTable() {
 
 		fetchProducts();
 	}, [session?.user?.id]);
+
+	const handleSaveProduct = async (updatedProduct: Partial<Product>) => {
+		if (!selectedProduct) return;
+
+		try {
+			const response = await apiFetch(
+				`/api/products/${selectedProduct.id}`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(updatedProduct),
+				}
+			);
+
+			if (response.ok) {
+				// Mettre à jour les données locales
+				setData((prevData) =>
+					prevData.map((product) =>
+						product.id === selectedProduct.id
+							? { ...product, ...updatedProduct }
+							: product
+					)
+				);
+				console.log("Produit mis à jour avec succès");
+			} else {
+				console.error("Erreur lors de la mise à jour du produit");
+			}
+		} catch (error) {
+			console.error("Erreur lors de la mise à jour du produit:", error);
+		}
+	};
+
+	const handleDeleteProduct = (product: Product) => {
+		// Remove the product from the local state
+		setData((prevData) => prevData.filter((p) => p.id !== product.id));
+	};
+
+	const handleToggleStatus = async (product: Product) => {
+		if (!product) return;
+
+		const newStatus = product.status === "active" ? "inactive" : "active";
+
+		try {
+			const response = await apiFetch(`/api/products/${product.id}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ status: newStatus }),
+			});
+
+			if (response.ok) {
+				// Mettre à jour les données locales
+				setData((prevData) =>
+					prevData.map((p) =>
+						p.id === product.id ? { ...p, status: newStatus } : p
+					)
+				);
+				console.log(`Statut mis à jour avec succès: ${newStatus}`);
+			} else {
+				console.error("Erreur lors de la mise à jour du statut");
+			}
+		} catch (error) {
+			console.error("Erreur lors de la mise à jour du statut:", error);
+		}
+	};
 
 	const table = useReactTable({
 		data,
@@ -242,7 +355,7 @@ export function ProductsTable() {
 	});
 
 	if (loading) {
-		return <div>Chargement de vos produits...</div>;
+		return <div>Chargement de vos annonces...</div>;
 	}
 
 	return (
@@ -341,6 +454,26 @@ export function ProductsTable() {
 					</Button>
 				</div>
 			</div>
+
+			<EditProductModal
+				product={selectedProduct}
+				isOpen={editDialogOpen}
+				onClose={() => {
+					setEditDialogOpen(false);
+					setSelectedProduct(null);
+				}}
+				onSave={handleSaveProduct}
+			/>
+
+			<DeleteProductModal
+				product={selectedProduct}
+				isOpen={deleteDialogOpen}
+				onClose={() => {
+					setDeleteDialogOpen(false);
+					setSelectedProduct(null);
+				}}
+				onConfirm={handleDeleteProduct}
+			/>
 		</div>
 	);
 }
