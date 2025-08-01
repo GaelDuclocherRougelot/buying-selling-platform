@@ -30,9 +30,31 @@ export async function getUserByUsername(username: string) {
 	return user;
 }
 
-export async function getAllUsers() {
-	const users = await prisma.user.findMany();
-	return users;
+export async function getAllUsers(page: number = 1, limit: number = 8) {
+	const skip = (page - 1) * limit;
+
+	const [users, totalCount] = await Promise.all([
+		prisma.user.findMany({
+			skip,
+			take: limit,
+			orderBy: {
+				createdAt: "desc",
+			},
+		}),
+		prisma.user.count(),
+	]);
+
+	return {
+		users,
+		pagination: {
+			currentPage: page,
+			totalPages: Math.ceil(totalCount / limit),
+			totalUsers: totalCount,
+			usersPerPage: limit,
+			hasNextPage: page < Math.ceil(totalCount / limit),
+			hasPreviousPage: page > 1,
+		},
+	};
 }
 
 export async function getAllVerifiedUsersCount() {

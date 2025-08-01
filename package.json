@@ -4,7 +4,9 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev --turbopack",
+		"dev:clean": "rm -rf .next .turbo && next dev --turbopack",
 		"build": "prisma generate && next build",
+		"build:clean": "rm -rf .next .turbo && prisma generate && next build",
 		"start": "next start",
 		"lint": "next lint",
 		"test": "jest",
@@ -13,7 +15,9 @@
 		"db:generate": "npx prisma generate",
 		"db:push": "npx prisma db push",
 		"db:migrate": "npx prisma migrate dev",
-		"delete-expired-users": "tsx scripts/delete-expired-users.ts"
+		"delete-expired-users": "tsx scripts/delete-expired-users.ts",
+		"clean": "rm -rf .next .turbo node_modules/.cache",
+		"optimize": "./scripts/optimize-dev.sh"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",

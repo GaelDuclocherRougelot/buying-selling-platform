@@ -33,7 +33,7 @@ async function checkAdminAccess(request: NextRequest) {
 	return { user: session.user };
 }
 
-// GET /api/admin/users - Get all users
+// GET /api/admin/users - Get all users with pagination
 export async function GET(request: NextRequest) {
 	try {
 		const authCheck = await checkAdminAccess(request);
@@ -44,11 +44,21 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		const users = await getAllUsers();
+		const { searchParams } = new URL(request.url);
+		const page = parseInt(searchParams.get("page") || "1");
+		const limit = parseInt(searchParams.get("limit") || "8");
 
-		return NextResponse.json({
-			users,
-		});
+		// Validate pagination parameters
+		if (page < 1 || limit < 1 || limit > 50) {
+			return NextResponse.json(
+				{ error: "Invalid pagination parameters" },
+				{ status: 400 }
+			);
+		}
+
+		const result = await getAllUsers(page, limit);
+
+		return NextResponse.json(result);
 	} catch (error) {
 		console.error("Error fetching users:", error);
 		return NextResponse.json(

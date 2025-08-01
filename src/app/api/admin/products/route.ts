@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { getAllProductsForAdmin } from "@/services/product";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -14,10 +13,44 @@ const createProductSchema = z.object({
 });
 
 // GET /api/admin/products - Get all products (including sold ones)
-export async function GET() {
+export async function GET(request: NextRequest) {
 	try {
-		const products = await getAllProductsForAdmin();
-		return NextResponse.json(products);
+		const { searchParams } = new URL(request.url);
+		const page = parseInt(searchParams.get("page") || "1");
+		const limit = parseInt(searchParams.get("limit") || "8");
+		const skip = (page - 1) * limit;
+
+		// Get total count
+		const totalProducts = await prisma.product.count();
+
+		// Get products with pagination
+		const products = await prisma.product.findMany({
+			skip,
+			take: limit,
+			include: {
+				category: true,
+			},
+			orderBy: {
+				createdAt: "desc",
+			},
+		});
+
+		// Calculate pagination info
+		const totalPages = Math.ceil(totalProducts / limit);
+		const hasNextPage = page < totalPages;
+		const hasPreviousPage = page > 1;
+
+		return NextResponse.json({
+			products,
+			pagination: {
+				currentPage: page,
+				totalPages,
+				totalProducts,
+				productsPerPage: limit,
+				hasNextPage,
+				hasPreviousPage,
+			},
+		});
 	} catch (error) {
 		console.error("Error fetching products:", error);
 		return NextResponse.json(

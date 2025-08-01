@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { createCategory } from "@/services/category";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,6 +18,51 @@ async function checkAdminAccess(request: NextRequest) {
 	}
 
 	return { user: session.user };
+}
+
+// GET /api/admin/categories - Get all categories with pagination
+export async function GET(request: NextRequest) {
+	try {
+		const { searchParams } = new URL(request.url);
+		const page = parseInt(searchParams.get("page") || "1");
+		const limit = parseInt(searchParams.get("limit") || "8");
+		const skip = (page - 1) * limit;
+
+		// Get total count
+		const totalCategories = await prisma.category.count();
+
+		// Get categories with pagination
+		const categories = await prisma.category.findMany({
+			skip,
+			take: limit,
+			orderBy: {
+				createdAt: "desc",
+			},
+		});
+
+		// Calculate pagination info
+		const totalPages = Math.ceil(totalCategories / limit);
+		const hasNextPage = page < totalPages;
+		const hasPreviousPage = page > 1;
+
+		return NextResponse.json({
+			categories,
+			pagination: {
+				currentPage: page,
+				totalPages,
+				totalCategories,
+				categoriesPerPage: limit,
+				hasNextPage,
+				hasPreviousPage,
+			},
+		});
+	} catch (error) {
+		console.error("Error fetching categories:", error);
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 }
+		);
+	}
 }
 
 /**

@@ -5,11 +5,11 @@ import AdminProductsPage from "./_components/AdminProductsPage";
 /**
  * Admin Products Page
  *
- * This page displays the products management interface for admins.
- * Only users with admin role can access this page.
+ * This page displays the products management interface for admins and moderators.
+ * Only users with admin or moderator role can access this page.
  *
  * @protected
- * @requiresAdminRole
+ * @requiresAdminOrModeratorRole
  */
 export default async function AdminProducts() {
 	const user = await getUser();
@@ -18,7 +18,7 @@ export default async function AdminProducts() {
 		redirect("/auth/login");
 	}
 
-	if (user.role !== "admin") {
+	if (user.role !== "admin" && user.role !== "moderator") {
 		redirect("/");
 	}
 
