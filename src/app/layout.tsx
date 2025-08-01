@@ -1,3 +1,4 @@
+import CookieBanner from "@/components/ui/cookie-banner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
@@ -104,6 +105,7 @@ export default function RootLayout({
 			>
 				<Toaster />
 				{children}
+				<CookieBanner />
 			</body>
 		</html>
 	);

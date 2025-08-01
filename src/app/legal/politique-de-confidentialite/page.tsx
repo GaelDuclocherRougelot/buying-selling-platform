@@ -51,7 +51,7 @@ const PolitiqueDeConfidentialite = () => (
 			</p>
 			<ul className="list-disc pl-6">
 				<li>
-					Données d’identification : nom, prénom, pseudo, adresse
+					Données d&apos;identification : nom, prénom, pseudo, adresse
 					email, mot de passe crypté
 				</li>
 				<li>Contenu des annonces ou messages envoyés</li>
@@ -61,6 +61,10 @@ const PolitiqueDeConfidentialite = () => (
 				<li>
 					Données de navigation (avec votre consentement pour les
 					cookies)
+				</li>
+				<li>
+					Données de paiement (via Stripe, conformément à leur
+					politique de confidentialité)
 				</li>
 			</ul>
 
@@ -79,19 +83,26 @@ const PolitiqueDeConfidentialite = () => (
 					Améliorer le site (analyse anonyme de fréquentation si
 					accepté, Google Analytics)
 				</li>
+				<li>
+					Traiter les paiements et gérer les transactions (via Stripe)
+				</li>
 			</ul>
 
 			<h2>4. Base légale du traitement</h2>
 			<p>Les traitements réalisés reposent sur :</p>
 			<ul className="list-disc pl-6">
-				<li>Votre consentement</li>
+				<li>Votre consentement (pour les cookies non essentiels)</li>
 				<li>
-					L’exécution du service que vous avez demandé (compte,
-					annonces)
+					L&apos;exécution du service que vous avez demandé (compte,
+					annonces, paiements)
 				</li>
 				<li>
 					Notre intérêt légitime et légal à assurer la sécurité du
 					site
+				</li>
+				<li>
+					L&apos;obligation légale de conserver certaines données pour
+					des raisons fiscales
 				</li>
 			</ul>
 
@@ -100,12 +111,16 @@ const PolitiqueDeConfidentialite = () => (
 			<ul className="list-disc pl-6">
 				<li>Tant que le compte est actif</li>
 				<li>
-					Jusqu’à 12 mois après la suppression du compte (sauf
+					Jusqu&apos;à 12 mois après la suppression du compte (sauf
 					obligations légales contraires)
 				</li>
 				<li>
 					Les cookies sont conservés entre 6 et 13 mois selon leur
 					nature
+				</li>
+				<li>
+					Les données de paiement sont conservées 5 ans (obligation
+					fiscale)
 				</li>
 			</ul>
 
@@ -120,21 +135,40 @@ const PolitiqueDeConfidentialite = () => (
 				<li>
 					Nos prestataires techniques (sécurité, gestion des e-mails)
 				</li>
+				<li>
+					Stripe (pour le traitement des paiements) - voir leur
+					politique de confidentialité
+				</li>
 			</ul>
-			<p>Aucune donnée n’est vendue à des tiers.</p>
+			<p>Aucune donnée n&apos;est vendue à des tiers.</p>
 
 			<h2>7. Vos droits</h2>
 			<p>Conformément au RGPD, vous disposez des droits suivants :</p>
 			<ul className="list-disc pl-6">
-				<li>Droit d’accès à vos données</li>
-				<li>Droit à rectification</li>
-				<li>Droit à l’effacement (droit à l’oubli)</li>
-				<li>Droit d’opposition et de limitation</li>
-				<li>Droit à la portabilité</li>
+				<li>
+					<strong>Droit d&apos;accès :</strong> Vous pouvez
+					télécharger toutes vos données depuis votre profil
+				</li>
+				<li>
+					<strong>Droit à rectification :</strong> Modifiez vos
+					informations dans votre profil
+				</li>
+				<li>
+					<strong>Droit à l&apos;effacement :</strong> Supprimez votre
+					compte définitivement
+				</li>
+				<li>
+					<strong>Droit d&apos;opposition et de limitation :</strong>{" "}
+					Contactez-nous
+				</li>
+				<li>
+					<strong>Droit à la portabilité :</strong> Exportez vos
+					données au format JSON
+				</li>
 			</ul>
 			<p>
-				Vous pouvez exercer vos droits en nous contactant à l’adresse
-				suivante :{" "}
+				Vous pouvez exercer vos droits en nous contactant à
+				l&apos;adresse suivante :{" "}
 				<a href="mailto:gaelduclocher.rougelot@gmail.com">
 					gaelduclocher.rougelot@gmail.com
 				</a>
@@ -151,21 +185,55 @@ const PolitiqueDeConfidentialite = () => (
 				<li>Connexion sécurisée (HTTPS / Certificat SSL)</li>
 				<li>Mots de passe cryptés</li>
 				<li>Accès administrateur protégé</li>
+				<li>Chiffrement des données sensibles</li>
+				<li>Sauvegardes sécurisées</li>
 			</ul>
 
 			<h2>9. Cookies</h2>
 			<p>Des cookies peuvent être déposés sur votre appareil :</p>
 			<ul className="list-disc pl-6">
-				<li>Cookies essentiels (fonctionnement du site)</li>
-				<li>Cookies de mesure d’audience (avec votre accord)</li>
-				<li>Cookies tiers (non utilisés sans votre consentement)</li>
+				<li>
+					<strong>Cookies essentiels :</strong> Indispensables au
+					fonctionnement du site (session, authentification)
+				</li>
+				<li>
+					<strong>Cookies d&apos;analyse :</strong> Nous aident à
+					comprendre comment vous utilisez le site (avec votre accord)
+				</li>
+				<li>
+					<strong>Cookies marketing :</strong> Utilisés pour vous
+					proposer des contenus personnalisés (avec votre
+					consentement)
+				</li>
 			</ul>
 			<p>
 				Vous pouvez à tout moment modifier vos préférences via le
-				bandeau cookies en bas de page.
+				bandeau cookies en bas de page ou dans les paramètres de votre
+				navigateur.
 			</p>
 
-			<h2>10. Modifications</h2>
+			<h2>10. Transferts de données</h2>
+			<p>
+				Vos données sont stockées dans l&apos;Union Européenne. En cas
+				de transfert hors UE, nous nous assurons que le niveau de
+				protection est adéquat (notamment pour les services Stripe qui
+				respectent le Privacy Shield).
+			</p>
+
+			<h2>11. Droit de plainte</h2>
+			<p>
+				Si vous estimez que vos droits ne sont pas respectés, vous
+				pouvez déposer une plainte auprès de la CNIL :{" "}
+				<a
+					href="https://www.cnil.fr/fr/plaintes"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					https://www.cnil.fr/fr/plaintes
+				</a>
+			</p>
+
+			<h2>12. Modifications</h2>
 			<p>
 				Cette politique peut être mise à jour. La date de dernière mise
 				à jour est : 17/06/2025.

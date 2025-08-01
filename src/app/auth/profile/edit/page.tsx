@@ -1,4 +1,6 @@
 import Header from "@/components/global/Header";
+import DataRightsManager from "@/components/rgpd/DataRightsManager";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -10,11 +12,10 @@ import VerifiedUser from "@/components/ui/verified-user";
 import { auth } from "@/lib/auth";
 import { getUser } from "@/lib/auth-session";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertDialogDelete } from "./_components/AlertDialogDelete";
 import ProfileForm from "./_components/ProfileForm";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 /**
  * Profile Edit Page
@@ -79,8 +80,16 @@ const ProfileEditPage = async () => {
 						</div>
 						<div className="flex flex-col gap-2 mt-4">
 							<label>Mot de passe </label>
-							<Button className="w-fit"><Link href="/auth/forget-password">Réinitialiser mon mot de passe</Link></Button>
+							<Button className="w-fit">
+								<Link href="/auth/forget-password">
+									Réinitialiser mon mot de passe
+								</Link>
+							</Button>
+						</div>
 
+						<div className="mt-8">
+							<h2 className="py-8">Mes droits RGPD</h2>
+							<DataRightsManager />
 						</div>
 					</CardContent>
 					<CardFooter className="flex justify-end gap-4">

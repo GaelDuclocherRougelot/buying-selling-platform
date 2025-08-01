@@ -29,13 +29,16 @@ import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
 import { User } from "@prisma/client";
 import {
+	AlertTriangle,
 	ArrowLeft,
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
 	Edit,
 	Eye,
+	EyeOff,
 	Filter,
+	Lock,
 	Mail,
 	MoreHorizontal,
 	Search,
@@ -69,6 +72,23 @@ interface Filters {
 	dateTo: string;
 }
 
+// Fonction utilitaire pour masquer les données sensibles
+const maskEmail = (email: string): string => {
+	const [localPart, domain] = email.split("@");
+	if (localPart.length <= 2) return email;
+	return `${localPart.substring(0, 2)}***@${domain}`;
+};
+
+const maskName = (name: string): string => {
+	if (name.length <= 2) return name;
+	return `${name.substring(0, 1)}***`;
+};
+
+const maskUsername = (username: string | null): string => {
+	if (!username || username.length <= 2) return username || "sans-pseudo";
+	return `${username.substring(0, 2)}***`;
+};
+
 export default function AdminUsersPage() {
 	const [users, setUsers] = useState<User[]>([]);
 	const [pagination, setPagination] = useState<PaginationInfo | null>(null);
@@ -76,6 +96,8 @@ export default function AdminUsersPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+	const [showSensitiveData, setShowSensitiveData] = useState(false);
+	const [gdprConsent, setGdprConsent] = useState(false);
 	const [filters, setFilters] = useState<Filters>({
 		role: "",
 		emailVerified: "",
@@ -108,7 +130,11 @@ export default function AdminUsersPage() {
 	};
 
 	const handleDeleteUser = async (userId: string) => {
-		if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
+		if (
+			!confirm(
+				"Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible et doit respecter le droit à l'effacement du RGPD."
+			)
+		) {
 			return;
 		}
 
@@ -118,7 +144,9 @@ export default function AdminUsersPage() {
 			});
 
 			if (response.ok) {
-				toast.success("Utilisateur supprimé avec succès");
+				toast.success(
+					"Utilisateur supprimé avec succès (conformément au RGPD)"
+				);
 				fetchUsers(currentPage);
 			} else {
 				toast.error("Erreur lors de la suppression de l'utilisateur");
@@ -223,6 +251,63 @@ export default function AdminUsersPage() {
 		return true;
 	});
 
+	// Avertissement RGPD
+	if (!gdprConsent) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<Card className="max-w-md w-full mx-4">
+					<CardHeader>
+						<CardTitle className="flex items-center space-x-2">
+							<Lock className="h-5 w-5 text-orange-500" />
+							<span>Protection des données</span>
+						</CardTitle>
+						<CardDescription>
+							Cette page contient des données personnelles
+							sensibles. En accédant à ces informations, vous vous
+							engagez à respecter le RGPD.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+							<div className="flex items-start space-x-2">
+								<AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
+								<div className="text-sm text-orange-800">
+									<p className="font-medium mb-2">
+										Avertissement RGPD :
+									</p>
+									<ul className="list-disc list-inside space-y-1">
+										<li>
+											Les données affichées sont à usage
+											administratif uniquement
+										</li>
+										<li>
+											Ne partagez pas ces informations
+											avec des tiers
+										</li>
+										<li>
+											Respectez le droit à
+											l&apos;effacement des utilisateurs
+										</li>
+										<li>
+											Les données sensibles sont masquées
+											par défaut
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<Button
+							onClick={() => setGdprConsent(true)}
+							className="w-full"
+						>
+							Je comprends et j'accepte
+						</Button>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
 	return (
 		<div className="min-h-screen bg-gray-50">
 			{/* Header */}
@@ -244,11 +329,49 @@ export default function AdminUsersPage() {
 								Gestion des utilisateurs
 							</h1>
 						</div>
+						<div className="flex items-center space-x-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() =>
+									setShowSensitiveData(!showSensitiveData)
+								}
+								className="flex items-center space-x-2"
+							>
+								{showSensitiveData ? (
+									<EyeOff size={16} />
+								) : (
+									<Eye size={16} />
+								)}
+								<span>
+									{showSensitiveData ? "Masquer" : "Afficher"}{" "}
+									les données sensibles
+								</span>
+							</Button>
+						</div>
 					</div>
 				</div>
 			</header>
 
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				{/* Avertissement RGPD */}
+				<div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+					<div className="flex items-start space-x-2">
+						<Shield className="h-5 w-5 text-blue-500 mt-0.5" />
+						<div className="text-sm text-blue-800">
+							<p className="font-medium mb-1">
+								Protection RGPD active :
+							</p>
+							<p>
+								Les données personnelles sont protégées.
+								Utilisez le bouton &quot;Afficher les données
+								sensibles&quot; pour accéder aux informations
+								complètes si nécessaire.
+							</p>
+						</div>
+					</div>
+				</div>
+
 				<Card>
 					<CardHeader>
 						<CardTitle>Utilisateurs</CardTitle>
@@ -596,7 +719,9 @@ export default function AdminUsersPage() {
 																		"/images/profile_default.webp"
 																	}
 																	alt={
-																		user.name
+																		showSensitiveData
+																			? user.name
+																			: "Utilisateur"
 																	}
 																	className="w-10 h-10 rounded-full object-cover"
 																/>
@@ -605,12 +730,20 @@ export default function AdminUsersPage() {
 													</td>
 													<td className="border border-gray-200 px-4 py-2 whitespace-nowrap">
 														<div className="font-medium">
-															{user.name}
+															{showSensitiveData
+																? user.name
+																: maskName(
+																		user.name
+																	)}
 														</div>
 														<div className="text-sm text-gray-500">
 															@
-															{user.username ||
-																"sans-pseudo"}
+															{showSensitiveData
+																? user.username ||
+																	"sans-pseudo"
+																: maskUsername(
+																		user.username
+																	)}
 														</div>
 													</td>
 													<td className="border border-gray-200 px-4 py-2">
@@ -620,7 +753,11 @@ export default function AdminUsersPage() {
 																className="text-gray-400"
 															/>
 															<span>
-																{user.email}
+																{showSensitiveData
+																	? user.email
+																	: maskEmail(
+																			user.email
+																		)}
 															</span>
 														</div>
 													</td>

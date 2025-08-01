@@ -9,7 +9,7 @@ import Heart from "../svg/Heart";
 import Person from "../svg/Person";
 import Tchat from "../svg/Tchat";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
+import { SearchBar } from "./SearchBar";
 // import MobileMenu from "./MobileMenu";
 
 /**
@@ -69,7 +69,7 @@ const Header = (): JSX.Element => {
 						>
 							Déposer une annonce
 						</Button>
-						<Input placeholder="Rechercher une annonce" />
+						<SearchBar />
 					</div>
 
 					{/* Navigation desktop */}
