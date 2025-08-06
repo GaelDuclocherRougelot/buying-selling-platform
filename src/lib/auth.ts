@@ -44,6 +44,7 @@ export const auth = betterAuth({
 			prompt: "select_account",
 			clientId: process.env.GOOGLE_CLIENT_ID || "",
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+			redirectUri: process.env.GOOGLE_REDIRECT_URI || "",
 		},
 	},
 	user: {
