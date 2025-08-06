@@ -36,6 +36,7 @@ interface Category {
 	id: string;
 	name: string;
 	displayName: string;
+	imageUrl?: string;
 }
 
 export function SearchFilters({
@@ -98,7 +99,7 @@ export function SearchFilters({
 	);
 
 	return (
-		<Card className="sticky top-4">
+		<Card className="sticky top-4 max-w-xs h-fit">
 			<CardHeader className="pb-4">
 				<div className="flex items-center justify-between">
 					<CardTitle className="flex items-center gap-2">

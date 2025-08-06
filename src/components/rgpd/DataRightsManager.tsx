@@ -8,22 +8,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
 import { apiFetch } from "@/lib/api";
-import { AlertTriangle, Download, Edit, Eye, Trash2 } from "lucide-react";
+import { AlertTriangle, Download, Eye } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function DataRightsManager() {
 	const [loading, setLoading] = useState(false);
-	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 	const handleDataExport = async () => {
 		setLoading(true);
@@ -48,34 +39,10 @@ export default function DataRightsManager() {
 			} else {
 				toast.error("Erreur lors de l'export de vos données");
 			}
-		} catch (error) {
+		} catch {
 			toast.error("Erreur lors de l'export de vos données");
 		} finally {
 			setLoading(false);
-		}
-	};
-
-	const handleAccountDeletion = async () => {
-		setLoading(true);
-		try {
-			const response = await apiFetch("/api/auth/soft-delete-user", {
-				method: "POST",
-			});
-
-			if (response.ok) {
-				toast.success(
-					"Votre compte a été supprimé. Vous recevrez un email de confirmation."
-				);
-				// Rediriger vers la page d'accueil
-				window.location.href = "/";
-			} else {
-				toast.error("Erreur lors de la suppression de votre compte");
-			}
-		} catch (error) {
-			toast.error("Erreur lors de la suppression de votre compte");
-		} finally {
-			setLoading(false);
-			setShowDeleteDialog(false);
 		}
 	};
 
@@ -88,8 +55,8 @@ export default function DataRightsManager() {
 						<p className="font-medium mb-2">Vos droits RGPD :</p>
 						<ul className="list-disc list-inside space-y-1">
 							<li>
-								<strong>Droit d&apos;accès :</strong> Vous pouvez
-								télécharger toutes vos données
+								<strong>Droit d&apos;accès :</strong> Vous
+								pouvez télécharger toutes vos données
 							</li>
 							<li>
 								<strong>Droit de rectification :</strong>{" "}
@@ -134,6 +101,5 @@ export default function DataRightsManager() {
 				</CardContent>
 			</Card>
 		</div>
-
 	);
 }

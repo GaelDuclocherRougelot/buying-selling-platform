@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Heart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface FavoriteButtonProps {
@@ -25,14 +25,7 @@ export default function FavoriteButton({
 	const [isFavorite, setIsFavorite] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
-	// Check if product is in favorites on mount
-	useEffect(() => {
-		if (session?.user?.id) {
-			checkFavoriteStatus();
-		}
-	}, [session?.user?.id, productId]);
-
-	const checkFavoriteStatus = async () => {
+	const checkFavoriteStatus = useCallback(async () => {
 		try {
 			const response = await apiFetch("/api/favorites");
 			if (response.ok) {
@@ -46,7 +39,14 @@ export default function FavoriteButton({
 		} catch (error) {
 			console.error("Error checking favorite status:", error);
 		}
-	};
+	}, [productId]);
+
+	// Check if product is in favorites on mount
+	useEffect(() => {
+		if (session?.user?.id) {
+			checkFavoriteStatus();
+		}
+	}, [session?.user?.id, productId, checkFavoriteStatus]);
 
 	const toggleFavorite = async () => {
 		if (!session?.user?.id) {

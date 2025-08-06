@@ -2,10 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import ProductCard from "@/features/product/ProductCard";
+import { ProductWithCategory } from "@/types/product";
 import { AlertCircle, Loader2, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import SearchProductCard from "./SearchProductCard";
 
 interface Filters {
 	q: string;
@@ -19,30 +20,6 @@ interface Filters {
 	sortOrder: string;
 }
 
-interface Product {
-	id: string;
-	title: string;
-	description: string | null;
-	price: number;
-	condition: string;
-	imagesUrl: string[];
-	delivery: string;
-	deliveryPrice: number | null;
-	city: string | null;
-	createdAt: string;
-	category: {
-		id: string;
-		name: string;
-		displayName: string;
-	};
-	owner: {
-		id: string;
-		name: string;
-		username: string | null;
-		displayUsername: string | null;
-	};
-}
-
 interface SearchResultsProps {
 	filters: Filters;
 	isLoading: boolean;
@@ -50,7 +27,7 @@ interface SearchResultsProps {
 }
 
 interface SearchResponse {
-	products: Product[];
+	products: ProductWithCategory[];
 	pagination: {
 		currentPage: number;
 		totalPages: number;
@@ -70,48 +47,48 @@ export function SearchResults({
 	const searchParams = useSearchParams();
 	const router = useRouter();
 
-	// Fonction pour construire l'URL de recherche
-	const buildSearchUrl = (page: number = 1) => {
-		const params = new URLSearchParams();
-
-		Object.entries(filters).forEach(([key, value]) => {
-			if (value) {
-				params.set(key, value);
-			}
-		});
-
-		params.set("page", page.toString());
-		return `/api/products/search?${params.toString()}`;
-	};
-
-	// Fonction pour effectuer la recherche
-	const performSearch = async (page: number = 1) => {
-		setIsLoading(true);
-		setError(null);
-
-		try {
-			const url = buildSearchUrl(page);
-			const response = await fetch(url);
-
-			if (!response.ok) {
-				throw new Error("Erreur lors de la recherche");
-			}
-
-			const data: SearchResponse = await response.json();
-			setResults(data);
-		} catch (err) {
-			setError("Une erreur est survenue lors de la recherche");
-			console.error("Erreur de recherche:", err);
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
 	// Effectuer la recherche quand les filtres changent
 	useEffect(() => {
 		const page = parseInt(searchParams.get("page") || "1");
+
+		// Fonction pour construire l'URL de recherche
+		const buildSearchUrl = (page: number = 1) => {
+			const params = new URLSearchParams();
+
+			Object.entries(filters).forEach(([key, value]) => {
+				if (value) {
+					params.set(key, value);
+				}
+			});
+
+			params.set("page", page.toString());
+			return `/api/products/search?${params.toString()}`;
+		};
+
+		// Fonction pour effectuer la recherche
+		const performSearch = async (page: number = 1) => {
+			setIsLoading(true);
+			setError(null);
+
+			try {
+				const url = buildSearchUrl(page);
+				const response = await fetch(url);
+
+				if (!response.ok) {
+					throw new Error("Erreur lors de la recherche");
+				}
+
+				const data: SearchResponse = await response.json();
+				setResults(data);
+			} catch (err) {
+				setError("Une erreur est survenue lors de la recherche");
+				console.error("Erreur de recherche:", err);
+			} finally {
+				setIsLoading(false);
+			}
+		};
 		performSearch(page);
-	}, [filters, searchParams]);
+	}, [filters, searchParams, setIsLoading]);
 
 	// Fonction pour changer de page
 	const changePage = (page: number) => {
@@ -120,22 +97,9 @@ export function SearchResults({
 		router.push(`/search?${params.toString()}`);
 	};
 
-	// Fonction pour formater le prix
-	const formatPrice = (price: number) => {
-		return new Intl.NumberFormat("fr-FR", {
-			style: "currency",
-			currency: "EUR",
-		}).format(price);
-	};
-
-	// Fonction pour obtenir le nom d'affichage de l'utilisateur
-	const getDisplayName = (owner: Product["owner"]) => {
-		return owner.displayUsername || owner.username || owner.name;
-	};
-
 	if (isLoading) {
 		return (
-			<Card>
+			<Card className="h-fit w-full">
 				<CardContent className="flex items-center justify-center py-12">
 					<div className="flex items-center gap-2">
 						<Loader2 className="h-6 w-6 animate-spin" />
@@ -148,7 +112,7 @@ export function SearchResults({
 
 	if (error) {
 		return (
-			<Card>
+			<Card className="h-fit w-full">
 				<CardContent className="flex items-center justify-center py-12">
 					<div className="flex items-center gap-2 text-red-600">
 						<AlertCircle className="h-6 w-6" />
@@ -166,7 +130,7 @@ export function SearchResults({
 	const { products, pagination } = results;
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 w-full">
 			{/* En-tête des résultats */}
 			<div className="flex items-center justify-between">
 				<div>
@@ -197,9 +161,17 @@ export function SearchResults({
 					</CardContent>
 				</Card>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					{products.map((product) => (
-						<SearchProductCard key={product.id} product={product} />
+						<ProductCard
+							key={product.id}
+							productId={product.id}
+							title={product.title}
+							description={product.description}
+							price={product.price}
+							imageUrl={product.imagesUrl[0]}
+							category={product.category}
+						/>
 					))}
 				</div>
 			)}

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 		const offset = (page - 1) * limit;
 
 		// Construction des filtres
-		const where: any = {
+		const where: Record<string, unknown> = {
 			status: "active", // Seulement les produits actifs
 		};
 
@@ -52,8 +52,14 @@ export async function GET(request: NextRequest) {
 		// Filtre par prix
 		if (minPrice || maxPrice) {
 			where.price = {};
-			if (minPrice) where.price.gte = parseFloat(minPrice);
-			if (maxPrice) where.price.lte = parseFloat(maxPrice);
+			if (minPrice) {
+				(where.price as Record<string, number>).gte =
+					parseFloat(minPrice);
+			}
+			if (maxPrice) {
+				(where.price as Record<string, number>).lte =
+					parseFloat(maxPrice);
+			}
 		}
 
 		// Filtre par livraison
@@ -67,7 +73,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Tri
-		const orderBy: any = {};
+		const orderBy: Record<string, string> = {};
 		orderBy[sortBy] = sortOrder;
 
 		// Requête avec pagination

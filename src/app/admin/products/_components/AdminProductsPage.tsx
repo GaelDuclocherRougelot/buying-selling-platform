@@ -9,6 +9,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -38,17 +39,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { Category } from "@prisma/client";
 import {
+	AlertCircle,
 	ArrowLeft,
+	CheckCircle,
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
+	Clock,
 	Edit,
 	Eye,
 	Filter,
 	MoreHorizontal,
+	Package,
 	Plus,
+	Receipt,
 	Search,
 	Trash2,
+	Truck,
 	X,
 } from "lucide-react";
 import Link from "next/link";
@@ -88,6 +95,44 @@ interface EditProductForm {
 	imagesUrl: string[];
 }
 
+interface ShippingProof {
+	id: string;
+	paymentId: string;
+	proofType: string;
+	proofData: {
+		trackingNumber: string;
+		receiptImageUrl: string;
+		packageImageUrl: string;
+		description?: string;
+		submittedAt: string;
+	};
+	status: string;
+	submittedAt: string;
+	verifiedAt?: string;
+	verifiedBy?: string;
+}
+
+interface Payment {
+	id: string;
+	amount: number;
+	status: string;
+	productId: string;
+	buyerId: string;
+	sellerId: string;
+	createdAt: string;
+	product: Product;
+	buyer: {
+		id: string;
+		username: string;
+		email: string;
+	};
+	seller: {
+		id: string;
+		username: string;
+		email: string;
+	};
+}
+
 export default function AdminProductsPage() {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
@@ -101,6 +146,15 @@ export default function AdminProductsPage() {
 	);
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+	const [isShippingProofModalOpen, setIsShippingProofModalOpen] =
+		useState(false);
+	const [selectedProduct, setSelectedProduct] = useState<Product | null>(
+		null
+	);
+	const [shippingProofs, setShippingProofs] = useState<ShippingProof[]>([]);
+
+	const [payments, setPayments] = useState<Payment[]>([]);
+	const [loadingProofs, setLoadingProofs] = useState(false);
 	const [editForm, setEditForm] = useState<EditProductForm>({
 		title: "",
 		description: "",
@@ -153,6 +207,89 @@ export default function AdminProductsPage() {
 			}
 		} catch {
 			console.error("Erreur lors du chargement des catégories");
+		}
+	};
+
+	const fetchShippingProofs = async (productId: string) => {
+		setLoadingProofs(true);
+		try {
+			// Récupérer les paiements pour ce produit
+			const paymentsResponse = await apiFetch(
+				`/api/admin/products/${productId}/payments`
+			);
+			if (paymentsResponse.ok) {
+				const paymentsData = await paymentsResponse.json();
+				setPayments(paymentsData);
+
+				// Récupérer les preuves d'expédition pour chaque paiement
+				const proofsPromises = paymentsData.map(
+					async (payment: Payment) => {
+						const proofResponse = await apiFetch(
+							`/api/shipping/proof?paymentId=${payment.id}`
+						);
+						if (proofResponse.ok) {
+							const proofData = await proofResponse.json();
+							return proofData.proof
+								? { ...proofData.proof, payment }
+								: null;
+						}
+						return null;
+					}
+				);
+
+				const proofs = await Promise.all(proofsPromises);
+				setShippingProofs(proofs.filter((proof) => proof !== null));
+			}
+		} catch (error) {
+			console.error("Erreur lors du chargement des preuves:", error);
+			toast.error("Erreur lors du chargement des preuves d'expédition");
+		} finally {
+			setLoadingProofs(false);
+		}
+	};
+
+	const openShippingProofModal = async (product: Product) => {
+		setSelectedProduct(product);
+		setIsShippingProofModalOpen(true);
+		await fetchShippingProofs(product.id);
+	};
+
+	const closeShippingProofModal = () => {
+		setSelectedProduct(null);
+		setIsShippingProofModalOpen(false);
+		setShippingProofs([]);
+		setPayments([]);
+	};
+
+	const handleVerifyProof = async (
+		proofId: string,
+		status: "verified" | "rejected"
+	) => {
+		try {
+			const response = await apiFetch(
+				`/api/admin/shipping-proofs/${proofId}/verify`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ status }),
+				}
+			);
+
+			if (response.ok) {
+				toast.success(
+					`Preuve ${status === "verified" ? "validée" : "rejetée"} avec succès`
+				);
+				// Recharger les preuves
+				if (selectedProduct) {
+					await fetchShippingProofs(selectedProduct.id);
+				}
+			} else {
+				toast.error("Erreur lors de la vérification de la preuve");
+			}
+		} catch {
+			toast.error("Erreur lors de la vérification de la preuve");
 		}
 	};
 
@@ -284,6 +421,39 @@ export default function AdminProductsPage() {
 				return "Mauvais état";
 			default:
 				return condition;
+		}
+	};
+
+	const getProofStatusIcon = (status: string) => {
+		switch (status) {
+			case "verified":
+				return <CheckCircle className="h-5 w-5 text-green-500" />;
+			case "rejected":
+				return <AlertCircle className="h-5 w-5 text-red-500" />;
+			default:
+				return <Clock className="h-5 w-5 text-orange-500" />;
+		}
+	};
+
+	const getProofStatusColor = (status: string) => {
+		switch (status) {
+			case "verified":
+				return "bg-green-100 text-green-800";
+			case "rejected":
+				return "bg-red-100 text-red-800";
+			default:
+				return "bg-orange-100 text-orange-800";
+		}
+	};
+
+	const getProofStatusLabel = (status: string) => {
+		switch (status) {
+			case "verified":
+				return "Validée";
+			case "rejected":
+				return "Rejetée";
+			default:
+				return "En attente de vérification";
 		}
 	};
 
@@ -571,6 +741,23 @@ export default function AdminProductsPage() {
 																</DropdownMenuItem>
 																<DropdownMenuItem
 																	onClick={() =>
+																		openShippingProofModal(
+																			product
+																		)
+																	}
+																	className="cursor-pointer"
+																>
+																	<Package
+																		size={
+																			14
+																		}
+																		className="mr-2"
+																	/>
+																	Vérifier les
+																	expéditions
+																</DropdownMenuItem>
+																<DropdownMenuItem
+																	onClick={() =>
 																		openEditModal(
 																			product
 																		)
@@ -643,8 +830,8 @@ export default function AdminProductsPage() {
 																	<AlertDialogCancel>
 																		Annuler
 																	</AlertDialogCancel>
-                                                                    <Button
-                                                                        variant="destructive"
+																	<Button
+																		variant="destructive"
 																		onClick={() =>
 																			productToDelete &&
 																			handleDeleteProduct(
@@ -999,6 +1186,302 @@ export default function AdminProductsPage() {
 						</Button>
 						<Button onClick={handleUpdateProduct}>
 							Enregistrer les modifications
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			{/* Shipping Proof Verification Modal */}
+			<Dialog
+				open={isShippingProofModalOpen}
+				onOpenChange={setIsShippingProofModalOpen}
+			>
+				<DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2">
+							<Package className="h-5 w-5" />
+							Vérification des expéditions
+						</DialogTitle>
+						<DialogDescription>
+							Vérifiez les preuves d&apos;expédition soumises pour
+							ce produit
+						</DialogDescription>
+					</DialogHeader>
+
+					{loadingProofs ? (
+						<div className="text-center py-8">
+							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+							<p className="mt-2 text-gray-600">
+								Chargement des preuves...
+							</p>
+						</div>
+					) : shippingProofs.length === 0 ? (
+						<div className="text-center py-8 text-gray-500">
+							<Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+							<p>
+								Aucune preuve d&apos;expédition trouvée pour ce
+								produit
+							</p>
+						</div>
+					) : (
+						<div className="space-y-6">
+							{(() => {
+								// Créer une Map pour optimiser les recherches de paiements
+								const paymentsMap = new Map(
+									payments.map((payment) => [
+										payment.id,
+										payment,
+									])
+								);
+
+								return shippingProofs.map((proof) => {
+									const payment = paymentsMap.get(
+										proof.paymentId
+									);
+
+									return (
+										<Card
+											key={proof.id}
+											className="border-l-4 border-l-orange-500"
+										>
+											<CardHeader>
+												<div className="flex items-center justify-between">
+													<div className="flex items-center gap-3">
+														{getProofStatusIcon(
+															proof.status
+														)}
+														<div>
+															<h3 className="font-semibold">
+																Preuve
+																d&apos;expédition
+																#
+																{proof.id.slice(
+																	-6
+																)}
+															</h3>
+															<p className="text-sm text-gray-600">
+																Paiement:{" "}
+																{proof.paymentId.slice(
+																	-6
+																)}{" "}
+																-{" "}
+																{
+																	payment?.amount
+																}
+																€
+															</p>
+														</div>
+													</div>
+													<Badge
+														className={getProofStatusColor(
+															proof.status
+														)}
+													>
+														{getProofStatusLabel(
+															proof.status
+														)}
+													</Badge>
+												</div>
+											</CardHeader>
+											<CardContent className="space-y-4">
+												{/* Informations de la transaction */}
+												<div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+													<div>
+														<h4 className="font-medium mb-2">
+															Acheteur
+														</h4>
+														<p className="text-sm">
+															{
+																payment?.buyer
+																	.username
+															}
+														</p>
+														<p className="text-sm text-gray-600">
+															{
+																payment?.buyer
+																	.email
+															}
+														</p>
+													</div>
+													<div>
+														<h4 className="font-medium mb-2">
+															Vendeur
+														</h4>
+														<p className="text-sm">
+															{
+																payment?.seller
+																	.username
+															}
+														</p>
+														<p className="text-sm text-gray-600">
+															{
+																payment?.seller
+																	.email
+															}
+														</p>
+													</div>
+												</div>
+
+												{/* Numéro de suivi */}
+												<div className="p-4 border rounded-lg">
+													<div className="flex items-center gap-2 mb-2">
+														<Truck className="h-4 w-4 text-blue-600" />
+														<h4 className="font-medium">
+															Numéro de suivi
+														</h4>
+													</div>
+													<code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+														{
+															proof.proofData
+																.trackingNumber
+														}
+													</code>
+												</div>
+
+												{/* Photos des preuves */}
+												<div className="grid grid-cols-2 gap-4">
+													<div className="space-y-2">
+														<div className="flex items-center gap-2">
+															<Receipt className="h-4 w-4 text-green-600" />
+															<h4 className="font-medium">
+																Reçu
+																d&apos;affranchissement
+															</h4>
+														</div>
+														<div className="border rounded-lg overflow-hidden">
+															{/* eslint-disable-next-line @next/next/no-img-element */}
+															<img
+																src={
+																	proof
+																		.proofData
+																		.receiptImageUrl
+																}
+																alt="Reçu d'affranchissement"
+																className="w-full h-48 object-cover"
+															/>
+														</div>
+													</div>
+													<div className="space-y-2">
+														<div className="flex items-center gap-2">
+															<Package className="h-4 w-4 text-blue-600" />
+															<h4 className="font-medium">
+																Photo du colis
+															</h4>
+														</div>
+														<div className="border rounded-lg overflow-hidden">
+															{/* eslint-disable-next-line @next/next/no-img-element */}
+															<img
+																src={
+																	proof
+																		.proofData
+																		.packageImageUrl
+																}
+																alt="Photo du colis"
+																className="w-full h-48 object-cover"
+															/>
+														</div>
+													</div>
+												</div>
+
+												{/* Description */}
+												{proof.proofData
+													.description && (
+													<div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+														<h4 className="font-medium mb-2">
+															Description du
+															vendeur
+														</h4>
+														<p className="text-sm text-gray-700">
+															{
+																proof.proofData
+																	.description
+															}
+														</p>
+													</div>
+												)}
+
+												{/* Informations temporelles */}
+												<div className="text-sm text-gray-600 space-y-1">
+													<p>
+														Soumise le:{" "}
+														{new Date(
+															proof.submittedAt
+														).toLocaleDateString(
+															"fr-FR",
+															{
+																day: "numeric",
+																month: "long",
+																year: "numeric",
+																hour: "2-digit",
+																minute: "2-digit",
+															}
+														)}
+													</p>
+													{proof.verifiedAt && (
+														<p>
+															Vérifiée le:{" "}
+															{new Date(
+																proof.verifiedAt
+															).toLocaleDateString(
+																"fr-FR",
+																{
+																	day: "numeric",
+																	month: "long",
+																	year: "numeric",
+																	hour: "2-digit",
+																	minute: "2-digit",
+																}
+															)}
+														</p>
+													)}
+												</div>
+
+												{/* Actions de vérification */}
+												{proof.status ===
+													"pending_verification" && (
+													<div className="flex gap-2 pt-4 border-t">
+														<Button
+															onClick={() =>
+																handleVerifyProof(
+																	proof.id,
+																	"verified"
+																)
+															}
+															className="flex items-center gap-2"
+														>
+															<CheckCircle className="h-4 w-4" />
+															Valider la preuve
+														</Button>
+														<Button
+															variant="destructive"
+															onClick={() =>
+																handleVerifyProof(
+																	proof.id,
+																	"rejected"
+																)
+															}
+															className="flex items-center gap-2"
+														>
+															<AlertCircle className="h-4 w-4" />
+															Rejeter la preuve
+														</Button>
+													</div>
+												)}
+											</CardContent>
+										</Card>
+									);
+								});
+							})()}
+						</div>
+					)}
+
+					<div className="flex justify-end pt-4 border-t">
+						<Button
+							variant="outline"
+							onClick={closeShippingProofModal}
+						>
+							<X size={16} className="mr-2" />
+							Fermer
 						</Button>
 					</div>
 				</DialogContent>

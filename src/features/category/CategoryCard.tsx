@@ -13,13 +13,14 @@ import React from "react";
  */
 const CategoryCard: React.FC<Category> = ({
 	displayName,
+	imageUrl,
 }: Category): JSX.Element => {
 	return (
 		<Link href={`/categories/${displayName}`} className="no-underline">
 			<Card className="w-full max-w-[18rem] p-0 gap-0 pb-4 cursor-pointer hover:shadow-lg transition-shadow duration-200">
 				<CardHeader className="p-0 h-72">
 					<Image
-						src={"/images/product_default.webp"}
+						src={imageUrl || "/images/product_default.webp"}
 						alt={displayName}
 						width={300}
 						height={300}

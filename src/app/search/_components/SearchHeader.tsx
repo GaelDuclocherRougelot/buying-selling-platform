@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -16,6 +17,17 @@ export function SearchHeader({ query, onSearch }: SearchHeaderProps) {
 		setSearchValue(query);
 	}, [query]);
 
+	// Délai de 500ms pour la recherche automatique
+	useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			if (searchValue !== query) {
+				onSearch(searchValue);
+			}
+		}, 500);
+
+		return () => clearTimeout(timeoutId);
+	}, [searchValue, query, onSearch]);
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		onSearch(searchValue);
@@ -24,7 +36,7 @@ export function SearchHeader({ query, onSearch }: SearchHeaderProps) {
 	return (
 		<div className="bg-white rounded-lg shadow-sm border p-6">
 			<div className="max-w-4xl mx-auto">
-				<h1 className="text-3xl font-bold text-gray-900 mb-4">
+				<h1 className="text-3xl font-bold text-gray-900 mb-2">
 					Rechercher des annonces
 				</h1>
 				<p className="text-gray-600 mb-6">
@@ -32,7 +44,10 @@ export function SearchHeader({ query, onSearch }: SearchHeaderProps) {
 					d&apos;annonces
 				</p>
 
-				<form onSubmit={handleSubmit} className="relative">
+				<form
+					onSubmit={handleSubmit}
+					className="relative flex flex-col gap-4"
+				>
 					<div className="relative">
 						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
 						<input
@@ -43,12 +58,12 @@ export function SearchHeader({ query, onSearch }: SearchHeaderProps) {
 							className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
 						/>
 					</div>
-					<button
+					<Button
 						type="submit"
-						className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+						className="mt-3 w-full py-6 px-6 text-lg"
 					>
 						Rechercher
-					</button>
+					</Button>
 				</form>
 			</div>
 		</div>

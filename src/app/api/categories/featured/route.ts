@@ -14,5 +14,6 @@ export async function GET(request: NextRequest) {
 
 	const categories = await getTopCategoriesByProductCount(limit);
 	const response = NextResponse.json(categories, { status: 200 });
+
 	return addCorsHeaders(response);
 }

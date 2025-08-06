@@ -6,6 +6,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import FavoriteButton from "@/components/ui/FavoriteButton";
+import { Category } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -15,7 +16,7 @@ interface ProductCardProps {
 	description: string | null;
 	price: number;
 	imageUrl: string;
-	category: string;
+	category: Category;
 	productId: string;
 }
 
@@ -35,12 +36,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
 	productId,
 }) => {
 	return (
-		<Card className="w-full max-w-[18rem] p-0 gap-0 pb-4 relative group">
+		<Card className="w-full max-w-[18rem] p-0 gap-0 pb-4 relative group overflow-hidden">
 			<div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-				<FavoriteButton productId={productId} size="sm" />
+				<FavoriteButton
+					productId={productId}
+					size="sm"
+					className="cursor-pointer"
+				/>
 			</div>
 			<Link
-				href={`/products/${category}/${productId}`}
+				href={`/products/${category?.id || "uncategorized"}/${productId}`}
 				className="no-underline"
 			>
 				<CardHeader className="p-0 h-72">
@@ -49,7 +54,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 						alt={title}
 						width={300}
 						height={300}
-						className="w-full h-72 object-cover rounded-t-md"
+						className="w-full h-72 rounded-t-md object-cover"
 					/>
 				</CardHeader>
 				<CardContent className="border-t pt-4">

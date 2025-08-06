@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const { name, displayName } = await request.json();
+		const { name, displayName, imageUrl } = await request.json();
 
 		if (!name || !displayName) {
 			return NextResponse.json(
@@ -167,11 +167,28 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const category = await createCategory(name, displayName);
+		const category = await createCategory(name, displayName, imageUrl);
 
 		return NextResponse.json(category, { status: 201 });
 	} catch (error) {
 		console.error("Error creating category:", error);
+
+		// Gérer les erreurs spécifiques
+		if (error instanceof Error) {
+			if (error.message.includes("existe déjà")) {
+				return NextResponse.json(
+					{ error: error.message },
+					{ status: 409 }
+				);
+			}
+			if (error.message.includes("doit contenir uniquement")) {
+				return NextResponse.json(
+					{ error: error.message },
+					{ status: 400 }
+				);
+			}
+		}
+
 		return NextResponse.json(
 			{ error: "Internal server error" },
 			{ status: 500 }

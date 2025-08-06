@@ -99,6 +99,12 @@ const Header = (): JSX.Element => {
 										</Link>
 									</li>
 									<li>
+										<Link href="/auth/orders">
+											<DashboardSVG />
+											<p>Commandes</p>
+										</Link>
+									</li>
+									<li>
 										<Link href="/auth/messages">
 											<Tchat />
 											<p>Messages</p>

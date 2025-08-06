@@ -36,6 +36,41 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		// Vérifier que le produit n'est pas déjà vendu
+		if (product.status === "sold") {
+			return NextResponse.json(
+				{ error: "Ce produit a déjà été vendu" },
+				{ status: 400 }
+			);
+		}
+
+		// Vérifier qu'il n'y a pas déjà un paiement en cours pour ce produit
+		const existingPayment = await prisma.payment.findFirst({
+			where: {
+				productId: productId,
+				status: {
+					in: ["pending", "pending_shipping_validation", "succeeded"],
+				},
+			},
+		});
+
+		if (existingPayment) {
+			return NextResponse.json(
+				{
+					error: "Ce produit est en cours d'achat par un autre utilisateur",
+				},
+				{ status: 400 }
+			);
+		}
+
+		// Vérifier que l'acheteur n'est pas le vendeur
+		if (product.ownerId === session.user.id) {
+			return NextResponse.json(
+				{ error: "Vous ne pouvez pas acheter votre propre produit" },
+				{ status: 400 }
+			);
+		}
+
 		if (!product.owner.stripeAccountId) {
 			return NextResponse.json(
 				{ error: "Seller has not set up payments" },
@@ -75,6 +110,7 @@ export async function POST(request: NextRequest) {
 			},
 			// Pour Stripe Connect, ajouter les frais de plateforme
 			payment_intent_data: {
+				capture_method: "manual",
 				application_fee_amount: platformFeeAmount,
 				transfer_data: {
 					destination: product.owner.stripeAccountId,
@@ -82,22 +118,27 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		// Create payment record in database only if payment_intent exists
-		if (checkoutSession.payment_intent) {
-			await prisma.payment.create({
-				data: {
-					stripePaymentIntentId:
-						checkoutSession.payment_intent as string,
-					amount: amount,
-					currency: "eur",
-					status: "pending",
-					productId: productId,
-					buyerId: session.user.id,
-					sellerId: product.ownerId,
-					applicationFeeAmount: platformFeeAmount / 100, // Convert back to euros
-				},
-			});
-		}
+		console.log("checkoutSession", checkoutSession);
+
+		// Note: payment_intent will be null at this stage
+		// The payment record will be created when the webhook is received
+		console.log(
+			"ℹ️ payment_intent is null at session creation (normal behavior)"
+		);
+
+		// Option: Create payment record with session ID as temporary reference
+		// await prisma.payment.create({
+		// 	data: {
+		// 		stripeSessionId: checkoutSession.id,
+		// 		amount: amount,
+		// 		currency: "eur",
+		// 		status: "pending",
+		// 		productId: productId,
+		// 		buyerId: session.user.id,
+		// 		sellerId: product.ownerId,
+		// 		applicationFeeAmount: platformFeeAmount / 100,
+		// 	},
+		// });
 
 		return NextResponse.json({
 			sessionId: checkoutSession.id,

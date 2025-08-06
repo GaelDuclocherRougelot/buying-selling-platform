@@ -300,7 +300,7 @@ export default function AdminUsersPage() {
 							onClick={() => setGdprConsent(true)}
 							className="w-full"
 						>
-							Je comprends et j'accepte
+							Je comprends et j&apos;accepte
 						</Button>
 					</CardContent>
 				</Card>

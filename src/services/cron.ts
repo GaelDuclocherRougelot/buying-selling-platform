@@ -23,7 +23,8 @@ export async function deleteExpiredUsers() {
 				sessions: true,
 				accounts: true,
 				products: true,
-				payments: true,
+				PaymentBuyer: true,
+				PaymentSeller: true,
 			},
 		});
 
@@ -55,7 +56,7 @@ export async function deleteExpiredUsers() {
 			}
 
 			// Delete payments (both as buyer and seller)
-			if (user.payments.length > 0) {
+			if (user.PaymentBuyer.length > 0 || user.PaymentSeller.length > 0) {
 				await prisma.payment.deleteMany({
 					where: {
 						OR: [{ buyerId: user.id }, { sellerId: user.id }],

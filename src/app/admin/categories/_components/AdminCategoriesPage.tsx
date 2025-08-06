@@ -39,6 +39,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ interface Category {
 	id: string;
 	displayName: string;
 	name: string;
+	imageUrl?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -63,6 +65,13 @@ interface PaginationInfo {
 interface EditCategoryForm {
 	displayName: string;
 	name: string;
+	imageUrl?: string;
+}
+
+interface CreateCategoryForm {
+	displayName: string;
+	name: string;
+	imageUrl?: string;
 }
 
 export default function AdminCategoriesPage() {
@@ -78,7 +87,20 @@ export default function AdminCategoriesPage() {
 	const [editForm, setEditForm] = useState<EditCategoryForm>({
 		displayName: "",
 		name: "",
+		imageUrl: "",
 	});
+	const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+	const [isUploading, setIsUploading] = useState(false);
+
+	// États pour la modal de création
+	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+	const [createForm, setCreateForm] = useState<CreateCategoryForm>({
+		displayName: "",
+		name: "",
+		imageUrl: "",
+	});
+	const [createSelectedFiles, setCreateSelectedFiles] = useState<File[]>([]);
+	const [isCreating, setIsCreating] = useState(false);
 
 	useEffect(() => {
 		fetchCategories(currentPage);
@@ -145,7 +167,9 @@ export default function AdminCategoriesPage() {
 		setEditForm({
 			displayName: category.displayName,
 			name: category.name,
+			imageUrl: category.imageUrl || "",
 		});
+		setSelectedFiles([]);
 		setIsEditModalOpen(true);
 	};
 
@@ -155,7 +179,30 @@ export default function AdminCategoriesPage() {
 		setEditForm({
 			displayName: "",
 			name: "",
+			imageUrl: "",
 		});
+		setSelectedFiles([]);
+	};
+
+	// Fonctions pour la modal de création
+	const openCreateModal = () => {
+		setCreateForm({
+			displayName: "",
+			name: "",
+			imageUrl: "",
+		});
+		setCreateSelectedFiles([]);
+		setIsCreateModalOpen(true);
+	};
+
+	const closeCreateModal = () => {
+		setCreateForm({
+			displayName: "",
+			name: "",
+			imageUrl: "",
+		});
+		setCreateSelectedFiles([]);
+		setIsCreateModalOpen(false);
 	};
 
 	const handleEditFormChange = (
@@ -168,10 +215,86 @@ export default function AdminCategoriesPage() {
 		}));
 	};
 
+	const handleCreateFormChange = (
+		field: keyof CreateCategoryForm,
+		value: string
+	) => {
+		// Pour le nom technique, convertir en minuscules et remplacer les espaces par des tirets
+		if (field === "name") {
+			value = value
+				.toLowerCase()
+				.replace(/\s+/g, "-")
+				.replace(/[^a-z0-9-]/g, "");
+		}
+
+		setCreateForm((prev) => ({
+			...prev,
+			[field]: value,
+		}));
+	};
+
+	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			const fileArray = Array.from(files);
+			setSelectedFiles((prev) => [...prev, ...fileArray]);
+		}
+	};
+
+	const handleCreateImageChange = (
+		e: React.ChangeEvent<HTMLInputElement>
+	) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			const fileArray = Array.from(files);
+			setCreateSelectedFiles((prev) => [...prev, ...fileArray]);
+		}
+	};
+
+	const removeExistingImage = () => {
+		setEditForm({
+			...editForm,
+			imageUrl: "",
+		});
+	};
+
+	const removeNewImage = (index: number) => {
+		setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+	};
+
+	const removeCreateNewImage = (index: number) => {
+		setCreateSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+	};
+
 	const handleUpdateCategory = async () => {
 		if (!editingCategory) return;
 
+		setIsUploading(true);
+
 		try {
+			let finalImageUrl = editForm.imageUrl;
+
+			// Upload new files if any
+			if (selectedFiles.length > 0) {
+				const formData = new FormData();
+				selectedFiles.forEach((file) => {
+					formData.append("files", file);
+				});
+
+				const uploadResponse = await apiFetch(
+					"/api/upload/category-pictures",
+					{
+						method: "POST",
+						body: formData,
+					}
+				);
+
+				if (uploadResponse.ok) {
+					const images = await uploadResponse.json();
+					finalImageUrl = images.urls[0]; // Take the first image for category
+				}
+			}
+
 			const response = await apiFetch(
 				`/api/admin/categories/${editingCategory.id}`,
 				{
@@ -179,7 +302,10 @@ export default function AdminCategoriesPage() {
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify(editForm),
+					body: JSON.stringify({
+						...editForm,
+						imageUrl: finalImageUrl,
+					}),
 				}
 			);
 
@@ -194,8 +320,82 @@ export default function AdminCategoriesPage() {
 						"Erreur lors de la modification de la catégorie"
 				);
 			}
-		} catch {
+		} catch (error) {
+			console.error("Erreur lors de la mise à jour:", error);
 			toast.error("Erreur lors de la modification de la catégorie");
+		} finally {
+			setIsUploading(false);
+		}
+	};
+
+	const handleCreateCategory = async () => {
+		if (!createForm.displayName || !createForm.name) {
+			toast.error("Le nom d'affichage et le nom technique sont requis");
+			return;
+		}
+
+		// Validation du format du nom technique
+		if (!/^[a-z0-9-]+$/.test(createForm.name)) {
+			toast.error(
+				"Le nom technique doit contenir uniquement des lettres minuscules, des chiffres et des tirets"
+			);
+			return;
+		}
+
+		setIsCreating(true);
+
+		try {
+			let finalImageUrl = createForm.imageUrl;
+
+			// Upload new files if any
+			if (createSelectedFiles.length > 0) {
+				const formData = new FormData();
+				createSelectedFiles.forEach((file) => {
+					formData.append("files", file);
+				});
+
+				const uploadResponse = await apiFetch(
+					"/api/upload/category-pictures",
+					{
+						method: "POST",
+						body: formData,
+					}
+				);
+
+				if (uploadResponse.ok) {
+					const images = await uploadResponse.json();
+					finalImageUrl = images.urls[0]; // Take the first image for category
+				}
+			}
+
+			const response = await apiFetch("/api/admin/categories", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					name: createForm.name,
+					displayName: createForm.displayName,
+					imageUrl: finalImageUrl,
+				}),
+			});
+
+			if (response.ok) {
+				toast.success("Catégorie créée avec succès");
+				fetchCategories(currentPage);
+				closeCreateModal();
+			} else {
+				const errorData = await response.json();
+				toast.error(
+					errorData.error ||
+						"Erreur lors de la création de la catégorie"
+				);
+			}
+		} catch (error) {
+			console.error("Erreur lors de la création:", error);
+			toast.error("Erreur lors de la création de la catégorie");
+		} finally {
+			setIsCreating(false);
 		}
 	};
 
@@ -229,7 +429,10 @@ export default function AdminCategoriesPage() {
 								Gestion des catégories
 							</h1>
 						</div>
-						<Button className="flex items-center space-x-2">
+						<Button
+							className="flex items-center space-x-2"
+							onClick={openCreateModal}
+						>
 							<Plus size={16} />
 							<span>Ajouter une catégorie</span>
 						</Button>
@@ -299,6 +502,9 @@ export default function AdminCategoriesPage() {
 										<thead>
 											<tr className="bg-gray-50">
 												<th className="border border-gray-200 px-4 py-2 text-left">
+													Image
+												</th>
+												<th className="border border-gray-200 px-4 py-2 text-left">
 													Nom d&apos;affichage
 												</th>
 												<th className="border border-gray-200 px-4 py-2 text-left">
@@ -319,6 +525,28 @@ export default function AdminCategoriesPage() {
 														key={category.id}
 														className="hover:bg-gray-50"
 													>
+														<td className="border border-gray-200 px-4 py-2">
+															{category.imageUrl ? (
+																<Image
+																	src={
+																		category.imageUrl
+																	}
+																	alt={
+																		category.displayName
+																	}
+																	className="w-12 h-12 object-cover rounded-md"
+																	width={48}
+																	height={48}
+																/>
+															) : (
+																<div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+																	<span className="text-gray-400 text-xs">
+																		Aucune
+																		image
+																	</span>
+																</div>
+															)}
+														</td>
 														<td className="border border-gray-200 px-4 py-2">
 															<div className="font-medium">
 																{
@@ -553,14 +781,223 @@ export default function AdminCategoriesPage() {
 								tirets.
 							</p>
 						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="image">Image de la catégorie</Label>
+
+							{/* Image existante */}
+							{editForm.imageUrl && (
+								<div className="mb-3">
+									<label className="block text-xs font-medium text-gray-600 mb-2">
+										Image actuelle
+									</label>
+									<div className="relative w-fit">
+										<Image
+											src={editForm.imageUrl}
+											alt="Image de la catégorie"
+											className="w-32 h-32 object-cover rounded-md border"
+											width={128}
+											height={128}
+										/>
+										<button
+											type="button"
+											onClick={removeExistingImage}
+											className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+										>
+											<X className="w-3 h-3" />
+										</button>
+									</div>
+								</div>
+							)}
+
+							{/* Nouvelles images sélectionnées */}
+							{selectedFiles.length > 0 && (
+								<div className="mb-3">
+									<label className="block text-xs font-medium text-gray-600 mb-2">
+										Nouvelle image
+									</label>
+									<div className="grid grid-cols-4 gap-2">
+										{selectedFiles.map((file, index) => (
+											<div
+												key={`new-${index}`}
+												className="relative group"
+											>
+												<Image
+													src={URL.createObjectURL(
+														file
+													)}
+													alt={`Nouvelle image ${index + 1}`}
+													className="w-full h-20 object-cover rounded-md border"
+													width={80}
+													height={80}
+												/>
+												<button
+													type="button"
+													onClick={() =>
+														removeNewImage(index)
+													}
+													className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+												>
+													<X className="w-3 h-3" />
+												</button>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
+
+							{/* Input file */}
+							<div className="flex flex-col gap-2 w-fit">
+								<Input
+									type="file"
+									accept="image/*"
+									onChange={handleImageChange}
+									className="w-fit h-fit cursor-pointer"
+								/>
+							</div>
+						</div>
 					</div>
 					<div className="flex justify-between">
-						<Button variant="outline" onClick={closeEditModal}>
+						<Button
+							variant="outline"
+							onClick={closeEditModal}
+							disabled={isUploading}
+						>
 							<X size={16} className="mr-2" />
 							Annuler
 						</Button>
-						<Button onClick={handleUpdateCategory}>
-							Enregistrer les modifications
+						<Button
+							onClick={handleUpdateCategory}
+							disabled={isUploading}
+						>
+							{isUploading
+								? "Enregistrement..."
+								: "Enregistrer les modifications"}
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			{/* Modal de création de catégorie */}
+			<Dialog
+				open={isCreateModalOpen}
+				onOpenChange={setIsCreateModalOpen}
+			>
+				<DialogContent className="sm:max-w-[500px]">
+					<DialogHeader>
+						<DialogTitle>Créer une nouvelle catégorie</DialogTitle>
+						<DialogDescription>
+							Ajoutez une nouvelle catégorie à votre plateforme
+						</DialogDescription>
+					</DialogHeader>
+					<div className="grid gap-4 py-4">
+						<div className="space-y-2">
+							<Label htmlFor="createDisplayName">
+								Nom d&apos;affichage
+							</Label>
+							<Input
+								id="createDisplayName"
+								value={createForm.displayName}
+								onChange={(e) =>
+									handleCreateFormChange(
+										"displayName",
+										e.target.value
+									)
+								}
+								placeholder="Nom d'affichage de la catégorie"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="createName">Nom technique</Label>
+							<Input
+								id="createName"
+								value={createForm.name}
+								onChange={(e) =>
+									handleCreateFormChange(
+										"name",
+										e.target.value
+									)
+								}
+								placeholder="nom-technique-de-la-categorie"
+							/>
+							<p className="text-sm text-gray-500">
+								Le nom technique doit être unique et ne contenir
+								que des lettres minuscules, des chiffres et des
+								tirets.
+							</p>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="createImage">
+								Image de la catégorie
+							</Label>
+
+							{/* Nouvelles images sélectionnées */}
+							{createSelectedFiles.length > 0 && (
+								<div className="mb-3">
+									<label className="block text-xs font-medium text-gray-600 mb-2">
+										Image sélectionnée
+									</label>
+									<div className="grid grid-cols-4 gap-2">
+										{createSelectedFiles.map(
+											(file, index) => (
+												<div
+													key={`create-new-${index}`}
+													className="relative group"
+												>
+													<Image
+														src={URL.createObjectURL(
+															file
+														)}
+														alt={`Nouvelle image ${index + 1}`}
+														className="w-full h-20 object-cover rounded-md border"
+														width={80}
+														height={80}
+													/>
+													<button
+														type="button"
+														onClick={() =>
+															removeCreateNewImage(
+																index
+															)
+														}
+														className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+													>
+														<X className="w-3 h-3" />
+													</button>
+												</div>
+											)
+										)}
+									</div>
+								</div>
+							)}
+
+							{/* Input file */}
+							<div className="flex flex-col gap-2 w-fit">
+								<Input
+									type="file"
+									accept="image/*"
+									onChange={handleCreateImageChange}
+									className="w-fit h-fit cursor-pointer"
+								/>
+							</div>
+						</div>
+					</div>
+					<div className="flex justify-between">
+						<Button
+							variant="outline"
+							onClick={closeCreateModal}
+							disabled={isCreating}
+						>
+							<X size={16} className="mr-2" />
+							Annuler
+						</Button>
+						<Button
+							onClick={handleCreateCategory}
+							disabled={isCreating}
+						>
+							{isCreating ? "Création..." : "Créer la catégorie"}
 						</Button>
 					</div>
 				</DialogContent>

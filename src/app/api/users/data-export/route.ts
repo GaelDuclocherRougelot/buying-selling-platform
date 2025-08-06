@@ -30,7 +30,16 @@ export async function GET(request: NextRequest) {
 						updatedAt: true,
 					},
 				},
-				payments: {
+				PaymentBuyer: {
+					select: {
+						id: true,
+						amount: true,
+						currency: true,
+						status: true,
+						createdAt: true,
+					},
+				},
+				PaymentSeller: {
 					select: {
 						id: true,
 						amount: true,
@@ -82,7 +91,8 @@ export async function GET(request: NextRequest) {
 				updatedAt: userData.updatedAt,
 			},
 			products: userData.products,
-			payments: userData.payments,
+			paymentsAsBuyer: userData.PaymentBuyer,
+			paymentsAsSeller: userData.PaymentSeller,
 			favorites: userData.favorites,
 			loginLogs: userData.loginLogs,
 		};

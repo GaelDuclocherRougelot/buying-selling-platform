@@ -30,6 +30,7 @@ const updateCategorySchema = z.object({
 			/^[a-z0-9-]+$/,
 			"Name must contain only lowercase letters, numbers, and hyphens"
 		),
+	imageUrl: z.string().optional(),
 });
 
 // PUT /api/admin/categories/[categoryId] - Update a category
@@ -60,7 +61,7 @@ export async function PUT(
 			);
 		}
 
-		const { displayName, name } = parseResult.data;
+		const { displayName, name, imageUrl } = parseResult.data;
 
 		// Check if category exists
 		const existingCategory = await prisma.category.findUnique({
@@ -95,6 +96,7 @@ export async function PUT(
 			data: {
 				displayName,
 				name,
+				imageUrl,
 			},
 		});
 

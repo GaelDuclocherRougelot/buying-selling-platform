@@ -32,7 +32,6 @@ model User {
   sessions      Session[]
   accounts      Account[]
   products      Product[]
-  payments      Payment[]
   loginLogs     LoginLog[]
   favorites     Favorite[]
 
@@ -105,6 +104,7 @@ model Category {
   id          String   @id @default(cuid())
   displayName String
   name        String   @unique
+  imageUrl    String?
   products    Product[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -142,7 +142,7 @@ model Payment {
   stripePaymentIntentId String @unique
   amount        Float
   currency      String   @default("eur")
-  status        String   @default("pending") // pending, succeeded, failed, canceled
+  status        String   @default("pending") // pending, pending_shipping_validation, succeeded, failed, canceled, refunded
   productId     String
   buyerId       String
   sellerId      String
@@ -155,8 +155,51 @@ model Payment {
   buyer         User     @relation("Buyer", fields: [buyerId], references: [id])
   seller        User     @relation("Seller", fields: [sellerId], references: [id])
 
+  // Add shipment tracking relation
+  shipmentTracking ShipmentTracking?
+  shippingProof     ShippingProof?
+
   @@map("payments")
-  User User[]
+}
+
+model ShipmentTracking {
+  id                    String   @id @default(cuid())
+  paymentId             String   @unique
+  trackingNumber        String   // Numéro de suivi Colissimo
+  carrier               String   @default("colissimo") // colissimo, chronopost, etc.
+  status                String   @default("pending") // pending, shipped, delivered, failed
+  lastEventCode         String?  // Code du dernier événement La Poste
+  lastEventLabel        String?  // Libellé du dernier événement
+  lastEventDate         DateTime?
+  estimatedDeliveryDate DateTime?
+  actualDeliveryDate    DateTime?
+  timeline              Json?    // Timeline complète de La Poste
+  events                Json?    // Événements détaillés
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  payment               Payment  @relation(fields: [paymentId], references: [id])
+
+  @@map("shipment_tracking")
+}
+
+model ShippingProof {
+  id          String   @id @default(cuid())
+  paymentId   String   @unique
+  proofType   String   // "receipt", "photo", "tracking_number"
+  proofData   Json     // Données de la preuve (URL image, numéro, etc.)
+  status      String   @default("pending_verification") // pending_verification, verified, rejected
+  submittedAt DateTime @default(now())
+  verifiedAt  DateTime?
+  verifiedBy  String?  // ID de l'admin qui a vérifié
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  payment     Payment  @relation(fields: [paymentId], references: [id])
+
+  @@map("shipping_proof")
 }
 
 model Favorite {

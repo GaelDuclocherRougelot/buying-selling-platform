@@ -3,18 +3,22 @@
 import Header from "@/components/global/Header";
 import ProductCard from "@/features/product/ProductCard";
 import { apiFetch } from "@/lib/api";
-import { Product } from "@prisma/client";
+import { Category, Product } from "@prisma/client";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+type ProductWithCategory = Product & {
+	category: Category;
+};
 
 interface CategoryPageProps {
 	params: Promise<{ categoryName: string }>;
 }
 
 export default function CategoryPage({ params }: CategoryPageProps) {
-	const [products, setProducts] = useState<Product[]>([]);
+	const [products, setProducts] = useState<ProductWithCategory[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [categoryName, setCategoryName] = useState<string>("");
 
@@ -111,7 +115,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 										product.imagesUrl[0] ||
 										"/images/product_default.webp"
 									}
-									category={product.categoryId}
+									category={product.category}
 									productId={product.id}
 								/>
 							))}

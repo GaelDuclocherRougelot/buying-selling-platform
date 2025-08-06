@@ -3,33 +3,30 @@
 import Header from "@/components/global/Header";
 import CategoryCard from "@/features/category/CategoryCard";
 import { apiFetch } from "@/lib/api";
+import { useCachedData } from "@/lib/hooks/useCache";
 import { Category } from "@prisma/client";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function CategoriesPage() {
-	const [categories, setCategories] = useState<Category[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		const fetchCategories = async () => {
-			try {
-				const response = await apiFetch("/api/categories");
-				if (!response.ok) {
-					throw new Error("Failed to fetch categories");
-				}
-				const data = await response.json();
-				setCategories(data);
-			} catch (error) {
-				console.error("Error fetching categories:", error);
-				toast.error("Erreur lors du chargement des catégories");
-			} finally {
-				setLoading(false);
+	const {
+		data: categories = [],
+		loading,
+		error,
+	} = useCachedData<Category[]>(
+		"categories:all",
+		async () => {
+			const response = await apiFetch("/api/categories");
+			if (!response.ok) {
+				throw new Error("Failed to fetch categories");
 			}
-		};
+			return await response.json();
+		},
+		60 * 60 * 1000 // 1 heure
+	);
 
-		fetchCategories();
-	}, []);
+	if (error) {
+		toast.error("Erreur lors du chargement des catégories");
+	}
 
 	if (loading) {
 		return (
@@ -54,31 +51,21 @@ export default function CategoriesPage() {
 			<Header />
 			<main className="flex justify-center px-4 lg:px-10 py-8">
 				<div className="w-full max-w-7xl">
-					{/* Header */}
-					<div className="mb-8">
-						<h1 className="text-3xl font-bold text-gray-900 mb-2">
-							Toutes les catégories
-						</h1>
-						<p className="text-gray-600">
-							Découvrez toutes nos annonces organisées par
-							catégories
-						</p>
+					<h1 className="text-3xl font-bold text-gray-900 mb-8">
+						Toutes les catégories
+					</h1>
+					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+						{categories?.map((category) => (
+							<CategoryCard
+								key={category.id}
+								displayName={category.displayName}
+								id={category.id}
+								name={category.name}
+								createdAt={category.createdAt}
+								updatedAt={category.updatedAt}
+								imageUrl={category.imageUrl} />
+						))}
 					</div>
-
-					{/* Categories Grid */}
-					{categories.length > 0 ? (
-						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-							{categories.map((category) => (
-								<CategoryCard key={category.id} {...category} />
-							))}
-						</div>
-					) : (
-						<div className="text-center py-12">
-							<p className="text-gray-600">
-								Aucune catégorie trouvée
-							</p>
-						</div>
-					)}
 				</div>
 			</main>
 		</>

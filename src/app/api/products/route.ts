@@ -1,6 +1,10 @@
 import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
 import { prisma } from "@/lib/prisma";
-import { getAllProducts } from "@/services/product";
+import {
+	getAllProducts,
+	getProductsByCategory,
+	invalidateProductCache,
+} from "@/services/product";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -50,27 +54,7 @@ export async function GET(request: NextRequest) {
 		let products;
 		if (category) {
 			// Filtrer par catégorie
-			products = await prisma.product.findMany({
-				where: {
-					category: {
-						name: category,
-					},
-					status: "active", // Seulement les produits actifs
-				},
-				include: {
-					category: true,
-					owner: {
-						select: {
-							id: true,
-							name: true,
-							username: true,
-						},
-					},
-				},
-				orderBy: {
-					createdAt: "desc",
-				},
-			});
+			products = await getProductsByCategory(category);
 		} else {
 			// Tous les produits
 			products = await getAllProducts();
@@ -168,6 +152,9 @@ export async function POST(request: NextRequest) {
 				deliveryPrice,
 			},
 		});
+
+		// Invalider le cache des produits après création
+		invalidateProductCache();
 
 		const response = NextResponse.json(product, { status: 201 });
 		return addCorsHeaders(response);

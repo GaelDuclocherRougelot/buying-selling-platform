@@ -121,16 +121,17 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({ product }) => {
 							Livraison: {formatPrice(product.deliveryPrice)}
 						</p>
 					)}
-
-					<div className="pt-2 border-t border-gray-100">
-						<SellerLink
-							userId={product.owner.id}
-							username={product.owner.username}
-							name={getDisplayName(product.owner)}
-						/>
-					</div>
 				</CardContent>
 			</Link>
+
+			{/* SellerLink en dehors du Link principal pour éviter les liens imbriqués */}
+			<div className="px-4 pb-2">
+				<SellerLink
+					userId={product.owner.id}
+					username={product.owner.username}
+					name={getDisplayName(product.owner)}
+				/>
+			</div>
 		</Card>
 	);
 };

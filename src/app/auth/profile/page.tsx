@@ -225,6 +225,13 @@ const ProfilePage = async () => {
 											Recevoir des paiements sur votre
 											compte
 										</p>
+										<p className="text-sm text-gray-600">
+											La plateforme prend 5% d&apos;une
+											vente.
+											<br />
+											Le reste est versé sur votre compte
+											bancaire.
+										</p>
 									</div>
 									{canSell ? (
 										<Badge
@@ -254,6 +261,29 @@ const ProfilePage = async () => {
 								<ProductsTable />
 							</div>
 						)}
+
+						{/* Lien vers la page des commandes */}
+						<div>
+							<h2 className="text-xl font-semibold mb-4">
+								Gestion des commandes
+							</h2>
+							<div className="text-sm text-gray-600 mb-4">
+								<p>
+									Accédez à la page dédiée pour gérer vos
+									commandes en tant qu&apos;acheteur et
+									vendeur.
+									<br />
+									<strong>Fonctionnalités :</strong> Suivi des
+									achats, preuves d&apos;expédition, gestion
+									des ventes.
+								</p>
+							</div>
+							<Link href="/auth/orders">
+								<Button className="w-full">
+									Voir mes commandes
+								</Button>
+							</Link>
+						</div>
 					</CardContent>
 				</Card>
 			</main>

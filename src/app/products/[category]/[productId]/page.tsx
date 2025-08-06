@@ -4,6 +4,7 @@ import Heart from "@/components/svg/Heart";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CardTitle } from "@/components/ui/card";
+import ProductStatusBadge from "@/components/ui/product-status-badge";
 import VerifiedUser from "@/components/ui/verified-user";
 import ProductImageCarousel from "@/features/product/ProductImageCarousel";
 import ProductNavBar from "@/features/product/ProductNavBar";
@@ -166,7 +167,7 @@ export default async function ProductPage(props: {
 								</CardTitle>
 							</div>
 						</div>
-						{!isOwner && (
+						{!isOwner && product.status !== "sold" && (
 							<div className="flex items-center gap-4">
 								<Link href={`/auth/chat/${chatId}`}>
 									<Button variant="default">
@@ -178,6 +179,21 @@ export default async function ProductPage(props: {
 									amount={product.price}
 									productTitle={product.title}
 								/>
+								<Button>
+									<Heart />
+								</Button>
+							</div>
+						)}
+						{!isOwner && product.status === "sold" && (
+							<div className="flex items-center gap-4">
+								<Link href={`/auth/chat/${chatId}`}>
+									<Button variant="default">
+										Contacter le vendeur
+									</Button>
+								</Link>
+								<Button variant="outline" disabled>
+									Produit vendu
+								</Button>
 								<Button>
 									<Heart />
 								</Button>
@@ -200,7 +216,10 @@ export default async function ProductPage(props: {
 					<ProductImageCarousel images={product.imagesUrl} />
 					<div className="flex flex-col gap-6 items-start justify-start max-w-2xl">
 						<div className="flex flex-col gap-2">
-							<h1>{product.title}</h1>
+							<div className="flex items-center gap-3">
+								<h1>{product.title}</h1>
+								<ProductStatusBadge status={product.status} />
+							</div>
 							<p className="text-xl">{product.price}€</p>
 						</div>
 						<div className="flex flex-col gap-2">

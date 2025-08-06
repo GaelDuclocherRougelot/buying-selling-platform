@@ -20,11 +20,11 @@ export async function POST(request: NextRequest) {
 	const body = await request.text();
 	const signature = request.headers.get("stripe-signature");
 
-	console.log(
-		"🔔 Webhook reçu - Headers:",
-		Object.fromEntries(request.headers.entries())
-	);
-	console.log("🔔 Webhook reçu - Body length:", body.length);
+	console.log("🔔 ===== WEBHOOK RECEIVED =====");
+	console.log("🔔 Timestamp:", new Date().toISOString());
+	console.log("🔔 Headers:", Object.fromEntries(request.headers.entries()));
+	console.log("🔔 Body length:", body.length);
+	console.log("🔔 Body preview:", body.substring(0, 500) + "...");
 
 	if (!signature) {
 		console.error("❌ Missing stripe signature");
@@ -59,11 +59,20 @@ export async function POST(request: NextRequest) {
 		);
 	}
 
-	console.log(`🔔 Webhook reçu: ${event.type}`);
+	console.log(`🔔 Event type: ${event.type}`);
+	console.log(`🔔 Event ID: ${event.id}`);
+	console.log(
+		`🔔 Event created: ${new Date(event.created * 1000).toISOString()}`
+	);
 	console.log(`📋 Event data:`, JSON.stringify(event.data, null, 2));
 
 	// Enregistrer le webhook dans les logs
-	const object = event.data.object as Stripe.Checkout.Session | Stripe.PaymentIntent | Stripe.PaymentMethod | Stripe.Account | { id?: string; object?: string };
+	const object = event.data.object as
+		| Stripe.Checkout.Session
+		| Stripe.PaymentIntent
+		| Stripe.PaymentMethod
+		| Stripe.Account
+		| { id?: string; object?: string };
 	logWebhookEvent(event.type, event.id, "received", {
 		objectId: object.id,
 		objectType: object.object,
@@ -259,30 +268,59 @@ async function handlePaymentIntentSucceeded(
 
 		if (!existingPayment) {
 			console.log(
-				`ℹ️ Paiement de test reçu (données non créées en base)`
+				`📝 Paiement non trouvé en base, création d'un nouveau...`
 			);
-			console.log(` Montant: ${paymentIntent.amount / 100}€`);
+			console.log(`💰 Montant: ${paymentIntent.amount / 100}€`);
 			console.log(`💳 ID: ${paymentIntent.id}`);
-			// En production, le paiement sera créé avec de vraies données
+
+			// Extraire les métadonnées du payment intent
+			const { productId, buyerId, sellerId } =
+				paymentIntent.metadata || {};
+
+			if (productId && buyerId && sellerId) {
+				try {
+					await prisma.payment.create({
+						data: {
+							stripePaymentIntentId: paymentIntent.id,
+							amount: paymentIntent.amount / 100, // Convert from cents
+							currency: paymentIntent.currency,
+							status: "pending_shipping_validation",
+							productId: productId,
+							buyerId: buyerId,
+							sellerId: sellerId,
+							applicationFeeAmount: 0, // Will be calculated if needed
+						},
+					});
+					console.log(
+						`📝 Nouveau paiement créé: ${paymentIntent.id}`
+					);
+				} catch (createError) {
+					console.error(
+						`❌ Erreur lors de la création du paiement:`,
+						createError
+					);
+				}
+			} else {
+				console.log(
+					`⚠️ Métadonnées manquantes pour créer le paiement: productId=${productId}, buyerId=${buyerId}, sellerId=${sellerId}`
+				);
+			}
 		} else {
+			// Pour les paiements avec capture manuelle, on ne marque pas comme "succeeded"
+			// tant que les preuves d'expédition ne sont pas validées
 			await prisma.payment.update({
 				where: { stripePaymentIntentId: paymentIntent.id },
 				data: {
-					status: "succeeded",
+					status: "pending_shipping_validation", // Nouveau statut
 					updatedAt: new Date(),
 				},
 			});
-			console.log(`📝 Paiement mis à jour: ${paymentIntent.id}`);
+			console.log(
+				`📝 Paiement en attente de validation d'expédition: ${paymentIntent.id}`
+			);
 
-			// Marquer le produit comme vendu
-			const { productId } = paymentIntent.metadata || {};
-			if (productId) {
-				await prisma.product.update({
-					where: { id: productId },
-					data: { status: "sold" },
-				});
-				console.log(`🏷️ Produit marqué comme vendu: ${productId}`);
-			}
+			// Ne pas marquer le produit comme vendu tant que les preuves ne sont pas validées
+			console.log(`⏳ Produit en attente de validation d'expédition`);
 		}
 	} catch (error) {
 		console.error(`❌ Erreur:`, error);
