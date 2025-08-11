@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrders } from "@/lib/hooks/useOrders";
+import BuyerValidateButton from "../payment/BuyerValidateButton";
+import PaymentButton from "../stripe/PaymentButton";
 
 interface OrdersListProps {
 	type?: "buyer" | "seller" | "all";
@@ -20,16 +22,28 @@ export function OrdersList({
 
 	const getStatusBadge = (status: string) => {
 		switch (status) {
-			case "pending":
+			case "waiting_payment":
 				return (
 					<Badge className="bg-orange-100 text-orange-800">
 						En attente de paiement
+					</Badge>
+				);
+			case "pending":
+				return (
+					<Badge className="bg-orange-100 text-orange-800">
+						En attente
 					</Badge>
 				);
 			case "pending_shipping_validation":
 				return (
 					<Badge className="bg-blue-100 text-blue-800">
 						En attente d&apos;expédition
+					</Badge>
+				);
+			case "pending_buyer_validation":
+				return (
+					<Badge className="bg-purple-100 text-purple-800">
+						En attente de validation acheteur
 					</Badge>
 				);
 			case "succeeded":
@@ -97,7 +111,7 @@ export function OrdersList({
 	const sellerOrders = orders.sellerOrders || [];
 
 	return (
-		<div className="space-y-8">
+		<div className="flex flex-col gap-6">
 			{/* Section Mes Achats */}
 			{(type === "buyer" || type === "all") && (
 				<Card>
@@ -148,7 +162,32 @@ export function OrdersList({
 											</div>
 											{getStatusBadge(order.status)}
 										</div>
-										<TrackingStatus paymentId={order.id} />
+										{order.status === "waiting_payment" && (
+											<PaymentButton
+												productId={order.product.id}
+												productTitle={
+													order.productTitle
+												}
+												amount={order.amount}
+											/>
+										)}
+										{order.status ===
+											"pending_buyer_validation" && (
+											<BuyerValidateButton
+												paymentId={order.id}
+												productTitle={
+													order.productTitle
+												}
+												amount={order.amount}
+												onValidated={() => {}}
+											/>
+										)}
+										{order.status ===
+											"pending_shipping_validation" && (
+											<TrackingStatus
+												paymentId={order.id}
+											/>
+										)}
 									</Card>
 								))}
 							</div>
@@ -206,14 +245,19 @@ export function OrdersList({
 											</div>
 											{getStatusBadge(order.status)}
 										</div>
-										<ShippingProofForm
-											paymentId={order.id}
-											productTitle={order.productTitle}
-											buyerName={
-												order.buyer.username ||
-												"Utilisateur"
-											}
-										/>
+										{order.status ===
+											"pending_shipping_validation" && (
+											<ShippingProofForm
+												paymentId={order.id}
+												productTitle={
+													order.productTitle
+												}
+												buyerName={
+													order.buyer.username ||
+													"Utilisateur"
+												}
+											/>
+										)}
 									</Card>
 								))}
 							</div>

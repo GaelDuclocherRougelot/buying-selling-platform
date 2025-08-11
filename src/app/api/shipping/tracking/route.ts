@@ -111,8 +111,11 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		// Si le colis est livré et que le paiement est en attente, déclencher le transfert
-		if (trackingStatus.isDelivered && payment.status === "pending") {
+		// Si le colis est livré et que le paiement est en attente de validation d'expédition, déclencher le transfert
+		if (
+			trackingStatus.isDelivered &&
+			payment.status === "pending_shipping_validation"
+		) {
 			try {
 				// Transférer l'argent au vendeur (moins les frais de plateforme)
 				const transferAmount = Math.round(

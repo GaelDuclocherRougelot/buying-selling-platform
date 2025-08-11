@@ -1,4 +1,9 @@
 import { auth } from "@/lib/auth";
+import {
+	calculatePlatformFee,
+	getPlatformFeeInCents,
+	getSellerSalesCount,
+} from "@/lib/platform-fees";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
@@ -32,6 +37,9 @@ export async function POST(request: NextRequest) {
 				owner: {
 					select: { stripeAccountId: true },
 				},
+				category: {
+					select: { name: true },
+				},
 			},
 		});
 
@@ -49,11 +57,22 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Calculate platform fee (e.g., 5%)
-		const platformFeePercentage = 0.05;
-		const platformFeeAmount = Math.round(
-			amount * platformFeePercentage * 100
-		); // Convert to cents
+		// 🎯 Calculate platform fee with progressive system
+		const sellerSalesCount = await getSellerSalesCount(product.ownerId);
+		const feeInfo = calculatePlatformFee(amount, {
+			category: product.category?.name?.toLowerCase(),
+			sellerSalesCount: sellerSalesCount,
+		});
+		const platformFeeAmount = getPlatformFeeInCents(amount, {
+			category: product.category?.name?.toLowerCase(),
+			sellerSalesCount: sellerSalesCount,
+		});
+
+		console.log(
+			`💰 PaymentIntent - Commission pour vendeur ${product.ownerId}:`
+		);
+		console.log(`   📊 Ventes réalisées: ${sellerSalesCount}`);
+		console.log(`   💳 ${feeInfo.breakdown} = ${feeInfo.feeAmount}€`);
 
 		// Create payment intent with application fee
 		const paymentIntent = await stripe.paymentIntents.create({

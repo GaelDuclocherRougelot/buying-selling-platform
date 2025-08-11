@@ -29,7 +29,7 @@ export function SearchBar() {
 					placeholder="Rechercher une annonce"
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
-					className="pl-10 cursor-text w-20"
+					className="pl-10 cursor-text w-full max-w-64 min-w-48"
 				/>
 
 				<Button onClick={handleSubmit}>

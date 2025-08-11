@@ -112,6 +112,14 @@ const columns: ColumnDef<Product>[] = [
 						<span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
 							Rejeté
 						</span>
+					) : status === "pending_shipping_validation" ? (
+						<span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+							En attente des preuves d&apos;expédition
+						</span>
+					) : status === "pending_buyer_validation" ? (
+						<span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+							En attente de validation acheteur
+						</span>
 					) : (
 						<span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
 							{status}

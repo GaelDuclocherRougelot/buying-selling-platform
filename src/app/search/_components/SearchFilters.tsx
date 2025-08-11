@@ -70,7 +70,7 @@ export function SearchFilters({
 	}, []);
 
 	const conditions = [
-		{ value: "pristine", label: "Neuf" },
+		{ value: "new", label: "Neuf" },
 		{ value: "good", label: "Bon état" },
 		{ value: "mid", label: "État moyen" },
 		{ value: "damaged", label: "Mauvais état" },
@@ -99,7 +99,7 @@ export function SearchFilters({
 	);
 
 	return (
-		<Card className="sticky top-4 max-w-xs h-fit">
+		<Card className="sticky top-20 h-fit">
 			<CardHeader className="pb-4">
 				<div className="flex items-center justify-between">
 					<CardTitle className="flex items-center gap-2">

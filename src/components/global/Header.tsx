@@ -1,4 +1,5 @@
 "use client";
+
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,8 +10,15 @@ import Heart from "../svg/Heart";
 import Person from "../svg/Person";
 import Tchat from "../svg/Tchat";
 import { Button } from "../ui/button";
+import {
+	NavigationMenu,
+	NavigationMenuContent,
+	NavigationMenuItem,
+	NavigationMenuLink,
+	NavigationMenuList,
+	NavigationMenuTrigger,
+} from "../ui/navigation-menu";
 import { SearchBar } from "./SearchBar";
-// import MobileMenu from "./MobileMenu";
 
 /**
  * Header component for the main navigation bar.
@@ -22,7 +30,6 @@ import { SearchBar } from "./SearchBar";
 const Header = (): JSX.Element => {
 	const user = useSession().data?.user;
 	const router = useRouter();
-	// const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 	const handleLinkToPublish = () => {
 		if (!user) {
@@ -40,101 +47,144 @@ const Header = (): JSX.Element => {
 		router.push("/auth/publish");
 	};
 
-	// const toggleMobileMenu = () => {
-	// 	setIsMobileMenuOpen(!isMobileMenuOpen);
-	// };
-
-	// const closeMobileMenu = () => {
-	// 	setIsMobileMenuOpen(false);
-	// };
-
 	return (
 		<>
-			<header className="flex items-center justify-between h-20 border sticky top-0 bg-background z-50 shadow-sm">
-				<div className="max-w-[85rem] mx-auto py-4 px-4 lg:px-10 flex items-center justify-between w-full">
-					{/* Logo et bouton burger */}
-					<div className="flex items-center gap-4">
+			<header className="flex items-center h-20 border sticky top-0 bg-background z-50 shadow-sm">
+				<div className="max-w-[85rem] mx-auto py-4 px-4 lg:px-10 w-full flex items-center">
+					<div className="flex items-center w-48">
 						<Link href="/" className="text-2xl font-extrabold">
 							Zone
 						</Link>
 					</div>
 
-					{/* Barre de recherche et bouton publier */}
-					<div className="flex items-center gap-4 w-full max-w-md mx-4">
+					<div className="flex-1 flex justify-center px-4">
+						<div className="w-full max-w-2xl flex items-center gap-4">
+							<SearchBar />
+						</div>
+					</div>
+
+					<div className="flex items-center gap-4 w-fit">
 						<Button
 							onClick={handleLinkToPublish}
-							className="py-5 whitespace-nowrap"
+							className="py-5 whitespace-nowrap hidden md:flex"
 							aria-label="Déposer une annonce"
 							role="link"
 						>
 							Déposer une annonce
 						</Button>
-						<SearchBar />
-					</div>
 
-					{/* Navigation desktop */}
-					<nav className="hidden md:flex justify-end">
-						<ul className="flex items-center gap-4 [&>li]:cursor-pointer [&>li>a]:flex [&>li>a]:flex-col [&>li>a]:items-center [&>li>a]:justify-center [&>li>a>p]:text-sm">
-							{user?.role === "admin" && (
-								<li>
-									<Link href="/admin">
-										<DashboardSVG />
-										<p>Admin</p>
-									</Link>
-								</li>
-							)}
-							<li>
-								<Link href="/categories">
-									<CategorySVG />
-									<p>Catégories</p>
-								</Link>
-							</li>
-							{user ? (
-								<>
-									{" "}
-									<li>
-										<Link href="/auth/favorites">
-											<Heart />
-											<p>Favoris</p>
-										</Link>
-									</li>
-									<li>
-										<Link href="/auth/orders">
-											<DashboardSVG />
-											<p>Commandes</p>
-										</Link>
-									</li>
-									<li>
-										<Link href="/auth/messages">
-											<Tchat />
-											<p>Messages</p>
-										</Link>
-									</li>
-									<li>
-										<Link href="/auth/profile">
-											<Person />
-											<p>Mon profil</p>
-										</Link>
-									</li>
-								</>
-							) : (
-								<li>
-									<Link href="/auth/login">
-										<Button
-											variant="outline"
-											className="cursor-pointer"
+						{/* Navigation desktop */}
+						<NavigationMenu
+							className="hidden md:flex"
+							viewport={false}
+						>
+							<NavigationMenuList>
+								{user?.role === "admin" && (
+									<NavigationMenuItem>
+										<NavigationMenuLink asChild>
+											<Link
+												href="/admin"
+												className="flex flex-col items-center gap-1"
+											>
+												<DashboardSVG />
+												<span className="text-xs">
+													Admin
+												</span>
+											</Link>
+										</NavigationMenuLink>
+									</NavigationMenuItem>
+								)}
+								<NavigationMenuItem>
+									<NavigationMenuLink asChild>
+										<Link
+											href="/categories"
+											className="flex flex-col items-center gap-1"
 										>
-											Se connecter
-										</Button>
-									</Link>
-								</li>
-							)}
-						</ul>
-					</nav>
+											<CategorySVG />
+											<span className="text-xs">
+												Catégories
+											</span>
+										</Link>
+									</NavigationMenuLink>
+								</NavigationMenuItem>
+								{user ? (
+									<>
+										<NavigationMenuItem>
+											<NavigationMenuTrigger>
+												<div className="flex flex-col items-center gap-1">
+													<Person />
+													<span className="text-xs font-normal">
+														Mon compte
+													</span>
+												</div>
+											</NavigationMenuTrigger>
+											<NavigationMenuContent className="absolute top-full right-0 mt-2 z-[100] rounded-md shadow-lg bg-popover">
+												<div className="flex flex-col gap-1">
+													<NavigationMenuLink asChild>
+														<Link
+															href="/auth/profile"
+															className="flex items-center gap-2 p-2 hover:bg-accent rounded"
+														>
+															<Person />
+															<span>
+																Mon profil
+															</span>
+														</Link>
+													</NavigationMenuLink>
+													<NavigationMenuLink asChild>
+														<Link
+															href="/auth/favorites"
+															className="flex items-center gap-2 p-2 hover:bg-accent rounded"
+														>
+															<Heart />
+															<span>Favoris</span>
+														</Link>
+													</NavigationMenuLink>
+													<NavigationMenuLink asChild>
+														<Link
+															href="/auth/orders"
+															className="flex items-center gap-2 p-2 hover:bg-accent rounded"
+														>
+															<DashboardSVG />
+															<span>
+																Commandes
+															</span>
+														</Link>
+													</NavigationMenuLink>
+													<NavigationMenuLink asChild>
+														<Link
+															href="/auth/messages"
+															className="flex items-center gap-2 p-2 hover:bg-accent rounded"
+														>
+															<Tchat />
+															<span>
+																Messages
+															</span>
+														</Link>
+													</NavigationMenuLink>
+												</div>
+											</NavigationMenuContent>
+										</NavigationMenuItem>
+									</>
+								) : (
+									<NavigationMenuItem>
+										<NavigationMenuLink asChild>
+											<Link href="/auth/login">
+												<Button
+													variant="outline"
+													className="cursor-pointer bg-transparent"
+												>
+													Se connecter
+												</Button>
+											</Link>
+										</NavigationMenuLink>
+									</NavigationMenuItem>
+								)}
+							</NavigationMenuList>
+						</NavigationMenu>
+					</div>
 				</div>
 			</header>
-
-			{/* Menu mobile */}
 		</>
 	);
 };

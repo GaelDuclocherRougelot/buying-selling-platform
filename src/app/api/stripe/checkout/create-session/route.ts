@@ -1,4 +1,9 @@
 import { auth } from "@/lib/auth";
+import {
+	calculatePlatformFee,
+	getPlatformFeeInCents,
+	getSellerSalesCount,
+} from "@/lib/platform-fees";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
@@ -26,6 +31,9 @@ export async function POST(request: NextRequest) {
 				owner: {
 					select: { stripeAccountId: true },
 				},
+				category: {
+					select: { name: true },
+				},
 			},
 		});
 
@@ -49,7 +57,12 @@ export async function POST(request: NextRequest) {
 			where: {
 				productId: productId,
 				status: {
-					in: ["pending", "pending_shipping_validation", "succeeded"],
+					in: [
+						"pending",
+						"pending_shipping_validation",
+						"pending_buyer_validation",
+						"succeeded",
+					],
 				},
 			},
 		});
@@ -78,11 +91,20 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Calculate platform fee (e.g., 5%)
-		const platformFeePercentage = 0.05;
-		const platformFeeAmount = Math.round(
-			amount * platformFeePercentage * 100
-		); // Convert to cents
+		// 🎯 Calculate platform fee with progressive system
+		const sellerSalesCount = await getSellerSalesCount(product.ownerId);
+		const feeInfo = calculatePlatformFee(amount, {
+			category: product.category?.name?.toLowerCase(),
+			sellerSalesCount: sellerSalesCount,
+		});
+		const platformFeeAmount = getPlatformFeeInCents(amount, {
+			category: product.category?.name?.toLowerCase(),
+			sellerSalesCount: sellerSalesCount,
+		});
+
+		console.log(`💰 Commission calculée pour vendeur ${product.ownerId}:`);
+		console.log(`   📊 Ventes réalisées: ${sellerSalesCount}`);
+		console.log(`   💳 ${feeInfo.breakdown} = ${feeInfo.feeAmount}€`);
 
 		// Create Stripe Checkout session
 		const checkoutSession = await stripe.checkout.sessions.create({
@@ -129,10 +151,10 @@ export async function POST(request: NextRequest) {
 		// Option: Create payment record with session ID as temporary reference
 		// await prisma.payment.create({
 		// 	data: {
-		// 		stripeSessionId: checkoutSession.id,
+		// 		stripePaymentIntentId: checkoutSession.id,
 		// 		amount: amount,
 		// 		currency: "eur",
-		// 		status: "pending",
+		// 		status: "waiting_payment",
 		// 		productId: productId,
 		// 		buyerId: session.user.id,
 		// 		sellerId: product.ownerId,

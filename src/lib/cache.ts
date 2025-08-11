@@ -121,7 +121,7 @@ export const CACHE_KEYS = {
 // TTL spécifiques pour différents types de données
 export const CACHE_TTL = {
 	FEATURED_PRODUCTS: 10 * 60 * 1000, // 10 minutes
-	FEATURED_CATEGORIES: 30 * 60 * 1000, // 30 minutes
+	FEATURED_CATEGORIES: 30 * 60 * 1000, // 30 minute
 	ALL_CATEGORIES: 60 * 60 * 1000, // 1 heure
 	PRODUCTS_BY_CATEGORY: 5 * 60 * 1000, // 5 minutes
 	USER_PROFILE: 15 * 60 * 1000, // 15 minutes

@@ -38,6 +38,12 @@ model User {
   @@map("user")
   PaymentBuyer Payment[] @relation("Buyer")
   PaymentSeller Payment[] @relation("Seller")
+  
+  // Relations pour la messagerie
+  buyerConversations Conversation[] @relation("BuyerConversations")
+  sellerConversations Conversation[] @relation("SellerConversations")
+  messages           Message[]      @relation("UserMessages")
+  offers             Offer[]        @relation("UserOffers")
 }
 
 model Session {
@@ -133,6 +139,9 @@ model Product {
   // Add payments relation
   payments    Payment[]
   favorites   Favorite[]
+  
+  // Relations pour la messagerie
+  conversations Conversation[]
 
   @@map("products")
 }
@@ -142,7 +151,7 @@ model Payment {
   stripePaymentIntentId String @unique
   amount        Float
   currency      String   @default("eur")
-  status        String   @default("pending") // pending, pending_shipping_validation, succeeded, failed, canceled, refunded
+  status        String   @default("pending") // pending, waiting_payment, pending_shipping_validation, succeeded, failed, canceled, refunded
   productId     String
   buyerId       String
   sellerId      String
@@ -193,6 +202,8 @@ model ShippingProof {
   submittedAt DateTime @default(now())
   verifiedAt  DateTime?
   verifiedBy  String?  // ID de l'admin qui a vérifié
+  rejectedAt  DateTime?
+  rejectedBy  String?  // ID de l'admin qui a rejeté
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -215,4 +226,65 @@ model Favorite {
   // Unique constraint to prevent duplicate favorites
   @@unique([userId, productId])
   @@map("favorites")
+}
+
+// Modèles pour le système de messagerie
+model Conversation {
+  id        String   @id @default(cuid())
+  productId String
+  buyerId   String
+  sellerId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer     User     @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller    User     @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  offers    Offer[]
+
+  // Unique constraint to prevent duplicate conversations
+  @@unique([productId, buyerId, sellerId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  messageType    String       @default("text") // text, image, file, offer, offer_response
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  // Relations
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  offer          Offer?
+
+  @@map("messages")
+}
+
+// Modèle pour les offres de négociation
+model Offer {
+  id             String   @id @default(cuid())
+  conversationId String
+  messageId      String   @unique // Lien vers le message qui contient l'offre
+  senderId       String
+  amount         Float
+  currency       String   @default("eur")
+  status         String   @default("pending") // pending, accepted, rejected, expired
+  offerMessage   String?  // Message optionnel avec l'offre
+  originalPrice  Float
+  expiresAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message       Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  sender        User         @relation("UserOffers", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("offers")
 }

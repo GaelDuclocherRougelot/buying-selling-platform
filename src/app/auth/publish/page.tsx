@@ -235,7 +235,7 @@ const CreateProductPage = () => {
 										<option value="">
 											Sélectionnez un état
 										</option>
-										<option value="pristine">Neuf</option>
+										<option value="new">Neuf</option>
 										<option value="good">Bon état</option>
 										<option value="mid">État moyen</option>
 										<option value="damaged">

@@ -91,7 +91,7 @@ export default function FavoritesPage() {
 
 	const translateCondition = (condition: string) => {
 		switch (condition.toLowerCase()) {
-			case "pristine":
+			case "new":
 			case "neuf":
 				return "Neuf";
 			case "good":

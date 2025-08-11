@@ -8,7 +8,7 @@ export default function OrdersClientPage() {
 		<>
 			<Header />
 			<main className="flex justify-center px-4 lg:px-10 py-8">
-				<div className="w-full max-w-[1300px] space-y-8">
+				<div className="w-full max-w-[1300px] flex flex-col gap-6">
 					{/* Titre de la page */}
 					<div className="text-center">
 						<h1 className="text-3xl font-bold mb-2">

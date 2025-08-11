@@ -20,12 +20,6 @@ export async function POST(request: NextRequest) {
 	const body = await request.text();
 	const signature = request.headers.get("stripe-signature");
 
-	console.log("🔔 ===== WEBHOOK RECEIVED =====");
-	console.log("🔔 Timestamp:", new Date().toISOString());
-	console.log("🔔 Headers:", Object.fromEntries(request.headers.entries()));
-	console.log("🔔 Body length:", body.length);
-	console.log("🔔 Body preview:", body.substring(0, 500) + "...");
-
 	if (!signature) {
 		console.error("❌ Missing stripe signature");
 		return NextResponse.json(
@@ -170,19 +164,40 @@ async function handleCheckoutSessionCompleted(
 
 			if (existingPayment) {
 				console.log(`📝 Paiement existant trouvé, mise à jour...`);
-				// Mettre à jour le paiement existant
+
+				// Récupérer le PaymentIntent pour obtenir le vrai application_fee_amount
+				let applicationFeeAmount =
+					existingPayment.applicationFeeAmount || 0;
+				try {
+					const paymentIntent = await stripe.paymentIntents.retrieve(
+						checkoutSession.payment_intent as string
+					);
+					applicationFeeAmount =
+						(paymentIntent.application_fee_amount || 0) / 100; // Convert to euros
+					console.log(
+						`💰 Commission mise à jour: ${applicationFeeAmount}€`
+					);
+				} catch (error) {
+					console.error(
+						"❌ Erreur récupération PaymentIntent:",
+						error
+					);
+				}
+
+				// Mettre à jour le paiement existant - EN ATTENTE DE VALIDATION
 				await prisma.payment.update({
 					where: {
 						stripePaymentIntentId:
 							checkoutSession.payment_intent as string,
 					},
 					data: {
-						status: "succeeded",
+						status: "pending_shipping_validation", // ⚠️ BLOQUÉ jusqu'à validation
+						applicationFeeAmount: applicationFeeAmount, // ✅ Mettre à jour la commission
 						updatedAt: new Date(),
 					},
 				});
 				console.log(
-					`📝 Paiement mis à jour: ${checkoutSession.payment_intent}`
+					`📝 Paiement mis à jour (en attente de validation): ${checkoutSession.payment_intent}`
 				);
 			} else {
 				console.log(
@@ -199,21 +214,59 @@ async function handleCheckoutSessionCompleted(
 				});
 
 				if (productId && buyerId && sellerId) {
+					// Récupérer le produit pour connaître le type de livraison
+					const product = await prisma.product.findUnique({
+						where: { id: productId },
+						select: { delivery: true },
+					});
+
+					// Récupérer le PaymentIntent pour obtenir le vrai application_fee_amount
+					let applicationFeeAmount = 0;
+					try {
+						const paymentIntent =
+							await stripe.paymentIntents.retrieve(
+								checkoutSession.payment_intent as string
+							);
+						applicationFeeAmount =
+							(paymentIntent.application_fee_amount || 0) / 100; // Convert to euros
+						console.log(
+							`💰 Commission calculée: ${applicationFeeAmount}€`
+						);
+					} catch (error) {
+						console.error(
+							"❌ Erreur récupération PaymentIntent:",
+							error
+						);
+					}
+
+					// Déterminer le statut selon le type de livraison
+					let paymentStatus = "pending_shipping_validation"; // Par défaut pour pickup/delivery
+					if (product?.delivery === "in-person") {
+						paymentStatus = "pending_buyer_validation"; // Pour remise en main propre
+						console.log(
+							`🤝 Livraison in-person détectée, en attente de validation acheteur`
+						);
+					} else {
+						console.log(
+							`📦 Livraison ${product?.delivery} détectée, en attente de preuves d'expédition`
+						);
+					}
+
 					await prisma.payment.create({
 						data: {
 							stripePaymentIntentId:
 								checkoutSession.payment_intent as string,
 							amount: (checkoutSession.amount_total || 0) / 100, // Convert from cents
 							currency: "eur",
-							status: "succeeded",
+							status: paymentStatus, // ✅ Statut adapté au type de livraison
 							productId: productId,
 							buyerId: buyerId,
 							sellerId: sellerId,
-							applicationFeeAmount: 0, // Will be calculated from payment intent if needed
+							applicationFeeAmount: applicationFeeAmount, // ✅ VRAIE commission
 						},
 					});
 					console.log(
-						`📝 Nouveau paiement créé: ${checkoutSession.payment_intent}`
+						`📝 Nouveau paiement créé (en attente de validation): ${checkoutSession.payment_intent}`
 					);
 				} else {
 					console.log(
@@ -222,22 +275,27 @@ async function handleCheckoutSessionCompleted(
 				}
 			}
 
-			// Marquer le produit comme vendu
+			// ⚠️ Marquer le produit selon le type de livraison
 			const { productId } = checkoutSession.metadata || {};
-			console.log(
-				`🏷️ Tentative de marquage du produit comme vendu: ${productId}`
-			);
 
 			if (productId) {
 				try {
-					const updatedProduct = await prisma.product.update({
+					// Récupérer le type de livraison du produit
+					const product = await prisma.product.findUnique({
 						where: { id: productId },
-						data: { status: "sold" },
+						select: { delivery: true },
 					});
-					console.log(
-						`🏷️ Produit marqué comme vendu avec succès: ${productId}`
-					);
-					console.log(`📋 Produit mis à jour:`, updatedProduct);
+
+					const productStatus = "pending_shipping_validation"; // Par défaut
+					if (product?.delivery === "in-person") {
+						return;
+					} 
+
+					await prisma.product.update({
+						where: { id: productId },
+						data: { status: productStatus },
+					});
+					console.log(`📋 Produit marqué comme: ${productStatus}`);
 				} catch (productError) {
 					console.error(
 						`❌ Erreur lors de la mise à jour du produit:`,
@@ -279,21 +337,60 @@ async function handlePaymentIntentSucceeded(
 
 			if (productId && buyerId && sellerId) {
 				try {
-					await prisma.payment.create({
-						data: {
-							stripePaymentIntentId: paymentIntent.id,
-							amount: paymentIntent.amount / 100, // Convert from cents
-							currency: paymentIntent.currency,
-							status: "pending_shipping_validation",
-							productId: productId,
-							buyerId: buyerId,
-							sellerId: sellerId,
-							applicationFeeAmount: 0, // Will be calculated if needed
-						},
+					// Récupérer le produit pour connaître le type de livraison
+					const product = await prisma.product.findUnique({
+						where: { id: productId },
+						select: { delivery: true },
 					});
+
+					// Calculer le vrai application_fee_amount depuis Stripe
+					const applicationFeeAmount =
+						(paymentIntent.application_fee_amount || 0) / 100; // Convert to euros
 					console.log(
-						`📝 Nouveau paiement créé: ${paymentIntent.id}`
+						`💰 Commission sur PaymentIntent: ${applicationFeeAmount}€`
 					);
+
+					// Déterminer le statut selon le type de livraison
+					const paymentStatus = "pending_shipping_validation"; // Par défaut
+					if (product?.delivery === "in-person") {
+						return;
+					} 
+
+					// Vérifier une seconde fois si le paiement n'existe pas déjà
+					// (protection contre les conditions de course)
+					const doubleCheckPayment = await prisma.payment.findUnique({
+						where: { stripePaymentIntentId: paymentIntent.id },
+					});
+
+					if (doubleCheckPayment) {
+						console.log(
+							`⚠️ Paiement créé entre-temps, mise à jour au lieu de création`
+						);
+						await prisma.payment.update({
+							where: { stripePaymentIntentId: paymentIntent.id },
+							data: {
+								status: paymentStatus,
+								applicationFeeAmount: applicationFeeAmount,
+								updatedAt: new Date(),
+							},
+						});
+					} else {
+						await prisma.payment.create({
+							data: {
+								stripePaymentIntentId: paymentIntent.id,
+								amount: paymentIntent.amount / 100, // Convert from cents
+								currency: paymentIntent.currency,
+								status: paymentStatus, // ✅ Statut adapté au type de livraison
+								productId: productId,
+								buyerId: buyerId,
+								sellerId: sellerId,
+								applicationFeeAmount: applicationFeeAmount, // ✅ VRAIE commission depuis Stripe
+							},
+						});
+						console.log(
+							`📝 Nouveau paiement créé (en attente de validation): ${paymentIntent.id}`
+						);
+					}
 				} catch (createError) {
 					console.error(
 						`❌ Erreur lors de la création du paiement:`,
@@ -306,21 +403,70 @@ async function handlePaymentIntentSucceeded(
 				);
 			}
 		} else {
-			// Pour les paiements avec capture manuelle, on ne marque pas comme "succeeded"
-			// tant que les preuves d'expédition ne sont pas validées
-			await prisma.payment.update({
-				where: { stripePaymentIntentId: paymentIntent.id },
-				data: {
-					status: "pending_shipping_validation", // Nouveau statut
-					updatedAt: new Date(),
-				},
-			});
+			// ⚠️ NE PAS changer le statut s'il est déjà en attente de validation
+			// Mais mettre à jour la commission si nécessaire
+			const applicationFeeAmount =
+				(paymentIntent.application_fee_amount || 0) / 100; // Convert to euros
 			console.log(
-				`📝 Paiement en attente de validation d'expédition: ${paymentIntent.id}`
+				`💰 Commission existante à vérifier: ${applicationFeeAmount}€`
 			);
 
-			// Ne pas marquer le produit comme vendu tant que les preuves ne sont pas validées
-			console.log(`⏳ Produit en attente de validation d'expédition`);
+			// ✅ CORRECTION : Ne pas changer le statut automatiquement
+			// Le statut doit rester "pending_shipping_validation" jusqu'à validation des preuves
+			if (existingPayment.applicationFeeAmount !== applicationFeeAmount) {
+				await prisma.payment.update({
+					where: { stripePaymentIntentId: paymentIntent.id },
+					data: {
+						// ❌ NE PAS changer le statut : existingPayment.status
+						applicationFeeAmount: applicationFeeAmount, // ✅ Mettre à jour seulement la commission
+						updatedAt: new Date(),
+					},
+				});
+				console.log(
+					`📝 Paiement existant mis à jour (commission uniquement): ${paymentIntent.id}`
+				);
+			} else {
+				console.log(
+					`📝 Paiement déjà en attente de validation avec bonne commission, pas de changement: ${paymentIntent.id}`
+				);
+			}
+		}
+
+		// Marquer le produit selon le type de livraison
+		const { productId } = paymentIntent.metadata || {};
+		if (productId) {
+			try {
+				// Récupérer le type de livraison du produit
+				const product = await prisma.product.findUnique({
+					where: { id: productId },
+					select: { delivery: true },
+				});
+
+				let productStatus = "pending_shipping_validation"; // Par défaut
+				if (product?.delivery === "in-person") {
+					productStatus = "pending_buyer_validation";
+					console.log(
+						`⏳ Produit PaymentIntent en attente de validation acheteur: ${productId}`
+					);
+				} else {
+					console.log(
+						`⏳ Produit PaymentIntent en attente de validation d'expédition: ${productId}`
+					);
+				}
+
+				await prisma.product.update({
+					where: { id: productId },
+					data: { status: productStatus },
+				});
+				console.log(`📋 Produit marqué comme: ${productStatus}`);
+			} catch (productError) {
+				console.error(
+					`❌ Erreur lors de la mise à jour du produit:`,
+					productError
+				);
+			}
+		} else {
+			console.log(`⚠️ Aucun productId trouvé dans les métadonnées`);
 		}
 	} catch (error) {
 		console.error(`❌ Erreur:`, error);

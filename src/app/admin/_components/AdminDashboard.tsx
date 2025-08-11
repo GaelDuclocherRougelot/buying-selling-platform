@@ -12,12 +12,15 @@ import { apiFetch } from "@/lib/api";
 import { signOut } from "@/lib/auth-client";
 import { User } from "better-auth";
 import {
-	BarChart3,
+	ArrowLeft,
+	Euro,
 	Loader2Icon,
 	LogIn,
 	LogOut,
 	Package,
+	ShoppingCart,
 	Tag,
+	Truck,
 	Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -32,6 +35,8 @@ interface AdminDashboardProps {
 interface AdminStats {
 	productCount: number;
 	categoryCount: number;
+	salesCount: number;
+	totalRevenue: number;
 }
 
 export default function AdminDashboard({ user }: AdminDashboardProps) {
@@ -40,6 +45,8 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 	const [stats, setStats] = useState<AdminStats>({
 		productCount: 0,
 		categoryCount: 0,
+		salesCount: 0,
+		totalRevenue: 0,
 	});
 	const [loading, setLoading] = useState(true);
 	const handleSignOut = async () => {
@@ -103,8 +110,17 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 							<Button
 								variant="outline"
 								size="sm"
+								onClick={() => router.push("/")}
+								className="flex items-center space-x-2 cursor-pointer"
+							>
+								<ArrowLeft size={16} />
+								<span>Accéder au site</span>
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
 								onClick={handleSignOut}
-								className="flex items-center space-x-2"
+								className="flex items-center space-x-2 cursor-pointer"
 							>
 								<LogOut size={16} />
 								<span>Déconnexion</span>
@@ -116,7 +132,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Stats Cards */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-sm font-medium">
@@ -185,12 +201,39 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 							<CardTitle className="text-sm font-medium">
 								Ventes
 							</CardTitle>
-							<BarChart3 className="h-4 w-4 text-muted-foreground" />
+							<ShoppingCart className="h-4 w-4 text-muted-foreground" />
 						</CardHeader>
 						<CardContent>
-							<div className="text-2xl font-bold">0€</div>
+							<div className="text-2xl font-bold">
+								{loading ? (
+									<Loader2Icon className="h-4 w-4 animate-spin" />
+								) : (
+									stats.salesCount
+								)}
+							</div>
 							<p className="text-xs text-muted-foreground">
+								Ventes réalisées entre les particuliers
+							</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
 								Chiffre d&apos;affaires
+							</CardTitle>
+							<Euro className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="text-2xl font-bold">
+								{loading ? (
+									<Loader2Icon className="h-4 w-4 animate-spin" />
+								) : (
+									`${stats.totalRevenue.toFixed(2)}€`
+								)}
+							</div>
+							<p className="text-xs text-muted-foreground">
+								Total des commissions
 							</p>
 						</CardContent>
 					</Card>
@@ -271,8 +314,28 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 									</CardHeader>
 									<CardContent>
 										<p className="text-sm text-muted-foreground">
-											Consultez et gérez le
-											historique des connexions utilisateurs
+											Consultez et gérez l&apos;historique
+											des connexions utilisateurs
+										</p>
+									</CardContent>
+								</Card>
+							</Link>
+
+							<Link href="/admin/shipping-proofs">
+								<Card className="hover:shadow-md transition-shadow cursor-pointer">
+									<CardHeader>
+										<CardTitle className="flex items-center space-x-2">
+											<Truck size={20} />
+											<span>
+												Preuves d&apos;expédition
+											</span>
+										</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<p className="text-sm text-muted-foreground">
+											Validez les preuves
+											d&apos;expédition et débloquez les
+											paiements
 										</p>
 									</CardContent>
 								</Card>

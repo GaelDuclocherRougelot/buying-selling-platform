@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSession } from "@/lib/auth-client";
 import {
 	AlertCircle,
 	CheckCircle,
@@ -13,12 +14,22 @@ import {
 	User,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import BuyerValidateButton from "./BuyerValidateButton";
+import BuyerValidation from "./BuyerValidation";
 
 interface Payment {
 	id: string;
 	amount: number;
 	currency: string;
-	status: "pending" | "succeeded" | "failed" | "canceled";
+	status:
+		| "pending"
+		| "succeeded"
+		| "failed"
+		| "canceled"
+		| "pending_buyer_validation"
+		| "pending_shipping_validation"
+		| "refunded"
+		| "seller_cancelled";
 	productId: string;
 	buyerId: string;
 	sellerId: string;
@@ -53,6 +64,7 @@ export default function PaymentStatus({ paymentId }: PaymentStatusProps) {
 	const [payment, setPayment] = useState<Payment | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const { data: session } = useSession();
 
 	// Obtenir le statut visuel
 	const getStatusIcon = () => {
@@ -97,8 +109,14 @@ export default function PaymentStatus({ paymentId }: PaymentStatusProps) {
 				return "Échec du paiement";
 			case "canceled":
 				return "Paiement annulé";
+			case "pending_buyer_validation":
+				return "En attente de validation acheteur";
+			case "pending_shipping_validation":
+				return "En attente de validation d'expédition";
+			case "refunded":
+				return "Remboursé";
 			default:
-				return "En attente de livraison";
+				return "En attente";
 		}
 	};
 
@@ -382,6 +400,49 @@ export default function PaymentStatus({ paymentId }: PaymentStatusProps) {
 							</div>
 						</>
 					)}
+
+					{/* Validation acheteur pour livraison in-person */}
+					{payment?.status === "pending_buyer_validation" &&
+						session?.user?.id === payment.buyerId && (
+							<div className="mt-6">
+								<BuyerValidation
+									paymentId={payment.id}
+									productTitle={payment.product.title}
+									amount={payment.amount}
+									onValidated={() => loadPayment()}
+								/>
+							</div>
+						)}
+
+					{/* Bouton de validation rapide pour les autres types de livraison */}
+					{payment?.status === "pending_shipping_validation" &&
+						session?.user?.id === payment.buyerId && (
+							<div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+								<div className="text-center space-y-4">
+									<div>
+										<h3 className="font-semibold text-green-800 mb-2">
+											Vous avez reçu votre produit ?
+										</h3>
+										<p className="text-sm text-green-700">
+											Si vous avez déjà reçu &ldquo;
+											{payment.product.title}&rdquo;, vous
+											pouvez confirmer la réception pour
+											finaliser la transaction.
+										</p>
+									</div>
+									<BuyerValidateButton
+										paymentId={payment.id}
+										productTitle={payment.product.title}
+										amount={payment.amount}
+										onValidated={() => loadPayment()}
+									/>
+									<p className="text-xs text-green-600">
+										Le vendeur recevra le paiement
+										immédiatement après validation.
+									</p>
+								</div>
+							</div>
+						)}
 
 					{error && (
 						<div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">

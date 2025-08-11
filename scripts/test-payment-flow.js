@@ -1,136 +1,174 @@
-require("dotenv").config();
-const Stripe = require("stripe");
-const { PrismaClient } = require("@prisma/client");
+#!/usr/bin/env node
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+/**
+ * 🧪 Test du Flow de Paiement Corrigé
+ *
+ * Ce script teste que le statut du paiement reste en "pending_shipping_validation"
+ * au lieu de passer automatiquement à "succeeded"
+ */
+
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 async function testPaymentFlow() {
-	console.log("🧪 Test du flux de paiement complet...\n");
+	console.log("🧪 Test du Flow de Paiement Corrigé\n");
 
 	try {
-		// 1. Vérifier la configuration
-		console.log("📋 Configuration:");
-		console.log(
-			"- STRIPE_SECRET_KEY:",
-			process.env.STRIPE_SECRET_KEY ? "✅" : "❌"
-		);
-		console.log(
-			"- STRIPE_WEBHOOK_SECRET:",
-			process.env.STRIPE_WEBHOOK_SECRET ? "✅" : "❌"
-		);
-
-		// 2. Créer un produit de test
-		console.log("\n🏷️ Création d'un produit de test...");
-		const testProduct = await prisma.product.create({
-			data: {
-				title: "Produit de test",
-				description: "Produit pour tester le paiement",
-				price: 10.0,
-				status: "active",
-				ownerId: "test-seller-id", // Utilisez un vrai ID d'utilisateur
-				categoryId: "test-category-id", // Utilisez un vrai ID de catégorie
-			},
-		});
-		console.log("✅ Produit créé:", testProduct.id);
-
-		// 3. Créer une session de checkout
-		console.log("\n🛒 Création d'une session de checkout...");
-		const checkoutSession = await stripe.checkout.sessions.create({
-			mode: "payment",
-			payment_method_types: ["card"],
-			line_items: [
-				{
-					price_data: {
-						currency: "eur",
-						product_data: {
-							name: "Produit de test",
-							description: "Test de paiement",
-						},
-						unit_amount: 1000, // 10€ en centimes
-					},
-					quantity: 1,
-				},
-			],
-			success_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/profile?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/profile?payment=cancelled`,
-			metadata: {
-				productId: testProduct.id,
-				buyerId: "test-buyer-id",
-				sellerId: "test-seller-id",
-			},
-			payment_intent_data: {
-				capture_method: "manual",
-				application_fee_amount: 50, // 0.50€ de frais
-				transfer_data: {
-					destination: "acct_test_seller", // Utilisez un vrai Stripe Account ID
-				},
-			},
-		});
-
-		console.log("✅ Session créée:", checkoutSession.id);
-		console.log("- Payment Intent:", checkoutSession.payment_intent);
-		console.log("- URL:", checkoutSession.url);
-		console.log("- Metadata:", checkoutSession.metadata);
-
-		// 4. Vérifier les paiements en base
-		console.log("\n📊 Vérification des paiements en base...");
+		// 1. Vérifier les paiements existants
+		console.log("📊 1. Vérification des paiements existants...");
 		const payments = await prisma.payment.findMany({
+			include: {
+				product: true,
+				buyer: true,
+				seller: true,
+			},
+			orderBy: { createdAt: "desc" },
+			take: 5,
+		});
+
+		console.log(`   Trouvé ${payments.length} paiements récents:\n`);
+
+		payments.forEach((payment, index) => {
+			console.log(`   ${index + 1}. Paiement ${payment.id}`);
+			console.log(`      Statut: ${payment.status}`);
+			console.log(`      Montant: ${payment.amount}€`);
+			console.log(
+				`      Commission: ${payment.applicationFeeAmount || 0}€`
+			);
+			console.log(`      Produit: ${payment.product.title}`);
+			console.log(`      Livraison: ${payment.product.delivery}`);
+			console.log(`      Créé: ${payment.createdAt.toISOString()}`);
+			console.log(`      Mis à jour: ${payment.updatedAt.toISOString()}`);
+			console.log("");
+		});
+
+		// 2. Vérifier les produits en attente de validation
+		console.log(
+			"📦 2. Vérification des produits en attente de validation..."
+		);
+		const pendingProducts = await prisma.product.findMany({
 			where: {
-				productId: testProduct.id,
+				status: {
+					in: [
+						"pending_shipping_validation",
+						"pending_buyer_validation",
+					],
+				},
+			},
+			include: {
+				payments: {
+					include: {
+						buyer: true,
+						seller: true,
+					},
+				},
 			},
 		});
 
-		console.log(`📝 ${payments.length} paiements trouvés pour ce produit:`);
-		payments.forEach((payment) => {
+		console.log(
+			`   Trouvé ${pendingProducts.length} produits en attente de validation:\n`
+		);
+
+		pendingProducts.forEach((product, index) => {
+			console.log(`   ${index + 1}. Produit ${product.id}`);
+			console.log(`      Titre: ${product.title}`);
+			console.log(`      Statut: ${product.status}`);
+			console.log(`      Livraison: ${product.delivery}`);
 			console.log(
-				`- ${payment.stripePaymentIntentId} (${payment.status}) - ${payment.amount}€`
+				`      Paiement: ${product.payments[0]?.status || "Aucun"}`
+			);
+			console.log(
+				`      Acheteur: ${product.payments[0]?.buyer.displayUsername || product.payments[0]?.buyer.username || "N/A"}`
+			);
+			console.log(
+				`      Vendeur: ${product.payments[0]?.seller.displayUsername || product.payments[0]?.seller.username || "N/A"}`
+			);
+			console.log("");
+		});
+
+		// 3. Vérifier les preuves d'expédition
+		console.log("📋 3. Vérification des preuves d'expédition...");
+		const shippingProofs = await prisma.shippingProof.findMany({
+			include: {
+				payment: {
+					include: {
+						product: true,
+					},
+				},
+			},
+			orderBy: { createdAt: "desc" },
+			take: 5,
+		});
+
+		console.log(
+			`   Trouvé ${shippingProofs.length} preuves d'expédition récentes:\n`
+		);
+
+		shippingProofs.forEach((proof, index) => {
+			console.log(`   ${index + 1}. Preuve ${proof.id}`);
+			console.log(`      Statut: ${proof.status}`);
+			console.log(`      Type: ${proof.proofType}`);
+			console.log(`      Paiement: ${proof.payment.status}`);
+			console.log(`      Produit: ${proof.payment.product.title}`);
+			console.log(`      Soumise: ${proof.submittedAt.toISOString()}`);
+			if (proof.verifiedAt) {
+				console.log(`      Validée: ${proof.verifiedAt.toISOString()}`);
+			}
+			console.log("");
+		});
+
+		// 4. Résumé des statuts
+		console.log("📈 4. Résumé des statuts de paiement...");
+		const statusCounts = await prisma.payment.groupBy({
+			by: ["status"],
+			_count: {
+				status: true,
+			},
+		});
+
+		console.log("   Répartition des statuts:\n");
+		statusCounts.forEach((status) => {
+			console.log(
+				`      ${status.status}: ${status._count.status} paiements`
 			);
 		});
 
-		// 5. Simuler un webhook de succès
-		console.log(
-			"\n🔔 Simulation d'un webhook checkout.session.completed..."
-		);
+		console.log("\n✅ Test terminé avec succès !");
 
-		const webhookEvent = {
-			id: "evt_test_" + Date.now(),
-			object: "event",
-			api_version: "2023-08-16",
-			created: Math.floor(Date.now() / 1000),
-			data: {
-				object: {
-					id: checkoutSession.id,
-					object: "checkout.session",
-					amount_total: 1000,
-					currency: "eur",
-					status: "complete",
-					payment_intent: checkoutSession.payment_intent,
-					metadata: checkoutSession.metadata,
+		// 5. Vérifications de sécurité
+		console.log("\n🔒 5. Vérifications de sécurité...");
+
+		// Vérifier qu'aucun paiement n'est passé à "succeeded" sans validation
+		const suspiciousPayments = await prisma.payment.findMany({
+			where: {
+				status: "succeeded",
+				updatedAt: {
+					gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Dernières 24h
 				},
 			},
-			livemode: false,
-			pending_webhooks: 1,
-			request: {
-				id: "req_test_" + Date.now(),
-				idempotency_key: null,
-			},
-			type: "checkout.session.completed",
-		};
-
-		console.log("📋 Webhook event:", JSON.stringify(webhookEvent, null, 2));
-
-		// 6. Nettoyer les données de test
-		console.log("\n🧹 Nettoyage des données de test...");
-		await prisma.payment.deleteMany({
-			where: {
-				productId: testProduct.id,
+			include: {
+				shippingProof: true,
 			},
 		});
-		await prisma.product.delete({
-			where: { id: testProduct.id },
-		});
-		console.log("✅ Données de test supprimées");
+
+		const unvalidatedPayments = suspiciousPayments.filter(
+			(payment) =>
+				!payment.shippingProof ||
+				payment.shippingProof.status !== "verified"
+		);
+
+		if (unvalidatedPayments.length > 0) {
+			console.log(
+				`   ⚠️  ATTENTION: ${unvalidatedPayments.length} paiements suspects trouvés !`
+			);
+			unvalidatedPayments.forEach((payment) => {
+				console.log(
+					`      - Paiement ${payment.id} en statut "succeeded" sans preuve validée`
+				);
+			});
+		} else {
+			console.log("   ✅ Aucun paiement suspect trouvé");
+		}
 	} catch (error) {
 		console.error("❌ Erreur lors du test:", error);
 	} finally {
@@ -138,71 +176,9 @@ async function testPaymentFlow() {
 	}
 }
 
-async function checkRecentPayments() {
-	console.log("\n📊 Vérification des paiements récents...");
-
-	try {
-		const payments = await prisma.payment.findMany({
-			take: 10,
-			orderBy: { createdAt: "desc" },
-			include: {
-				product: {
-					select: { title: true },
-				},
-				buyer: {
-					select: { username: true },
-				},
-				seller: {
-					select: { username: true },
-				},
-			},
-		});
-
-		console.log(`📝 ${payments.length} paiements récents:`);
-		payments.forEach((payment) => {
-			console.log(`- ${payment.stripePaymentIntentId}`);
-			console.log(`  Status: ${payment.status}`);
-			console.log(`  Amount: ${payment.amount}€`);
-			console.log(`  Product: ${payment.product?.title || "N/A"}`);
-			console.log(`  Buyer: ${payment.buyer?.username || "N/A"}`);
-			console.log(`  Seller: ${payment.seller?.username || "N/A"}`);
-			console.log(`  Created: ${payment.createdAt}`);
-			console.log("");
-		});
-	} catch (error) {
-		console.error("❌ Erreur lors de la vérification:", error);
-	}
-}
-
-async function checkWebhookLogs() {
-	console.log("\n📋 Conseils pour vérifier les logs webhook:");
-	console.log("1. Vérifiez les logs de votre application Next.js");
-	console.log(
-		'2. Recherchez les messages commençant par "🔔 ===== WEBHOOK RECEIVED ====="'
-	);
-	console.log(
-		"3. Vérifiez que le webhook est configuré dans Stripe Dashboard"
-	);
-	console.log("4. Testez avec un vrai paiement en mode test");
-	console.log("5. Utilisez Stripe CLI pour tester les webhooks localement");
-}
-
-async function main() {
-	await testPaymentFlow();
-	await checkRecentPayments();
-	await checkWebhookLogs();
-
-	console.log("\n💡 Prochaines étapes de débogage:");
-	console.log("1. Exécutez: node scripts/check-stripe-config.js");
-	console.log("2. Vérifiez les logs de votre application");
-	console.log("3. Testez un vrai paiement avec une carte de test");
-	console.log(
-		"4. Utilisez Stripe CLI: stripe listen --forward-to localhost:3000/api/stripe/payments/webhook"
-	);
-}
-
+// Exécuter le test
 if (require.main === module) {
-	main().catch(console.error);
+	testPaymentFlow();
 }
 
-module.exports = { testPaymentFlow, checkRecentPayments, checkWebhookLogs };
+module.exports = { testPaymentFlow };

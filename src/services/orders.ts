@@ -321,7 +321,11 @@ export async function getUserOrderStats(userId: string) {
 			where: {
 				buyerId: userId,
 				status: {
-					in: ["pending", "pending_shipping_validation"],
+					in: [
+						"pending",
+						"pending_shipping_validation",
+						"pending_buyer_validation",
+					],
 				},
 			},
 		}),
@@ -329,7 +333,11 @@ export async function getUserOrderStats(userId: string) {
 			where: {
 				sellerId: userId,
 				status: {
-					in: ["pending", "pending_shipping_validation"],
+					in: [
+						"pending",
+						"pending_shipping_validation",
+						"pending_buyer_validation",
+					],
 				},
 			},
 		}),

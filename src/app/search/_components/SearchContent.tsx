@@ -74,7 +74,7 @@ export function SearchContent() {
 					onSearch={(query) => applyFilters({ q: query })}
 				/>
 
-				<div className="flex gap-4">
+				<div className="flex gap-4 h-full">
 					{/* Filtres */}
 					<SearchFilters
 						filters={filters}

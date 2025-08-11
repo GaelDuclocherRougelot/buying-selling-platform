@@ -1,10 +1,10 @@
 "use client";
 
+import StartConversationButton from "@/components/messages/StartConversationButton";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils"; // Assuming you have a utility for className concatenation
+import { cn } from "@/lib/utils";
 import { Heart } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 /**
@@ -16,18 +16,24 @@ import { useEffect, useState } from "react";
  * @param {string} props.image - URL of the product image
  * @param {string} props.title - Title of the product
  * @param {number} props.price - Price of the product
- * @param {string} props.chatId - Chat ID for contacting the seller
+ * @param {string} props.productId - Product ID for creating conversation
+ * @param {string} props.sellerId - Seller ID for creating conversation
+ * @param {string} props.sellerName - Seller name for display
  */
 export default function ProductNavBar({
 	image,
 	title,
 	price,
-	chatId,
+	productId,
+	sellerId,
+	sellerName,
 }: {
 	image: string;
 	title: string;
 	price: number;
-	chatId: string;
+	productId: string;
+	sellerId: string;
+	sellerName: string;
 }) {
 	const [isVisible, setIsVisible] = useState(false);
 
@@ -62,9 +68,12 @@ export default function ProductNavBar({
 					</div>
 				</div>
 				<div className="flex items-center gap-4">
-					<Link href={`/auth/chat/${chatId}`}>
-						<Button variant="default">Contacter le vendeur</Button>
-					</Link>
+					<StartConversationButton
+						productId={productId}
+						sellerId={sellerId}
+						sellerName={sellerName}
+						className="px-6 py-2"
+					/>
 					<Button>
 						<Heart />
 					</Button>

@@ -6,14 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SmartTrackingSimulation } from "@/services/smart-tracking-simulation";
 import {
 	AlertCircle,
 	AlertTriangle,
 	CheckCircle,
 	Clock,
+	Truck,
 	Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ShippingProofFormProps {
 	paymentId: string;
@@ -53,6 +55,64 @@ export default function ShippingProofForm({
 		receipt: boolean;
 		package: boolean;
 	}>({ receipt: false, package: false });
+	const [detectedCarrier, setDetectedCarrier] = useState<string | null>(null);
+	const [isValidTracking, setIsValidTracking] = useState<boolean>(false);
+
+	// Effet pour détecter automatiquement le transporteur
+	useEffect(() => {
+		if (trackingNumber.trim().length >= 10) {
+			const isValid =
+				SmartTrackingSimulation.isValidTrackingNumber(trackingNumber);
+			setIsValidTracking(isValid);
+
+			if (isValid) {
+				// Utilisation d'une méthode publique pour détecter le transporteur
+				const carrier = detectCarrierFromTracking(trackingNumber);
+				setDetectedCarrier(carrier);
+				setError(null);
+			} else {
+				setDetectedCarrier(null);
+				setError("Format de numéro de suivi non reconnu");
+			}
+		} else {
+			setDetectedCarrier(null);
+			setIsValidTracking(false);
+			setError(null);
+		}
+	}, [trackingNumber]);
+
+	// Fonction helper pour détecter le transporteur (reproduit la logique privée)
+	const detectCarrierFromTracking = (trackingNumber: string): string => {
+		const number = trackingNumber.toUpperCase();
+
+		// Formats La Poste/Colissimo
+		if (
+			number.match(/^[0-9]{13}$/) ||
+			number.match(/^[A-Z]{2}[0-9]{9}[A-Z]{2}$/) ||
+			number.match(/^[0-9]{10}$/)
+		) {
+			return "La Poste";
+		}
+
+		// Formats Chronopost
+		if (
+			number.match(/^[0-9]{10}$/) ||
+			number.match(/^[A-Z]{2}[0-9]{8}[A-Z]{2}$/)
+		) {
+			return "Chronopost";
+		}
+
+		// Formats DHL
+		if (
+			number.match(/^[0-9]{10}$/) ||
+			number.match(/^[A-Z]{3}[0-9]{10}$/)
+		) {
+			return "DHL";
+		}
+
+		// Par défaut, La Poste
+		return "La Poste";
+	};
 
 	// Fonction pour uploader une image vers Cloudinary
 	const uploadImageToCloudinary = async (
@@ -90,7 +150,12 @@ export default function ShippingProofForm({
 
 		// Validation : toutes les preuves sont requises
 		if (!trackingNumber.trim()) {
-			setError("Numéro de suivi Colissimo requis");
+			setError("Numéro de suivi requis");
+			return;
+		}
+
+		if (!isValidTracking) {
+			setError("Numéro de suivi invalide ou format non reconnu");
 			return;
 		}
 
@@ -118,6 +183,7 @@ export default function ShippingProofForm({
 			// Combinaison de preuves avec URLs Cloudinary
 			const proofData = {
 				trackingNumber: trackingNumber.trim(),
+				carrier: detectedCarrier,
 				receiptImageUrl,
 				packageImageUrl,
 				description,
@@ -230,7 +296,10 @@ export default function ShippingProofForm({
 						pour débloquer le paiement :
 					</p>
 					<ul className="text-sm text-yellow-700 mt-2 space-y-1">
-						<li>• Numéro de suivi Colissimo (vérifié via API)</li>
+						<li>
+							• Numéro de suivi (La Poste, Chronopost, DHL
+							supportés)
+						</li>
 						<li>
 							• Photo du reçu d&apos;affranchissement (preuve de
 							paiement)
@@ -290,7 +359,7 @@ export default function ShippingProofForm({
 						{/* Numéro de suivi */}
 						<div className="space-y-2">
 							<Label htmlFor="trackingNumber">
-								Numéro de suivi Colissimo *
+								Numéro de suivi *
 							</Label>
 							<Input
 								id="trackingNumber"
@@ -298,11 +367,30 @@ export default function ShippingProofForm({
 								onChange={(e) =>
 									setTrackingNumber(e.target.value)
 								}
-								placeholder="Ex: 1A2B3C4D5E6F"
+								placeholder="Ex: 1A2B3C4D5E6F ou LT123456789FR"
 								required
+								className={
+									isValidTracking &&
+									trackingNumber.length >= 10
+										? "border-green-300"
+										: ""
+								}
 							/>
+
+							{/* Affichage du transporteur détecté */}
+							{detectedCarrier && isValidTracking && (
+								<div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
+									<Truck className="h-4 w-4 text-green-600" />
+									<span className="text-sm text-green-700">
+										<strong>Transporteur détecté :</strong>{" "}
+										{detectedCarrier}
+									</span>
+								</div>
+							)}
+
 							<p className="text-xs text-gray-500">
-								Ce numéro sera vérifié via l&apos;API La Poste
+								Supporte La Poste, Chronopost et DHL - Détection
+								automatique
 							</p>
 						</div>
 
@@ -387,7 +475,11 @@ export default function ShippingProofForm({
 						Sécurité renforcée
 					</h4>
 					<ul className="text-sm text-blue-700 space-y-1">
-						<li>• Vérification API La Poste en temps réel</li>
+						<li>
+							• Détection automatique du transporteur (La Poste,
+							Chronopost, DHL)
+						</li>
+						<li>• Validation du format du numéro de suivi</li>
 						<li>• Contrôle manuel des photos par notre équipe</li>
 						<li>• Paiement débloqué uniquement après validation</li>
 						<li>• Suspension en cas de fraude détectée</li>

@@ -11,10 +11,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Product } from "../types";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Product } from "../types";
 
 interface EditProductModalProps {
 	product: Product | null;
@@ -185,7 +185,7 @@ export function EditProductModal({
 							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 							required
 						>
-							<option value="pristine">Neuf</option>
+							<option value="new">Neuf</option>
 							<option value="good">Bon état</option>
 							<option value="mid">État correct</option>
 							<option value="damaged">Mauvais état</option>

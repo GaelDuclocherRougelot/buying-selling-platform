@@ -1,11 +1,9 @@
 import Header from "@/components/global/Header";
-import PaymentButton from "@/components/stripe/PaymentButton";
-import Heart from "@/components/svg/Heart";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { CardTitle } from "@/components/ui/card";
 import ProductStatusBadge from "@/components/ui/product-status-badge";
 import VerifiedUser from "@/components/ui/verified-user";
+import ProductActions from "@/features/product/ProductActions";
 import ProductImageCarousel from "@/features/product/ProductImageCarousel";
 import ProductNavBar from "@/features/product/ProductNavBar";
 import { createApiURL } from "@/lib/api";
@@ -105,7 +103,6 @@ export default async function ProductPage(props: {
 	params: Promise<{ category: string; productId: string }>;
 }) {
 	const params = await props.params;
-	const chatId = "123456789";
 
 	// Récupérer l'utilisateur connecté
 	const currentUser = await getUser();
@@ -135,7 +132,9 @@ export default async function ProductPage(props: {
 				image={product.imagesUrl[0]}
 				title={product.title}
 				price={product.price}
-				chatId="123456789"
+				productId={product.id}
+				sellerId={product.ownerId}
+				sellerName={product.owner.username || product.owner.name}
 			/>
 			<main className="flex flex-col items-center justify-center p-0">
 				<section className="max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
@@ -167,56 +166,23 @@ export default async function ProductPage(props: {
 								</CardTitle>
 							</div>
 						</div>
-						{!isOwner && product.status !== "sold" && (
-							<div className="flex items-center gap-4">
-								<Link href={`/auth/chat/${chatId}`}>
-									<Button variant="default">
-										Contacter le vendeur
-									</Button>
-								</Link>
-								<PaymentButton
-									productId={product.id}
-									amount={product.price}
-									productTitle={product.title}
-								/>
-								<Button>
-									<Heart />
-								</Button>
-							</div>
-						)}
-						{!isOwner && product.status === "sold" && (
-							<div className="flex items-center gap-4">
-								<Link href={`/auth/chat/${chatId}`}>
-									<Button variant="default">
-										Contacter le vendeur
-									</Button>
-								</Link>
-								<Button variant="outline" disabled>
-									Produit vendu
-								</Button>
-								<Button>
-									<Heart />
-								</Button>
-							</div>
-						)}
-						{isOwner && (
-							<div className="flex items-center gap-4">
-								<Link href="/auth/profile">
-									<Button
-										variant="outline"
-										className="cursor-pointer"
-									>
-										Gérer mes annonces
-									</Button>
-								</Link>
-							</div>
-						)}
+						<ProductActions
+							productId={product.id}
+							sellerId={product.ownerId}
+							sellerName={
+								product.owner.username || product.owner.name
+							}
+							price={product.price}
+							productTitle={product.title}
+							status={product.status}
+							isOwner={isOwner}
+						/>
 					</div>
 					<hr />
 					<ProductImageCarousel images={product.imagesUrl} />
 					<div className="flex flex-col gap-6 items-start justify-start max-w-2xl">
 						<div className="flex flex-col gap-2">
-							<div className="flex items-center gap-3">
+							<div className="flex items-center justify-center gap-6">
 								<h1>{product.title}</h1>
 								<ProductStatusBadge status={product.status} />
 							</div>

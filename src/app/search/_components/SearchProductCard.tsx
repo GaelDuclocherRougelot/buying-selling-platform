@@ -60,7 +60,7 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({ product }) => {
 
 	const getConditionLabel = (condition: string) => {
 		const conditions: Record<string, string> = {
-			pristine: "Neuf",
+			new: "Neuf",
 			good: "Bon état",
 			mid: "État moyen",
 			damaged: "Mauvais état",
