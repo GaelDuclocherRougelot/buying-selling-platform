@@ -1,10 +1,10 @@
 "use client";
 
-import WebSocketStatus from "@/components/messages/WebSocketStatus";
+import MessageStatus from "@/components/messages/MessageStatus";
 import { useSession } from "@/lib/auth-client";
-import { useWebSocket, WebSocketMessage } from "@/lib/hooks/useWebSocket";
-import { Conversation, Message } from "@/types/conversation";
-import { useEffect, useState } from "react";
+import { useMessages } from "@/lib/hooks/useMessages";
+import { Conversation } from "@/types/conversation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import ChatWindow from "./ChatWindow";
 import ConversationsList from "./ConversationsList";
@@ -17,87 +17,23 @@ export default function MessagesPage() {
 	const [loading, setLoading] = useState(true);
 	const [loadingMessages, setLoadingMessages] = useState(false);
 
-	// WebSocket hook
+	// Hook de messagerie REST
 	const {
-		joinConversation,
-		leaveConversation,
-		sendMessage,
+		fetchConversations: fetchConversationsFromHook,
+		fetchConversationMessages,
+		sendMessage: sendMessageFromHook,
 		markMessagesAsRead,
-		isConnected,
-		isConnecting,
-	} = useWebSocket({
-		onNewMessage: (message) => {
-			console.log("🎯 MessagesPage: onNewMessage appelé avec:", message);
-			handleNewWebSocketMessage(message);
-		},
-		onMessageSent: (data) => {
-			console.log("📤 MessagesPage: onMessageSent appelé avec:", data);
-			if (data.success) {
-				console.log("✅ Message envoyé avec succès:", data.messageId);
+		refreshMessages,
+	} = useMessages();
 
-				// Marquer les messages comme lus immédiatement
-				markMessagesAsRead(data.message.conversationId);
+	// Référence pour le polling
+	const pollingRef = useRef<NodeJS.Timeout | null>(null);
+	const lastMessageIdRef = useRef<string | null>(null);
 
-				// Remplacer le message temporaire par le vrai message
-				if (selectedConversation) {
-					setSelectedConversation((prev) => {
-						if (!prev) return null;
-
-						// Remplacer le message temporaire par le vrai message
-						const updatedMessages = prev.messages.map((msg) => {
-							if (msg.id.startsWith("temp-")) {
-								return {
-									...msg,
-									id: data.messageId,
-									createdAt: new Date().toISOString(),
-								};
-							}
-							return msg;
-						});
-
-						return {
-							...prev,
-							messages: updatedMessages,
-						};
-					});
-				}
-			}
-		},
-		onConnect: () => {
-			console.log("🔌 MessagesPage: WebSocket connecté");
-		},
-		onDisconnect: () => {
-			console.log("🔌 MessagesPage: WebSocket déconnecté");
-		},
-		onError: (error) => {
-			console.error("❌ MessagesPage: Erreur WebSocket:", error);
-		},
-	});
-
-	// Log de debug pour l'état WebSocket
-	useEffect(() => {
-		console.log(
-			"📊 MessagesPage: État WebSocket - isConnected:",
-			isConnected,
-			"isConnecting:",
-			isConnecting
-		);
-	}, [isConnected, isConnecting]);
-
-	const fetchConversations = async () => {
+	const fetchConversations = useCallback(async () => {
 		try {
-			const response = await fetch("/api/messages/conversations");
-
-			if (response.ok) {
-				const data = await response.json();
-				setConversations(data.conversations || []);
-			} else {
-				console.error(
-					"❌ Erreur API:",
-					response.status,
-					response.statusText
-				);
-			}
+			const conversationsData = await fetchConversationsFromHook();
+			setConversations(conversationsData);
 		} catch (error) {
 			console.error(
 				"💥 Erreur lors du chargement des conversations:",
@@ -106,24 +42,32 @@ export default function MessagesPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
-
+	}, [fetchConversationsFromHook]);
+	
 	useEffect(() => {
 		if (session?.user?.id) {
 			fetchConversations();
 		}
-	}, [session?.user?.id]); // Seulement l'ID de l'utilisateur, pas tout l'objet session
+	}, [session?.user?.id, fetchConversations]);
 
-	const fetchConversationMessages = async (conversationId: string) => {
+	const fetchConversationMessagesLocal = async (conversationId: string) => {
 		try {
-			const response = await fetch(
-				`/api/messages/conversations/${conversationId}`
+			// Récupérer la conversation complète depuis la liste
+			const conversation = conversations.find(
+				(conv) => conv.id === conversationId
 			);
-			if (response.ok) {
-				const data = await response.json();
-				console.log("🔄 MessagesPage: Réponse API:", data);
-				return data.conversation;
+			if (!conversation) {
+				throw new Error("Conversation non trouvée");
 			}
+
+			// Récupérer les messages
+			const messages = await fetchConversationMessages(conversationId);
+
+			// Retourner la conversation complète avec les messages
+			return {
+				...conversation,
+				messages: messages || [],
+			};
 		} catch (error) {
 			console.error("Erreur lors du chargement des messages:", error);
 		}
@@ -131,29 +75,27 @@ export default function MessagesPage() {
 	};
 
 	const handleConversationSelect = async (conversation: Conversation) => {
-		// Quitter la conversation précédente
-		if (selectedConversation) {
-			leaveConversation(selectedConversation.id);
-		}
-
-		// Rejoindre la nouvelle conversation immédiatement
-		if (isConnected) {
-			joinConversation(conversation.id);
-		} else {
-			toast.error(
-				"❌ Erreur serveur, impossible de rejoindre la conversation"
-			);
+		// Arrêter le polling de la conversation précédente
+		if (pollingRef.current) {
+			clearTimeout(pollingRef.current);
+			pollingRef.current = null;
 		}
 
 		// Fetcher les messages complets de cette conversation
 		setLoadingMessages(true);
 		try {
-			const fullConversation = await fetchConversationMessages(
+			const fullConversation = await fetchConversationMessagesLocal(
 				conversation.id
 			);
 			if (fullConversation) {
 				// Chargement des messages complets de la conversation
 				setSelectedConversation(fullConversation);
+
+				// Marquer les messages comme lus
+				await markMessagesAsRead(conversation.id);
+
+				// Démarrer le polling pour cette conversation
+				startPolling(conversation.id);
 			} else {
 				// Fallback si le fetch échoue
 				toast.error(
@@ -172,78 +114,93 @@ export default function MessagesPage() {
 		messageType: "text" | "image" | "file" | "mixed" = "text"
 	) => {
 		if (!content.trim() || !session?.user?.id) return;
-		sendMessage(conversationId, content.trim(), messageType);
-	};
 
-	const handleNewWebSocketMessage = (message: WebSocketMessage) => {
-		// Mettre à jour la conversation si elle est actuellement sélectionnée
-		const newMessage: Message = {
-			id: message.data.id,
-			conversationId: message.conversationId,
-			senderId: message.senderId,
-			content: message.data.content,
-			messageType: message.data.messageType as "text" | "image" | "file",
-			isRead: false,
-			createdAt: message.data.createdAt,
-			sender: {
-				id: message.data.sender.id,
-				name: message.data.sender.name,
-				image: message.data.sender.image || undefined,
-				username: message.data.sender.username || undefined,
-			},
-		};
+		const newMessage = await sendMessageFromHook(
+			conversationId,
+			content.trim(),
+			messageType
+		);
 
-		// Mise à jour immédiate de l'état
-		setSelectedConversation((prev) => {
-			if (!prev) return null;
-			return {
-				...prev,
-				messages: [...prev.messages, newMessage],
-			};
-		});
-		if (selectedConversation?.id === message.conversationId) {
-			console.log("✅ Mise à jour immédiate de la conversation active");
+		if (newMessage && selectedConversation) {
+			// Ajouter le message à la conversation actuelle
+			setSelectedConversation((prev: Conversation | null) => ({
+				...prev!,
+				messages: [...(prev?.messages || []), newMessage],
+			}));
 
-			// Ajouter le nouveau message à la conversation
-			// Mettre à jour la liste des conversations localement au lieu de refetch
-			setConversations((prevConversations) => {
-				return prevConversations.map((conv) => {
-					if (conv.id === message.conversationId) {
-						console.log(
-							"🔄 Mise à jour de la liste des conversations"
-						);
-
-						const updatedLastMessage: Message = {
-							id: message.data.id,
-							conversationId: message.conversationId,
-							senderId: message.senderId,
-							content: message.data.content,
-							messageType: message.data.messageType as
-								| "text"
-								| "image"
-								| "file",
-							isRead: false,
-							createdAt: message.data.createdAt,
-							sender: {
-								id: message.data.sender.id,
-								name: message.data.sender.name,
-								image: message.data.sender.image || undefined,
-								username:
-									message.data.sender.username || undefined,
-							},
-						};
-
-						return {
-							...conv,
-							lastMessage: updatedLastMessage,
-							updatedAt: new Date().toISOString(),
-						};
-					}
-					return conv;
-				});
-			});
+			// Mettre à jour la liste des conversations
+			setConversations((prev) =>
+				prev.map((conv) =>
+					conv.id === conversationId
+						? {
+								...conv,
+								lastMessage: newMessage,
+								updatedAt: new Date().toISOString(),
+							}
+						: conv
+				)
+			);
 		}
 	};
+
+	// Fonction pour démarrer le polling d'une conversation
+	const startPolling = useCallback(
+		(conversationId: string) => {
+			// Arrêter le polling précédent
+			if (pollingRef.current) {
+				clearTimeout(pollingRef.current);
+			}
+
+			// Démarrer le polling toutes les 5 secondes
+			const poll = async () => {
+				if (selectedConversation?.id === conversationId) {
+					const messages = await refreshMessages(
+						conversationId,
+						lastMessageIdRef.current || undefined
+					);
+
+					if (messages.length > 0) {
+						const lastMessage = messages[messages.length - 1];
+						lastMessageIdRef.current = lastMessage.id;
+
+						// Mettre à jour la conversation si de nouveaux messages sont arrivés
+						if (
+							messages.length >
+							(selectedConversation.messages?.length || 0)
+						) {
+							setSelectedConversation((prev: Conversation | null) => ({
+								...prev!,
+								messages,
+							}));
+
+							// Marquer comme lus
+							await markMessagesAsRead(conversationId);
+						}
+					}
+				}
+
+				// Continuer le polling
+				pollingRef.current = setTimeout(poll, 5000);
+			};
+
+			poll();
+		},
+		[
+			markMessagesAsRead,
+			refreshMessages,
+			selectedConversation?.id,
+			selectedConversation?.messages?.length,
+		]
+	);
+
+	// Nettoyer le polling au démontage
+	useEffect(() => {
+		return () => {
+			if (pollingRef.current) {
+				clearTimeout(pollingRef.current);
+			}
+		};
+	}, []);
 
 	if (loading) {
 		return (
@@ -268,7 +225,7 @@ export default function MessagesPage() {
 							vendeurs
 						</p>
 					</div>
-					<WebSocketStatus />
+					<MessageStatus />
 				</div>
 			</div>
 

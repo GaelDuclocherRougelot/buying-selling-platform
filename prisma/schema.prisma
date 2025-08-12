@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,40 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modèles Better-Auth
 model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean
-  image         String?
-  username      String?   @unique
-  displayUsername String?
-  role          String    @default("user")
-  deletedAt     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Stripe Connect fields
-  stripeAccountId String? @unique
-  stripeAccountStatus String? @default("pending") // pending, active, restricted, disabled
-
-  // Relations
-  sessions      Session[]
-  accounts      Account[]
-  products      Product[]
-  loginLogs     LoginLog[]
-  favorites     Favorite[]
+  id                  String         @id
+  name                String
+  email               String         @unique
+  emailVerified       Boolean
+  image               String?
+  username            String?        @unique
+  role                String         @default("user")
+  deletedAt           DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  displayUsername     String?
+  stripeAccountId     String?        @unique
+  stripeAccountStatus String?        @default("pending")
+  accounts            Account[]
+  buyerConversations  Conversation[] @relation("BuyerConversations")
+  sellerConversations Conversation[] @relation("SellerConversations")
+  favorites           Favorite[]
+  loginLogs           LoginLog[]
+  messages            Message[]      @relation("UserMessages")
+  offers              Offer[]        @relation("UserOffers")
+  PaymentBuyer        Payment[]      @relation("Buyer")
+  PaymentSeller       Payment[]      @relation("Seller")
+  products            Product[]
+  sessions            Session[]
 
   @@map("user")
-  PaymentBuyer Payment[] @relation("Buyer")
-  PaymentSeller Payment[] @relation("Seller")
-  
-  // Relations pour la messagerie
-  buyerConversations Conversation[] @relation("BuyerConversations")
-  sellerConversations Conversation[] @relation("SellerConversations")
-  messages           Message[]      @relation("UserMessages")
-  offers             Offer[]        @relation("UserOffers")
 }
 
 model Session {
@@ -61,35 +51,35 @@ model Session {
 }
 
 model LoginLog {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action      String   // "login", "logout", "failed_login", "password_reset"
-  ipAddress   String?
-  userAgent   String?
-  location    String?  // Country/City if available
-  success     Boolean  @default(true)
-  failureReason String? // Reason for failed login
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String
+  action        String
+  ipAddress     String?
+  userAgent     String?
+  location      String?
+  success       Boolean  @default(true)
+  failureReason String?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("login_logs")
 }
 
 model Account {
-  id                     String    @id
-  accountId              String
-  providerId             String
-  userId                 String
-  accessToken            String?
-  refreshToken           String?
-  idToken                String?
-  accessTokenExpiresAt   DateTime?
-  refreshTokenExpiresAt  DateTime?
-  scope                  String?
-  password               String?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("account")
 }
@@ -105,110 +95,97 @@ model Verification {
   @@map("verification")
 }
 
-// Modèles métier
 model Category {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
+  name        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   displayName String
-  name        String   @unique
   imageUrl    String?
   products    Product[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
   @@map("categories")
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  price       Float
-  condition   String
-  imagesUrl   String[]
-  status      String  @default("pending")
-  delivery    String  @default("pickup")
-  deliveryPrice Float? @default(0)
-  city        String?
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  category    Category @relation(fields: [categoryId], references: [id])
-  categoryId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Add payments relation
-  payments    Payment[]
-  favorites   Favorite[]
-  
-  // Relations pour la messagerie
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  price         Float
+  condition     String
+  imagesUrl     String[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  categoryId    String
+  status        String         @default("pending")
+  ownerId       String
+  city          String?
+  delivery      String         @default("pickup")
+  deliveryPrice Float?         @default(0)
   conversations Conversation[]
+  favorites     Favorite[]
+  payments      Payment[]
+  category      Category       @relation(fields: [categoryId], references: [id])
+  owner         User           @relation(fields: [ownerId], references: [id])
 
   @@map("products")
 }
 
 model Payment {
-  id            String   @id @default(cuid())
-  stripePaymentIntentId String @unique
-  amount        Float
-  currency      String   @default("eur")
-  status        String   @default("pending") // pending, waiting_payment, pending_shipping_validation, succeeded, failed, canceled, refunded
-  productId     String
-  buyerId       String
-  sellerId      String
-  applicationFeeAmount Float? // Platform fee
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  product       Product  @relation(fields: [productId], references: [id])
-  buyer         User     @relation("Buyer", fields: [buyerId], references: [id])
-  seller        User     @relation("Seller", fields: [sellerId], references: [id])
-
-  // Add shipment tracking relation
-  shipmentTracking ShipmentTracking?
-  shippingProof     ShippingProof?
+  id                    String            @id @default(cuid())
+  stripePaymentIntentId String            @unique
+  amount                Float
+  currency              String            @default("eur")
+  status                String            @default("pending")
+  productId             String
+  buyerId               String
+  sellerId              String
+  applicationFeeAmount  Float?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  buyer                 User              @relation("Buyer", fields: [buyerId], references: [id])
+  product               Product           @relation(fields: [productId], references: [id])
+  seller                User              @relation("Seller", fields: [sellerId], references: [id])
+  shipmentTracking      ShipmentTracking?
+  shippingProof         ShippingProof?
 
   @@map("payments")
 }
 
 model ShipmentTracking {
-  id                    String   @id @default(cuid())
-  paymentId             String   @unique
-  trackingNumber        String   // Numéro de suivi Colissimo
-  carrier               String   @default("colissimo") // colissimo, chronopost, etc.
-  status                String   @default("pending") // pending, shipped, delivered, failed
-  lastEventCode         String?  // Code du dernier événement La Poste
-  lastEventLabel        String?  // Libellé du dernier événement
+  id                    String    @id @default(cuid())
+  paymentId             String    @unique
+  trackingNumber        String
+  carrier               String    @default("colissimo")
+  status                String    @default("pending")
+  lastEventCode         String?
+  lastEventLabel        String?
   lastEventDate         DateTime?
   estimatedDeliveryDate DateTime?
   actualDeliveryDate    DateTime?
-  timeline              Json?    // Timeline complète de La Poste
-  events                Json?    // Événements détaillés
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relations
-  payment               Payment  @relation(fields: [paymentId], references: [id])
+  timeline              Json?
+  events                Json?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  payment               Payment   @relation(fields: [paymentId], references: [id])
 
   @@map("shipment_tracking")
 }
 
 model ShippingProof {
-  id          String   @id @default(cuid())
-  paymentId   String   @unique
-  proofType   String   // "receipt", "photo", "tracking_number"
-  proofData   Json     // Données de la preuve (URL image, numéro, etc.)
-  status      String   @default("pending_verification") // pending_verification, verified, rejected
-  submittedAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  paymentId   String    @unique
+  proofType   String
+  proofData   Json
+  status      String    @default("pending_verification")
+  submittedAt DateTime  @default(now())
   verifiedAt  DateTime?
-  verifiedBy  String?  // ID de l'admin qui a vérifié
+  verifiedBy  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   rejectedAt  DateTime?
-  rejectedBy  String?  // ID de l'admin qui a rejeté
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  payment     Payment  @relation(fields: [paymentId], references: [id])
+  rejectedBy  String?
+  payment     Payment   @relation(fields: [paymentId], references: [id])
 
   @@map("shipping_proof")
 }
@@ -218,33 +195,26 @@ model Favorite {
   userId    String
   productId String
   createdAt DateTime @default(now())
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Unique constraint to prevent duplicate favorites
   @@unique([userId, productId])
   @@map("favorites")
 }
 
-// Modèles pour le système de messagerie
 model Conversation {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   productId String
   buyerId   String
   sellerId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  buyer     User     @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
-  seller    User     @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  buyer     User      @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  seller    User      @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
   messages  Message[]
   offers    Offer[]
 
-  // Unique constraint to prevent duplicate conversations
   @@unique([productId, buyerId, sellerId])
   @@map("conversations")
 }
@@ -254,11 +224,9 @@ model Message {
   conversationId String
   senderId       String
   content        String
-  messageType    String       @default("text") // text, image, file, offer, offer_response
+  messageType    String       @default("text")
   isRead         Boolean      @default(false)
   createdAt      DateTime     @default(now())
-
-  // Relations
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
   offer          Offer?
@@ -266,25 +234,22 @@ model Message {
   @@map("messages")
 }
 
-// Modèle pour les offres de négociation
 model Offer {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
-  messageId      String   @unique // Lien vers le message qui contient l'offre
+  messageId      String       @unique
   senderId       String
   amount         Float
-  currency       String   @default("eur")
-  status         String   @default("pending") // pending, accepted, rejected, expired
-  offerMessage   String?  // Message optionnel avec l'offre
+  currency       String       @default("eur")
+  status         String       @default("pending")
+  offerMessage   String?
   originalPrice  Float
   expiresAt      DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  message       Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  sender        User         @relation("UserOffers", fields: [senderId], references: [id], onDelete: Cascade)
+  message        Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  sender         User         @relation("UserOffers", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@map("offers")
 }

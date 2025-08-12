@@ -1,3 +1,5 @@
+import { Product } from "@prisma/client";
+
 export interface Message {
 	id: string;
 	conversationId: string;
@@ -31,12 +33,7 @@ export interface Conversation {
 	sellerId: string;
 	createdAt: string;
 	updatedAt: string;
-	product: {
-		id: string;
-		title: string;
-		imagesUrl: string[];
-		price: number;
-	};
+	product: Product;
 	buyer: {
 		id: string;
 		name: string;

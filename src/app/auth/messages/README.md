@@ -1,145 +1,185 @@
-# Système de Messagerie
+# Système de Messagerie - Architecture REST
 
-Ce système de messagerie permet aux acheteurs et vendeurs de communiquer en temps réel via WebSocket.
+## Vue d'ensemble
 
-## Fonctionnalités
-
-- **Conversations en temps réel** : Communication instantanée entre utilisateurs
-- **Notifications** : Indicateurs visuels pour les nouveaux messages
-- **Statut de connexion** : Affichage du statut WebSocket
-- **Recherche** : Recherche dans les conversations existantes
-- **Interface responsive** : Adaptation mobile et desktop
+Ce système de messagerie utilise une architecture REST complète au lieu du temps réel (WebSocket/Ably). Il est conçu pour être simple, fiable et facile à maintenir.
 
 ## Architecture
 
-### Base de données
+### API Endpoints
 
-- **Conversation** : Stocke les conversations entre acheteurs et vendeurs
-- **Message** : Stocke les messages individuels avec statut de lecture
+#### 1. Conversations
 
-### WebSocket
+- **GET** `/api/messages/conversations` - Récupérer toutes les conversations de l'utilisateur
+- **POST** `/api/messages/conversations` - Créer une nouvelle conversation
 
-- **Authentification** : Vérification de l'identité des utilisateurs
-- **Rooms** : Chaque conversation est une "room" WebSocket
-- **Typing indicators** : Indicateurs de frappe en temps réel
+#### 2. Messages
 
-### API Routes
+- **GET** `/api/messages/conversations/[conversationId]/messages` - Récupérer les messages d'une conversation
+- **POST** `/api/messages/send` - Envoyer un nouveau message
 
-- `GET /api/messages/conversations` : Liste des conversations
-- `POST /api/messages/conversations` : Créer une conversation
-- `GET /api/messages/conversations/[id]` : Messages d'une conversation
-- `POST /api/messages/send` : Envoyer un message
+#### 3. Gestion des messages
+
+- **POST** `/api/messages/conversations/[conversationId]/read` - Marquer les messages comme lus
+
+### Hook personnalisé : `useMessages`
+
+Le hook `useMessages` fournit toutes les fonctionnalités nécessaires :
+
+```typescript
+const {
+	loading, // État de chargement
+	sending, // État d'envoi
+	fetchConversations, // Récupérer les conversations
+	fetchConversationMessages, // Récupérer les messages
+	sendMessage, // Envoyer un message
+	markMessagesAsRead, // Marquer comme lus
+	createConversation, // Créer une conversation
+	refreshMessages, // Rafraîchir les messages
+} = useMessages();
+```
+
+## Fonctionnalités
+
+### 1. Gestion des conversations
+
+- Liste des conversations avec dernier message
+- Compteur de messages non lus
+- Tri par date de mise à jour
+
+### 2. Envoi de messages
+
+- Support des types de messages (texte, image, fichier)
+- Validation côté serveur
+- Mise à jour immédiate de l'interface
+
+### 3. Polling intelligent
+
+- Vérification automatique des nouveaux messages toutes les 5 secondes
+- Mise à jour en temps réel de l'interface
+- Marquage automatique des messages comme lus
+
+### 4. Gestion des erreurs
+
+- Gestion gracieuse des erreurs réseau
+- Messages d'erreur utilisateur
+- Fallbacks en cas d'échec
+
+## Avantages de l'architecture REST
+
+### ✅ Simplicité
+
+- Pas de gestion de connexions WebSocket
+- Pas de gestion d'état de connexion
+- API standard et prévisible
+
+### ✅ Fiabilité
+
+- Pas de déconnexions inattendues
+- Gestion automatique des erreurs réseau
+- Retry automatique via le polling
+
+### ✅ Maintenabilité
+
+- Code plus simple et lisible
+- Moins de dépendances externes
+- Debugging plus facile
+
+### ✅ Scalabilité
+
+- Pas de limite de connexions simultanées
+- Gestion standard des timeouts
+- Cache HTTP standard
 
 ## Utilisation
 
-### Démarrer le serveur avec WebSocket
+### Dans un composant
 
-```bash
-pnpm run dev:websocket
+```typescript
+import { useMessages } from "@/lib/hooks/useMessages";
+
+function MyComponent() {
+  const { sendMessage, loading } = useMessages();
+
+  const handleSend = async () => {
+    const message = await sendMessage(conversationId, "Hello!", "text");
+    if (message) {
+      console.log("Message envoyé:", message);
+    }
+  };
+
+  return (
+    <button onClick={handleSend} disabled={loading}>
+      Envoyer
+    </button>
+  );
+}
 ```
 
-### Démarrer le serveur normal
+### Polling automatique
 
-```bash
-pnpm run dev
+Le polling se fait automatiquement quand une conversation est sélectionnée :
+
+```typescript
+const handleConversationSelect = async (conversation: Conversation) => {
+	// Charger les messages
+	const fullConversation = await fetchConversationMessagesLocal(
+		conversation.id
+	);
+	setSelectedConversation(fullConversation);
+
+	// Démarrer le polling automatiquement
+	startPolling(conversation.id);
+};
 ```
 
-### Composants disponibles
+## Configuration
 
-#### StartConversationButton
+### Variables d'environnement
 
-Bouton pour démarrer une conversation depuis une page produit :
+Aucune configuration spéciale n'est requise. Le système utilise les endpoints API standard de Next.js.
 
-```tsx
-<StartConversationButton
-	productId="product-123"
-	sellerId="seller-456"
-	sellerName="Nom du vendeur"
-/>
-```
+### Base de données
 
-#### MessageNotifications
+Le système utilise Prisma avec les modèles suivants :
 
-Indicateur de nouveaux messages dans le header :
+- `Conversation` - Conversations entre utilisateurs
+- `Message` - Messages individuels
+- `User` - Utilisateurs du système
 
-```tsx
-<MessageNotifications />
-```
+## Migration depuis WebSocket
 
-#### WebSocketStatus
+### Supprimé
 
-Statut de la connexion WebSocket :
+- `WebSocketContext.tsx`
+- Dépendances `socket.io` et `ably`
+- Gestion des connexions en temps réel
 
-```tsx
-<WebSocketStatus />
-```
+### Remplacé par
 
-## Intégration dans les pages
-
-### Page produit
-
-Ajouter le bouton de contact :
-
-```tsx
-import StartConversationButton from "@/components/messages/StartConversationButton";
-
-// Dans le composant produit
-<StartConversationButton
-	productId={product.id}
-	sellerId={product.ownerId}
-	sellerName={product.owner.name}
-/>;
-```
-
-### Header
-
-Ajouter les notifications de messages :
-
-```tsx
-import MessageNotifications from "@/components/messages/MessageNotifications";
-
-// Dans le header
-<MessageNotifications />;
-```
-
-## Sécurité
-
-- Vérification de l'authentification pour toutes les routes
-- Validation des permissions (utilisateur participant à la conversation)
-- Protection contre l'auto-messagerie
-- Validation des données d'entrée
+- Hook `useMessages` pour la gestion des données
+- Polling automatique pour la mise à jour
+- API REST standard pour toutes les opérations
 
 ## Performance
 
-- Messages chargés à la demande
-- Pagination des conversations
-- Mise en cache des données utilisateur
-- Optimisation des requêtes Prisma
+### Optimisations
 
-## Développement
+- Polling intelligent (5 secondes)
+- Mise à jour locale de l'état
+- Gestion des timeouts et reconnexions
 
-### Ajouter de nouveaux types de messages
+### Monitoring
 
-1. Étendre l'interface `Message` dans `types/conversation.ts`
-2. Mettre à jour le composant `ChatWindow`
-3. Ajouter la logique de traitement dans l'API
+- Indicateurs de chargement et d'envoi
+- Gestion des erreurs avec retry
+- Logs de debug pour le développement
 
-### Ajouter des fonctionnalités WebSocket
+## Support
 
-1. Étendre la classe `WebSocketManager`
-2. Ajouter les événements dans le hook `useWebSocket`
-3. Mettre à jour les composants clients
+Pour toute question ou problème :
 
-## Dépannage
-
-### WebSocket ne se connecte pas
-
-- Vérifier que le serveur WebSocket est démarré
-- Contrôler les logs du serveur
-- Vérifier la configuration CORS
-
-### Messages non reçus en temps réel
-
-- Vérifier la connexion WebSocket
-- Contrôler les logs de l'API
-- Vérifier les permissions de la conversation
+1. Vérifier les logs de la console
+2. Contrôler les réponses de l'API
+3. Vérifier la connectivité réseau
+4. Consulter la documentation des endpoints

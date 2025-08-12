@@ -2,7 +2,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function GET(
+	request: NextRequest,
+	{ params }: { params: Promise<{ conversationId: string }> }
+) {
 	try {
 		const session = await auth.api.getSession({
 			headers: request.headers,
@@ -11,30 +14,18 @@ export async function POST(request: NextRequest) {
 		if (!session?.user?.id) {
 			return NextResponse.json(
 				{ error: "Non autorisé" },
-				{ status: 400 }
+				{ status: 401 }
 			);
 		}
 
-		const user = session.user;
-
-		const {
-			conversationId,
-			content,
-			messageType = "text",
-		} = await request.json();
-
-		if (!conversationId || !content) {
-			return NextResponse.json(
-				{ error: "conversationId et content sont requis" },
-				{ status: 400 }
-			);
-		}
+		const { conversationId } = await params;
+		const userId = session.user.id;
 
 		// Vérifier que la conversation existe et que l'utilisateur y participe
 		const conversation = await prisma.conversation.findFirst({
 			where: {
 				id: conversationId,
-				OR: [{ buyerId: user.id }, { sellerId: user.id }],
+				OR: [{ buyerId: userId }, { sellerId: userId }],
 			},
 		});
 
@@ -45,13 +36,10 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Créer le message
-		const message = await prisma.message.create({
-			data: {
+		// Récupérer les messages de la conversation
+		const messages = await prisma.message.findMany({
+			where: {
 				conversationId,
-				senderId: user.id,
-				content,
-				messageType,
 			},
 			include: {
 				sender: {
@@ -62,23 +50,18 @@ export async function POST(request: NextRequest) {
 						username: true,
 					},
 				},
+				offer: true, // Inclure la relation offer pour les messages de type "offer"
+			},
+			orderBy: {
+				createdAt: "asc",
 			},
 		});
 
-		// Mettre à jour la date de mise à jour de la conversation
-		await prisma.conversation.update({
-			where: { id: conversationId },
-			data: { updatedAt: new Date() },
-		});
-
-		// Le message est maintenant stocké en base de données
-		// L'utilisateur devra rafraîchir ou utiliser un polling pour voir les nouveaux messages
-
 		return NextResponse.json({
-			message,
+			messages,
 		});
 	} catch (error) {
-		console.error("Erreur lors de l'envoi du message:", error);
+		console.error("Erreur lors de la récupération des messages:", error);
 		return NextResponse.json(
 			{ error: "Erreur interne du serveur" },
 			{ status: 500 }

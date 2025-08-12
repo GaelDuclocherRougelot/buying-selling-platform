@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrders } from "@/lib/hooks/useOrders";
+import { toast } from "sonner";
 import BuyerValidateButton from "../payment/BuyerValidateButton";
 import PaymentButton from "../stripe/PaymentButton";
 
@@ -18,7 +19,12 @@ export function OrdersList({
 	type = "all",
 	includeStats = false,
 }: OrdersListProps) {
-	const { orders, isLoading, error } = useOrders(type, includeStats);
+	const { orders, isLoading, error, mutate } = useOrders(type, includeStats);
+
+	const refreshOrders = () => {
+		mutate();
+		toast.success("Commandes mises à jour");
+	};
 
 	const getStatusBadge = (status: string) => {
 		switch (status) {
@@ -179,7 +185,9 @@ export function OrdersList({
 													order.productTitle
 												}
 												amount={order.amount}
-												onValidated={() => {}}
+												onValidated={() => {
+													refreshOrders();
+												}}
 											/>
 										)}
 										{order.status ===

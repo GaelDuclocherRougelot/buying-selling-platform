@@ -121,6 +121,7 @@ export default function ConversationsList({
 
 			{/* Liste des conversations */}
 			<div className="flex-1 overflow-y-auto">
+				<div className="max-h-[calc(100vh-400px)] overflow-y-auto">
 				{filteredConversations.map((conversation) => {
 					const otherUser = getOtherUser(conversation);
 					const isSelected =
@@ -210,7 +211,8 @@ export default function ConversationsList({
 							</div>
 						</div>
 					);
-				})}
+					})}
+				</div>
 			</div>
 		</div>
 	);

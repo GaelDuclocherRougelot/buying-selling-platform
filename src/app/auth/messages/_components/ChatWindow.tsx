@@ -251,16 +251,48 @@ export default function ChatWindow({
 		setMessages([...conversation.messages]);
 	};
 
-	const handleOfferUpdate = () => {
-		// Rafraîchir les messages pour afficher les mises à jour des offres
-		setMessages([...conversation.messages]);
+	const handleOfferUpdate = async () => {
+		console.log(
+			"🔄 Rechargement de la conversation après mise à jour de l'offre"
+		);
+		// Recharger complètement la conversation depuis le serveur
+		try {
+			const response = await fetch(
+				`/api/messages/conversations/${conversation.id}/messages`
+			);
+			if (response.ok) {
+				const data = await response.json();
+				const updatedMessages = data.messages || [];
+				console.log("✅ Messages mis à jour:", updatedMessages.length);
+				setMessages(updatedMessages);
+			}
+		} catch (error) {
+			console.error(
+				"❌ Erreur lors du rechargement de la conversation:",
+				error
+			);
+			// Fallback : rafraîchir localement
+			setMessages([...conversation.messages]);
+		}
 	};
 
 	const getOtherUser = () => {
 		if (currentUserId === conversation.buyerId) {
-			return conversation.seller;
+			return (
+				conversation.seller || {
+					name: "Vendeur",
+					image: null,
+					username: null,
+				}
+			);
 		}
-		return conversation.buyer;
+		return (
+			conversation.buyer || {
+				name: "Acheteur",
+				image: null,
+				username: null,
+			}
+		);
 	};
 
 	const isCurrentUser = (message: Message) => {
@@ -433,6 +465,18 @@ export default function ChatWindow({
 		);
 	};
 
+	// Vérification de sécurité pour s'assurer que la conversation a les propriétés nécessaires
+	if (!conversation || !conversation.buyer || !conversation.seller) {
+		return (
+			<div className="h-full flex items-center justify-center">
+				<div className="text-center text-gray-500">
+					<p>Erreur : Données de conversation invalides</p>
+					<p className="text-sm">Veuillez rafraîchir la page</p>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="h-full flex flex-col">
 			{/* Header de la conversation */}
@@ -472,20 +516,25 @@ export default function ChatWindow({
 							</span>
 						</div>
 						<p className="text-sm text-gray-600">
-							{conversation.product.title}
+							{conversation.product?.title ||
+								"Produit non disponible"}
 						</p>
 					</div>
 					<div className="text-right">
 						<div className="flex flex-col items-end space-y-2">
 							<p className="text-sm font-medium text-gray-900">
-								{conversation.product.price.toFixed(2)} €
+								{conversation.product?.price
+									? `${conversation.product.price.toFixed(2)} €`
+									: "Prix non disponible"}
 							</p>
-							<button
-								onClick={() => setShowOfferForm(true)}
-								className="px-3 py-1 bg-green-500 text-white text-xs rounded-full hover:bg-green-600 transition-colors flex items-center space-x-1"
-							>
-								<span>Faire une offre</span>
-							</button>
+							{conversation.buyerId === currentUserId && conversation.product?.status === "active" && (
+								<button
+									onClick={() => setShowOfferForm(true)}
+									className="px-3 py-1 bg-green-500 text-white text-xs rounded-full hover:bg-green-600 transition-colors flex items-center space-x-1"
+								>
+									<span>Faire une offre</span>
+								</button>
+							)}
 						</div>
 					</div>
 				</div>

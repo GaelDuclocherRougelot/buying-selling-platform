@@ -21,11 +21,14 @@ export default function OfferMessage({
 	const [isResponding, setIsResponding] = useState(false);
 	const [showDetails, setShowDetails] = useState(false);
 
-	if (message.offer === null) {
+	if (!message.offer) {
 		return (
 			<div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
 				<p className="text-sm text-yellow-800">
-					Erreur d&apos;affichage de l&apos;offre
+					Erreur d&apos;affichage de l&apos;offre - Offre non chargée
+				</p>
+				<p className="text-xs text-yellow-700 mt-1">
+					Message type: {message.messageType}
 				</p>
 			</div>
 		);
@@ -163,21 +166,23 @@ export default function OfferMessage({
 
 			{/* PaymentButton quand l'offre est acceptée */}
 			{/* Affiche le bouton de paiement uniquement pour l'acheteur (non-expéditeur) quand l'offre est acceptée */}
-			{message.offer?.status === "accepted" && isCurrentUser && (
-				<div className="mt-3 pt-3 border-t border-gray-100">
-					<div className="text-center">
-						<p className="text-sm text-green-700 mb-3">
-							🎉 Offre acceptée ! Vous pouvez maintenant procéder
-							au paiement.
-						</p>
-						<PaymentButton
-							productId={conversation.product.id}
-							amount={message.offer.amount}
-							productTitle={conversation.product.title}
-						/>
+			{message.offer?.status === "accepted" &&
+				isCurrentUser &&
+				conversation.product?.status === "active" && (
+					<div className="mt-3 pt-3 border-t border-gray-100">
+						<div className="text-center">
+							<p className="text-sm text-green-700 mb-3">
+								🎉 Offre acceptée ! Vous pouvez maintenant
+								procéder au paiement.
+							</p>
+							<PaymentButton
+								productId={conversation.product.id}
+								amount={message.offer.amount}
+								productTitle={conversation.product.title}
+							/>
+						</div>
 					</div>
-				</div>
-			)}
+				)}
 
 			{/* Informations supplémentaires */}
 			<div className="mt-3 pt-3 border-t border-gray-100">

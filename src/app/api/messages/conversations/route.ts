@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
 						title: true,
 						imagesUrl: true,
 						price: true,
+						status: true,
 					},
 				},
 				buyer: {
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest) {
 								username: true,
 							},
 						},
+						offer: true, // Inclure la relation offer pour les messages de type "offer"
 					},
 				},
 			},
@@ -172,6 +174,7 @@ export async function POST(request: NextRequest) {
 							title: true,
 							imagesUrl: true,
 							price: true,
+							status: true,
 						},
 					},
 					buyer: {
