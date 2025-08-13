@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { apiFetch } from "@/lib/api";
 import { SmartTrackingSimulation } from "@/services/smart-tracking-simulation";
 import {
 	AlertCircle,
@@ -125,7 +126,7 @@ export default function ShippingProofForm({
 			const formData = new FormData();
 			formData.append("files", file);
 
-			const response = await fetch("/api/upload/proof-pictures", {
+			const response = await apiFetch("/api/upload/proof-pictures", {
 				method: "POST",
 				body: formData,
 			});
@@ -190,11 +191,8 @@ export default function ShippingProofForm({
 				submittedAt: new Date().toISOString(),
 			};
 
-			const response = await fetch("/api/shipping/proof", {
+			const response = await apiFetch("/api/shipping/proof", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
 				body: JSON.stringify({
 					paymentId,
 					proofType: "complete_proof",

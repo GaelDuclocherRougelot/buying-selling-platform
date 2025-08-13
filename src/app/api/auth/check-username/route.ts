@@ -1,41 +1,52 @@
-import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
-import { getUserByUsername } from "@/services/user";
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { handleApiRoute } from "@/lib/api-error-handler";
+import { prisma } from "@/lib/prisma";
+import { NextRequest } from "next/server";
 
-export async function GET(req: NextRequest) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(req);
-	if (corsPreflightResponse) return corsPreflightResponse;
+/**
+ * @swagger
+ * /api/auth/check-username:
+ *   get:
+ *     summary: Vérifier la disponibilité d'un nom d'utilisateur
+ *     description: Vérifie si un nom d'utilisateur est déjà pris ou disponible
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: query
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nom d'utilisateur à vérifier
+ *     responses:
+ *       200:
+ *         description: Vérification effectuée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 available:
+ *                   type: boolean
+ *                   description: true si le nom d'utilisateur est disponible, false sinon
+ *                   example: true
+ *       400:
+ *         description: Paramètre username manquant
+ *       500:
+ *         description: Erreur interne du serveur
+ */
 
-	const username = req.nextUrl.searchParams.get("username");
+export async function GET(request: NextRequest) {
+	return handleApiRoute(async () => {
+		const { searchParams } = new URL(request.url);
+		const username = searchParams.get("username");
 
-	if (!username) {
-		return corsResponse({ error: "Aucun nom d'utilisateur fourni" }, 400);
-	}
-
-	try {
-		const user = await getUserByUsername(username);
-		if (!user) {
-			const response = NextResponse.json(
-				{ avalaible: true },
-				{
-					status: 200,
-				}
-			);
-			return addCorsHeaders(response);
+		if (!username) {
+			throw new Error("username parameter is required");
 		}
-		const response = NextResponse.json(
-			{ available: false },
-			{
-				status: 200,
-			}
-		);
-		return addCorsHeaders(response);
-	} catch (error) {
-		if (error instanceof z.ZodError) {
-			return corsResponse({ error: error.errors }, 400);
-		}
-		return corsResponse({ error: "Erreur interne" }, 500);
-	}
+
+		const existingUser = await prisma.user.findUnique({
+			where: { username },
+		});
+
+		return { available: !existingUser };
+	});
 }

@@ -11,6 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { apiFetch } from "@/lib/api";
 import { Filter, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -51,7 +52,9 @@ export function SearchFilters({
 	useEffect(() => {
 		const fetchCategories = async () => {
 			try {
-				const response = await fetch("/api/categories");
+				const response = await apiFetch("/api/categories", {
+					method: "GET",
+				});
 				if (response.ok) {
 					const data = await response.json();
 					setCategories(data);

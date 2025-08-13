@@ -1,33 +1,44 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
+import { useErrorHandler } from "@/lib/hooks/useErrorHandler";
 import { cn } from "@/lib/utils";
 import { Heart } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "./button";
 
 interface FavoriteButtonProps {
 	productId: string;
+	variant?:
+		| "default"
+		| "destructive"
+		| "outline"
+		| "secondary"
+		| "ghost"
+		| "link";
+	size?: "default" | "sm" | "lg" | "icon";
 	className?: string;
-	size?: "sm" | "lg" | "default" | "icon";
-	variant?: "default" | "outline" | "ghost";
 }
 
 export default function FavoriteButton({
 	productId,
-	className,
+	variant = "outline",
 	size = "default",
-	variant = "ghost",
+	className,
 }: FavoriteButtonProps) {
 	const { data: session } = useSession();
 	const [isFavorite, setIsFavorite] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const { handleError, handleApiError } = useErrorHandler();
 
+	// Check if product is in favorites
 	const checkFavoriteStatus = useCallback(async () => {
 		try {
-			const response = await apiFetch("/api/favorites");
+			const response = await apiFetch(
+				`/api/favorites?userId=${session?.user?.id}`
+			);
 			if (response.ok) {
 				const favorites = await response.json();
 				const isInFavorites = favorites.some(
@@ -37,9 +48,13 @@ export default function FavoriteButton({
 				setIsFavorite(isInFavorites);
 			}
 		} catch (error) {
-			console.error("Error checking favorite status:", error);
+			handleError(error, {
+				fallbackMessage: "Erreur lors de la vérification des favoris",
+				showToast: false,
+				logToConsole: true,
+			});
 		}
-	}, [productId]);
+	}, [productId, handleError, session?.user?.id]);
 
 	// Check if product is in favorites on mount
 	useEffect(() => {
@@ -50,7 +65,10 @@ export default function FavoriteButton({
 
 	const toggleFavorite = async () => {
 		if (!session?.user?.id) {
-			toast.error("Veuillez vous connecter pour ajouter des favoris");
+			handleError("Veuillez vous connecter pour ajouter des favoris", {
+				showToast: true,
+				logToConsole: true,
+			});
 			return;
 		}
 
@@ -67,17 +85,23 @@ export default function FavoriteButton({
 					setIsFavorite(false);
 					toast.success("Produit retiré des favoris");
 				} else {
-					toast.error("Erreur lors de la suppression du favori");
+					handleApiError(
+						response,
+						"Erreur lors de la suppression du favori"
+					);
 				}
 			} else {
 				// Add to favorites
-				const response = await apiFetch("/api/favorites", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ productId }),
-				});
+				const response = await apiFetch(
+					`/api/favorites`,
+					{
+						method: "POST",
+						body: JSON.stringify({
+							productId,
+							userId: session?.user?.id,
+						}),
+					}
+				);
 
 				if (response.ok) {
 					setIsFavorite(true);
@@ -90,13 +114,19 @@ export default function FavoriteButton({
 					) {
 						setIsFavorite(true);
 					} else {
-						toast.error("Erreur lors de l'ajout aux favoris");
+						handleApiError(
+							response,
+							"Erreur lors de l'ajout aux favoris"
+						);
 					}
 				}
 			}
 		} catch (error) {
-			console.error("Error toggling favorite:", error);
-			toast.error("Erreur lors de la gestion des favoris");
+			handleError(error, {
+				fallbackMessage: "Erreur lors de la gestion des favoris",
+				showToast: true,
+				logToConsole: true,
+			});
 		} finally {
 			setIsLoading(false);
 		}
@@ -127,8 +157,7 @@ export default function FavoriteButton({
 			<Heart
 				className={cn(
 					iconSizes[size],
-					"transition-all duration-200",
-					isFavorite && "fill-current"
+					isFavorite ? "fill-current" : "fill-none"
 				)}
 			/>
 		</Button>

@@ -16,6 +16,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import BuyerValidateButton from "./BuyerValidateButton";
 import BuyerValidation from "./BuyerValidation";
+import { apiFetch } from "@/lib/api";
 
 interface Payment {
 	id: string;
@@ -130,7 +131,9 @@ export default function PaymentStatus({ paymentId }: PaymentStatusProps) {
 		setError(null);
 
 		try {
-			const response = await fetch(`/api/payments/${paymentId}`);
+			const response = await apiFetch(`/api/payments/${paymentId}`, {
+				method: "GET",
+			});
 
 			if (response.ok) {
 				const data = await response.json();
@@ -188,9 +191,8 @@ export default function PaymentStatus({ paymentId }: PaymentStatusProps) {
 		setLoading(true);
 
 		try {
-			const response = await fetch("/api/shipping/tracking", {
+			const response = await apiFetch("/api/shipping/tracking", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					paymentId: payment.id,
 					trackingNumber:

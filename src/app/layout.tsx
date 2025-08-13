@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import CookieBanner from "@/components/ui/cookie-banner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -103,9 +104,11 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				<Toaster />
-				{children}
-				<CookieBanner />
+				<ErrorBoundary>
+					<Toaster />
+					{children}
+					<CookieBanner />
+				</ErrorBoundary>
 			</body>
 		</html>
 	);

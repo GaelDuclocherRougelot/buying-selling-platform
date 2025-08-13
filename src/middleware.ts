@@ -2,14 +2,36 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Middleware function to protect routes that require authentication.
- * It checks for a session cookie and redirects to the login page if not found.
- * For admin routes, it also checks if the user has admin role.
- *
- * @param {NextRequest} request - The incoming request object
- * @returns {NextResponse} The response object, either redirecting to login or continuing the request
+ * CORS configuration
+ */
+const corsHeaders = {
+	"Access-Control-Allow-Origin": "*", // Ou spécifiez vos domaines autorisés
+	"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+	"Access-Control-Allow-Headers":
+		"Content-Type, Authorization, X-Requested-With, Accept",
+	"Access-Control-Max-Age": "86400",
+	"Access-Control-Allow-Credentials": "true",
+};
+
+/**
+ * Middleware function to handle CORS globally and protect routes that require authentication.
  */
 export async function middleware(request: NextRequest) {
+	// Gestion globale du CORS
+	if (request.method === "OPTIONS") {
+		return new NextResponse(null, {
+			status: 200,
+			headers: corsHeaders,
+		});
+	}
+
+	// Ajouter les en-têtes CORS à toutes les réponses
+	const response = NextResponse.next();
+	Object.entries(corsHeaders).forEach(([key, value]) => {
+		response.headers.set(key, value);
+	});
+
+	// Gestion de l'authentification pour les routes protégées
 	const sessionCookie = getSessionCookie(request);
 
 	if (!sessionCookie) {

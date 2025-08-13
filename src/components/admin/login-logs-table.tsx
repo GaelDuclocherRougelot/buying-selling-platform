@@ -19,6 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { apiFetch } from "@/lib/api";
 import type { LoginAction, LoginLog } from "@/types/login-log";
 import { useEffect, useState } from "react";
 
@@ -48,7 +49,12 @@ export function LoginLogsTable({ initialLogs = [] }: LoginLogsTableProps) {
 				if (filters.limit) params.append("limit", filters.limit);
 				if (filters.offset) params.append("offset", filters.offset);
 
-				const response = await fetch(`/api/admin/login-logs?${params}`);
+				const response = await apiFetch(
+					`/api/admin/login-logs?${params}`,
+					{
+						method: "GET",
+					}
+				);
 				if (response.ok) {
 					const data = await response.json();
 					setLogs(data.logs);

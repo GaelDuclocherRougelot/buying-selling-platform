@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { Conversation, Message } from "@/types/conversation";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -172,7 +173,7 @@ export default function ChatWindow({
 				formData.append("files", file);
 			});
 
-			const response = await fetch("/api/upload/messages", {
+			const response = await apiFetch("/api/upload/messages", {
 				method: "POST",
 				body: formData,
 			});
@@ -210,7 +211,7 @@ export default function ChatWindow({
 				formData.append("files", file);
 			});
 
-			const response = await fetch("/api/upload/messages", {
+			const response = await apiFetch("/api/upload/messages", {
 				method: "POST",
 				body: formData,
 			});
@@ -257,7 +258,7 @@ export default function ChatWindow({
 		);
 		// Recharger complètement la conversation depuis le serveur
 		try {
-			const response = await fetch(
+			const response = await apiFetch(
 				`/api/messages/conversations/${conversation.id}/messages`
 			);
 			if (response.ok) {

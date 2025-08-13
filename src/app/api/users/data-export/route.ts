@@ -1,18 +1,20 @@
+import {
+	createAuthErrorResponse,
+	createNotFoundErrorResponse,
+	handleApiRoute,
+} from "@/lib/api-error-handler";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-	try {
+	return handleApiRoute(async () => {
 		const session = await auth.api.getSession({
 			headers: request.headers,
 		});
 
 		if (!session?.user) {
-			return NextResponse.json(
-				{ error: "Non autorisé" },
-				{ status: 401 }
-			);
+			return createAuthErrorResponse("Non autorisé");
 		}
 
 		// Récupérer toutes les données de l'utilisateur
@@ -70,10 +72,7 @@ export async function GET(request: NextRequest) {
 		});
 
 		if (!userData) {
-			return NextResponse.json(
-				{ error: "Utilisateur non trouvé" },
-				{ status: 404 }
-			);
+			return createNotFoundErrorResponse("Utilisateur non trouvé");
 		}
 
 		// Préparer les données pour l'export
@@ -98,17 +97,8 @@ export async function GET(request: NextRequest) {
 		};
 
 		// Retourner les données en JSON
-		return NextResponse.json(exportData, {
-			headers: {
-				"Content-Type": "application/json",
-				"Content-Disposition": `attachment; filename="user-data-${session.user.id}-${new Date().toISOString().split("T")[0]}.json"`,
-			},
+		return NextResponse.json({
+			data: exportData,
 		});
-	} catch (error) {
-		console.error("Erreur lors de l'export des données:", error);
-		return NextResponse.json(
-			{ error: "Erreur lors de l'export des données" },
-			{ status: 500 }
-		);
-	}
+	});
 }

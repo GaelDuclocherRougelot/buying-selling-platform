@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useErrorHandler } from "./useErrorHandler";
 
 interface CacheEntry<T> {
 	data: T;
@@ -60,6 +61,7 @@ export function useCache<T>(
 	const [data, setData] = useState<T | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
+	const { handleError } = useErrorHandler();
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -79,11 +81,17 @@ export function useCache<T>(
 			clientCache.set(key, result, ttl);
 			setData(result);
 		} catch (err) {
-			setError(err as Error);
+			const error = err as Error;
+			setError(error);
+			handleError(error, {
+				fallbackMessage: "Erreur lors de la récupération des données",
+				showToast: false,
+				logToConsole: true,
+			});
 		} finally {
 			setLoading(false);
 		}
-	}, [key, fetchFunction, ttl]);
+	}, [key, fetchFunction, ttl, handleError]);
 
 	useEffect(() => {
 		fetchData();

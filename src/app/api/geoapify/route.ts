@@ -1,39 +1,29 @@
-import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
-import { NextRequest, NextResponse } from "next/server";
+import { handleApiRoute } from "@/lib/api-error-handler";
+import { NextRequest } from "next/server";
 
-export async function GET(req: NextRequest) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(req);
-	if (corsPreflightResponse) return corsPreflightResponse;
+export async function GET(request: NextRequest) {
+	return handleApiRoute(async () => {
+		const { searchParams } = new URL(request.url);
+		const text = searchParams.get("text");
 
-	const { searchParams } = new URL(req.url);
-	const text = searchParams.get("text");
-
-	if (!text) {
-		return corsResponse({ error: "Missing 'text' query parameter" }, 400);
-	}
-
-	const apiKey = process.env.GEOAPIFY_API_KEY;
-	if (!apiKey) {
-		return corsResponse({ error: "Geoapify API key not configured" }, 500);
-	}
-
-	const geoapifyUrl = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
-		text
-	)}&apiKey=${apiKey}&lang=fr`;
-
-	try {
-		const geoapifyRes = await fetch(geoapifyUrl);
-		if (!geoapifyRes.ok) {
-			return corsResponse(
-				{ error: "Geoapify API error" },
-				geoapifyRes.status
-			);
+		if (!text) {
+			throw new Error("text parameter is required");
 		}
-		const data = await geoapifyRes.json();
-		const response = NextResponse.json(data);
-		return addCorsHeaders(response);
-	} catch {
-		return corsResponse({ error: "Failed to fetch from Geoapify" }, 500);
-	}
+
+		const apiKey = process.env.GEOAPIFY_API_KEY;
+		if (!apiKey) {
+			throw new Error("GEOAPIFY_API_KEY not configured");
+		}
+
+		const response = await fetch(
+			`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text)}&filter=countrycode:fr&limit=10&apiKey=${apiKey}`
+		);
+
+		if (!response.ok) {
+			throw new Error(`Geoapify API error: ${response.status}`);
+		}
+
+		const data = await response.json();
+		return data;
+	});
 }

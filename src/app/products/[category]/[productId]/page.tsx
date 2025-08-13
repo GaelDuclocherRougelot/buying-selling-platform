@@ -6,7 +6,8 @@ import VerifiedUser from "@/components/ui/verified-user";
 import ProductActions from "@/features/product/ProductActions";
 import ProductImageCarousel from "@/features/product/ProductImageCarousel";
 import ProductNavBar from "@/features/product/ProductNavBar";
-import { createApiURL } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
+
 import { getUser } from "@/lib/auth-session";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
@@ -20,14 +21,9 @@ export async function generateMetadata({
 	const resolvedParams = await params;
 
 	try {
-		const productResponse = await fetch(
-			createApiURL(`/api/products/${resolvedParams.productId}`),
-			{
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			}
+		const productResponse = await apiFetch(
+			`/api/products/${resolvedParams.productId}`,
+			{ method: "GET" }
 		);
 
 		if (!productResponse.ok) {
@@ -108,19 +104,12 @@ export default async function ProductPage(props: {
 	const currentUser = await getUser();
 
 	// Construct the full URL for the API request
-	const productResponse = await fetch(
-		createApiURL(`/api/products/${params.productId}`),
-		{
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-			},
-		}
+	const productResponse = await apiFetch(
+		`/api/products/${params.productId}`,
+		{ method: "GET" }
 	);
 
 	const product = await productResponse.json();
-
-	console.log(product);
 
 	// Vérifier si l'utilisateur connecté est le propriétaire de l'annonce
 	const isOwner = currentUser?.id === product.ownerId;

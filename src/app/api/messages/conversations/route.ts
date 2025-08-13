@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Message } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -75,7 +76,8 @@ export async function GET(request: NextRequest) {
 		const processedConversations = conversations.map((conversation) => {
 			const lastMessage = conversation.messages[0];
 			const unreadCount = conversation.messages.filter(
-				(message) => !message.isRead && message.senderId !== userId
+				(message: Message) =>
+					!message.isRead && message.senderId !== userId
 			).length;
 
 			return {

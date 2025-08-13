@@ -12,6 +12,7 @@ import { apiFetch } from "@/lib/api";
 import { signOut } from "@/lib/auth-client";
 import { User } from "better-auth";
 import {
+	AlertTriangle,
 	ArrowLeft,
 	Euro,
 	Loader2Icon,
@@ -33,20 +34,21 @@ interface AdminDashboardProps {
 }
 
 interface AdminStats {
-	productCount: number;
-	categoryCount: number;
+	totalProducts: number;
+	totalCategories: number;
 	salesCount: number;
 	totalRevenue: number;
+	totalUsers: number;
 }
 
 export default function AdminDashboard({ user }: AdminDashboardProps) {
 	const router = useRouter();
-	const [usersCount, setUsersCount] = useState<number>(0);
 	const [stats, setStats] = useState<AdminStats>({
-		productCount: 0,
-		categoryCount: 0,
+		totalProducts: 0,
+		totalCategories: 0,
 		salesCount: 0,
 		totalRevenue: 0,
+		totalUsers: 0,
 	});
 	const [loading, setLoading] = useState(true);
 	const handleSignOut = async () => {
@@ -56,25 +58,8 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 	};
 
 	useEffect(() => {
-		fetchUsers();
 		fetchStats();
 	}, []);
-
-	const fetchUsers = async () => {
-		try {
-			const response = await apiFetch("/api/admin/users/count");
-			if (response.ok) {
-				const data = await response.json();
-				setUsersCount(data.users);
-			} else {
-				toast.error("Erreur lors du chargement des utilisateurs");
-			}
-			setLoading(false);
-		} catch {
-			toast.error("Erreur lors du chargement des utilisateurs");
-			setLoading(false);
-		}
-	};
 
 	const fetchStats = async () => {
 		try {
@@ -145,7 +130,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 								{loading ? (
 									<Loader2Icon className="h-4 w-4 animate-spin" />
 								) : (
-									usersCount
+									stats.totalUsers
 								)}
 							</div>
 							<p className="text-xs text-muted-foreground">
@@ -166,7 +151,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 								{loading ? (
 									<Loader2Icon className="h-4 w-4 animate-spin" />
 								) : (
-									stats.productCount
+									stats.totalProducts
 								)}
 							</div>
 							<p className="text-xs text-muted-foreground">
@@ -187,7 +172,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 								{loading ? (
 									<Loader2Icon className="h-4 w-4 animate-spin" />
 								) : (
-									stats.categoryCount
+									stats.totalCategories
 								)}
 							</div>
 							<p className="text-xs text-muted-foreground">
@@ -336,6 +321,23 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 											Validez les preuves
 											d&apos;expédition et débloquez les
 											paiements
+										</p>
+									</CardContent>
+								</Card>
+							</Link>
+
+							<Link href="/admin/error-logs">
+								<Card className="hover:shadow-md transition-shadow cursor-pointer">
+									<CardHeader>
+										<CardTitle className="flex items-center space-x-2">
+											<AlertTriangle size={20} />
+											<span>Logs d&apos;erreur</span>
+										</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<p className="text-sm text-muted-foreground">
+											Surveillez et gérez les erreurs de
+											l&apos;application
 										</p>
 									</CardContent>
 								</Card>

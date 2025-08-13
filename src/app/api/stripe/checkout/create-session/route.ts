@@ -8,6 +8,62 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * @swagger
+ * /api/stripe/checkout/create-session:
+ *   post:
+ *     summary: Créer une session de paiement Stripe
+ *     description: Crée une session de paiement Stripe pour l'achat d'un produit
+ *     tags: [Payments]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *               - amount
+ *               - productTitle
+ *             properties:
+ *               productId:
+ *                 type: string
+ *                 description: ID du produit à acheter
+ *                 example: "product_123"
+ *               amount:
+ *                 type: number
+ *                 description: Montant total du paiement en euros
+ *                 example: 59.99
+ *               productTitle:
+ *                 type: string
+ *                 description: Titre du produit pour la description du paiement
+ *                 example: "Chaise design"
+ *     responses:
+ *       200:
+ *         description: Session de paiement créée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sessionId:
+ *                   type: string
+ *                   description: ID de la session Stripe
+ *                 url:
+ *                   type: string
+ *                   description: URL de la page de paiement Stripe
+ *       400:
+ *         description: Produit déjà vendu, paiement en cours, ou vendeur non configuré
+ *       401:
+ *         description: Non autorisé
+ *       404:
+ *         description: Produit non trouvé
+ *       500:
+ *         description: Erreur interne du serveur
+ */
+
 export async function POST(request: NextRequest) {
 	try {
 		const session = await auth.api.getSession({

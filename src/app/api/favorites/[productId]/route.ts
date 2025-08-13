@@ -1,68 +1,40 @@
-import { auth } from "@/lib/auth";
-import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
-import { removeFromFavorites } from "@/services/favorites";
-import { NextRequest, NextResponse } from "next/server";
+import { handleApiRoute } from "@/lib/api-error-handler";
+import { prisma } from "@/lib/prisma";
+import { NextRequest } from "next/server";
 
-/**
- * @swagger
- * /api/favorites/{productId}:
- *   delete:
- *     summary: Remove a product from favorites
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: productId
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the product to remove from favorites
- *     responses:
- *       200:
- *         description: Product removed from favorites
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Favorite not found
- *       500:
- *         description: Internal Server Error
- */
 export async function DELETE(
 	request: NextRequest,
 	{ params }: { params: Promise<{ productId: string }> }
 ) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(request);
-	if (corsPreflightResponse) return corsPreflightResponse;
+	return handleApiRoute(async () => {
+		const { searchParams } = new URL(request.url);
+		const userId = searchParams.get("userId");
 
-	try {
-		const session = await auth.api.getSession({
-			headers: request.headers,
-		});
-
-		if (!session?.user?.id) {
-			return corsResponse({ error: "Unauthorized" }, 401);
+		if (!userId) {
+			throw new Error("userId parameter is required");
 		}
 
 		const { productId } = await params;
 
-		if (!productId) {
-			return corsResponse({ error: "Product ID is required" }, 400);
+		// Vérifier si le favori existe
+		const favorite = await prisma.favorite.findFirst({
+			where: {
+				userId,
+				productId,
+			},
+		});
+
+		if (!favorite) {
+			throw new Error("Favorite not found");
 		}
 
-		await removeFromFavorites(session.user.id, productId);
-		return addCorsHeaders(
-			NextResponse.json({ message: "Favorite removed" }, { status: 200 })
-		);
-	} catch (error) {
-		console.error("Error removing favorite:", error);
+		// Supprimer le favori
+		await prisma.favorite.delete({
+			where: {
+				id: favorite.id,
+			},
+		});
 
-		if (error instanceof Error) {
-			if (error.message === "Favorite not found") {
-				return corsResponse({ error: "Favorite not found" }, 404);
-			}
-		}
-
-		return corsResponse({ error: "Internal Server Error" }, 500);
-	}
+		return { message: "Favorite removed successfully" };
+	});
 }

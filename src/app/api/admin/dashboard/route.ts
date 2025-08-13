@@ -1,18 +1,35 @@
-import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
-import { getAdminStats } from "@/services/special";
-import { NextRequest, NextResponse } from "next/server";
+import { handleApiRoute } from "@/lib/api-error-handler";
+import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(request);
-	if (corsPreflightResponse) return corsPreflightResponse;
+export async function GET() {
+	return handleApiRoute(async () => {
+		// Récupérer les statistiques du dashboard
+		const [totalUsers, totalProducts, totalCategories, totalRevenue] =
+			await Promise.all([
+				prisma.user.count({ where: { role: "user" } }),
+				prisma.product.count({ where: { status: "active" } }),
+				prisma.category.count(),
+				prisma.payment.aggregate({
+					where: {
+						status: "succeeded",
+					},
+					_count: {
+						id: true,
+					},
+					_sum: {
+						applicationFeeAmount: true,
+					},
+				}),
+			]);
+			const dashboardStats = {
+				totalUsers,
+				totalProducts,
+				totalCategories,
+				totalRevenue: totalRevenue._sum.applicationFeeAmount || 0,
+				salesCount: totalRevenue._count.id || 0,
+			};
+			console.log(dashboardStats);
 
-	try {
-		const stats = await getAdminStats();
-		const response = NextResponse.json(stats, { status: 200 });
-		return addCorsHeaders(response);
-	} catch (error) {
-		console.error("Error fetching admin stats:", error);
-		return corsResponse({ error: "Failed to fetch admin stats" }, 500);
-	}
+		return dashboardStats;
+	});
 }

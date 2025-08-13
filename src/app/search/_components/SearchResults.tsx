@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ProductCard from "@/features/product/ProductCard";
+import { apiFetch } from "@/lib/api";
 import { ProductWithCategory } from "@/types/product";
 import { AlertCircle, Loader2, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -72,7 +73,9 @@ export function SearchResults({
 
 			try {
 				const url = buildSearchUrl(page);
-				const response = await fetch(url);
+				const response = await apiFetch(url, {
+					method: "GET",
+				});
 
 				if (!response.ok) {
 					throw new Error("Erreur lors de la recherche");

@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiFetch } from "@/lib/api";
 import {
 	AlertTriangle,
 	CheckCircle,
@@ -50,8 +51,11 @@ export default function ProofVerification({
 		setError(null);
 
 		try {
-			const response = await fetch(
-				`/api/shipping/proof?paymentId=${paymentId}`
+			const response = await apiFetch(
+				`/api/shipping/proof?paymentId=${paymentId}`,
+				{
+					method: "GET",
+				}
 			);
 
 			if (response.ok) {
@@ -86,7 +90,7 @@ export default function ProofVerification({
 		setLoading(true);
 
 		try {
-			const response = await fetch(
+			const response = await apiFetch(
 				`/api/admin/shipping-proofs/${proof?.id}/verify`,
 				{
 					method: "POST",

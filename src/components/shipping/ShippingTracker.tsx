@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { apiFetch } from "@/lib/api";
 import {
 	AlertCircle,
 	CheckCircle,
@@ -54,9 +55,8 @@ export default function ShippingTracker({
 		setError(null);
 
 		try {
-			const response = await fetch("/api/shipping/tracking", {
+			const response = await apiFetch("/api/shipping/tracking", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					paymentId,
 					trackingNumber: trackingNum,

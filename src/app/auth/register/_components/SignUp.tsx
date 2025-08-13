@@ -20,6 +20,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import profile_default from "../../../../../public/images/profile_default.webp";
+import { apiFetch } from "@/lib/api";
 
 type FormValues = {
 	firstName: string;
@@ -84,7 +85,9 @@ export default function SignUp(): JSX.Element {
 			imageFile = data.image[0];
 		} else {
 			// Convert the default image (profile_default) to a File object
-			const response = await fetch(profile_default.src);
+			const response = await apiFetch(profile_default.src, {
+				method: "GET",
+			});
 			const blob = await response.blob();
 			imageFile = new File([blob], "profile_default.webp", {
 				type: blob.type,

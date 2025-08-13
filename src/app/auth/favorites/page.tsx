@@ -6,7 +6,7 @@ import { useSession } from "@/lib/auth-client";
 import { Eye, Heart, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface Favorite {
@@ -37,15 +37,12 @@ export default function FavoritesPage() {
 	const [favorites, setFavorites] = useState<Favorite[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		if (session?.user?.id) {
-			fetchFavorites();
-		}
-	}, [session?.user?.id]);
-
-	const fetchFavorites = async () => {
+	const fetchFavorites = useCallback(async () => {
 		try {
-			const response = await apiFetch("/api/favorites");
+			const response = await apiFetch(
+				`/api/favorites?userId=${session?.user?.id}`,
+				{ method: "GET" }
+			);
 			if (response.ok) {
 				const data = await response.json();
 				setFavorites(data);
@@ -59,7 +56,14 @@ export default function FavoritesPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [session?.user?.id]);
+
+	useEffect(() => {
+		if (session?.user?.id) {
+			fetchFavorites();
+		}
+	}, [session?.user?.id, fetchFavorites]);
+
 
 	const removeFavorite = async (productId: string) => {
 		try {

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 
 interface LoginStats {
@@ -33,8 +34,11 @@ export function LoginStats({ initialStats }: LoginStatsProps) {
 				if (filters.userId) params.append("userId", filters.userId);
 				if (filters.days) params.append("days", filters.days);
 
-				const response = await fetch(
-					`/api/admin/login-logs/stats?${params}`
+				const response = await apiFetch(
+					`/api/admin/login-logs/stats?${params}`,
+					{
+						method: "GET",
+					}
 				);
 				if (response.ok) {
 					const data = await response.json();

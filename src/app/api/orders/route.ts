@@ -7,6 +7,52 @@ import {
 import { Order } from "@/types/order";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     summary: Récupérer les commandes de l'utilisateur
+ *     description: Récupère les commandes de l'utilisateur connecté (acheteur et/ou vendeur)
+ *     tags: [Orders]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [buyer, seller, all]
+ *         description: Type de commandes à récupérer (acheteur, vendeur, ou les deux)
+ *       - in: query
+ *         name: stats
+ *         schema:
+ *           type: boolean
+ *         description: Inclure les statistiques des commandes
+ *     responses:
+ *       200:
+ *         description: Commandes récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 buyerOrders:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Order'
+ *                 sellerOrders:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Order'
+ *                 stats:
+ *                   type: object
+ *                   description: Statistiques des commandes
+ *       401:
+ *         description: Non autorisé - utilisateur non connecté
+ *       500:
+ *         description: Erreur interne du serveur
+ */
+
 export async function GET(request: NextRequest) {
 	try {
 		const user = await getUser();

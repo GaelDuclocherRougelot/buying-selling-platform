@@ -176,7 +176,7 @@ const ProfilePage = async () => {
 										bancaire, complétez la configuration de
 										votre compte Stripe.
 									</p>
-									<ConnectAccountButton mode="onboard" />
+									<ConnectAccountButton mode="onboarding" />
 								</div>
 							) : (
 								<div className="space-y-3">
@@ -188,7 +188,7 @@ const ProfilePage = async () => {
 										Complétez votre profil Stripe pour
 										activer votre compte vendeur.
 									</p>
-									<ConnectAccountButton mode="onboard" />
+									<ConnectAccountButton mode="onboarding" />
 								</div>
 							)}
 						</div>

@@ -9,12 +9,14 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
+import { useErrorHandler } from "@/lib/hooks/useErrorHandler";
 import { AlertTriangle, Download, Eye } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function DataRightsManager() {
 	const [loading, setLoading] = useState(false);
+	const { handleError, handleApiError } = useErrorHandler();
 
 	const handleDataExport = async () => {
 		setLoading(true);
@@ -37,10 +39,17 @@ export default function DataRightsManager() {
 
 				toast.success("Vos données ont été exportées avec succès");
 			} else {
-				toast.error("Erreur lors de l'export de vos données");
+				handleApiError(
+					response,
+					"Erreur lors de l'export de vos données"
+				);
 			}
-		} catch {
-			toast.error("Erreur lors de l'export de vos données");
+		} catch (error) {
+			handleError(error, {
+				fallbackMessage: "Erreur lors de l'export de vos données",
+				showToast: true,
+				logToConsole: true,
+			});
 		} finally {
 			setLoading(false);
 		}

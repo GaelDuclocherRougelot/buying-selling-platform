@@ -3,11 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
+import { useErrorHandler } from "@/lib/hooks/useErrorHandler";
 import { useState } from "react";
 import { toast } from "sonner";
 
 interface ConnectAccountButtonProps {
-	mode?: "create" | "onboard";
+	mode?: "create" | "onboarding";
 	className?: string;
 }
 
@@ -17,10 +18,14 @@ export default function ConnectAccountButton({
 }: ConnectAccountButtonProps) {
 	const { data: session } = useSession();
 	const [loading, setLoading] = useState(false);
+	const { handleError, handleApiError } = useErrorHandler();
 
 	const handleConnectAccount = async () => {
 		if (!session?.user) {
-			toast.error("Vous devez être connecté");
+			handleError("Vous devez être connecté", {
+				showToast: true,
+				logToConsole: true,
+			});
 			return;
 		}
 
@@ -40,9 +45,11 @@ export default function ConnectAccountButton({
 				if (!createResponse.ok) {
 					// Gérer l'erreur de profil plateforme
 					if (createData.error === "PLATFORM_PROFILE_REQUIRED") {
-						toast.error("Configuration requise", {
-							description:
+						handleError("Configuration requise", {
+							fallbackMessage:
 								"Le profil de plateforme Stripe doit être configuré. Vérifiez la console pour les instructions.",
+							showToast: true,
+							logToConsole: true,
 						});
 
 						// Afficher les instructions dans la console
@@ -61,10 +68,12 @@ export default function ConnectAccountButton({
 
 					// Gérer les erreurs Stripe
 					if (createData.error === "STRIPE_ERROR") {
-						toast.error("Erreur Stripe", {
-							description:
+						handleError("Erreur Stripe", {
+							fallbackMessage:
 								createData.message ||
 								"Erreur lors de la création du compte Stripe",
+							showToast: true,
+							logToConsole: true,
 						});
 						return;
 					}
@@ -72,8 +81,11 @@ export default function ConnectAccountButton({
 					if (
 						createData.error !== "User already has a Stripe account"
 					) {
-						toast.error("Erreur", {
-							description: createData.error || "Erreur inconnue",
+						handleError("Erreur", {
+							fallbackMessage:
+								createData.error || "Erreur inconnue",
+							showToast: true,
+							logToConsole: true,
 						});
 						return;
 					}
@@ -90,9 +102,11 @@ export default function ConnectAccountButton({
 					);
 
 					if (!linkResponse.ok) {
-						const linkError = await linkResponse.json();
-						console.error("Link creation error:", linkError);
-						throw new Error("Failed to create account link");
+						handleApiError(
+							linkResponse,
+							"Erreur lors de la création du lien de compte"
+						);
+						return;
 					}
 
 					const { url } = await linkResponse.json();
@@ -112,32 +126,25 @@ export default function ConnectAccountButton({
 				);
 
 				if (!linkResponse.ok) {
-					const linkError = await linkResponse.json();
-					console.error("Link creation error:", linkError);
-					throw new Error("Failed to create account link");
+					handleApiError(
+						linkResponse,
+						"Erreur lors de la création du lien de compte"
+					);
+					return;
 				}
 
 				const { url } = await linkResponse.json();
 				window.location.href = url;
 			}
 		} catch (error) {
-			console.error("Error connecting account:", error);
-			toast.error("Erreur lors de la connexion du compte", {
-				description:
-					error instanceof Error ? error.message : "Erreur inconnue",
+			handleError(error, {
+				fallbackMessage: "Erreur lors de la connexion du compte",
+				showToast: true,
+				logToConsole: true,
 			});
 		} finally {
 			setLoading(false);
 		}
-	};
-
-	const getButtonText = () => {
-		if (loading) {
-			return mode === "create" ? "Création..." : "Redirection...";
-		}
-		return mode === "create"
-			? "Créer un compte Stripe"
-			: "Compléter la configuration";
 	};
 
 	return (
@@ -146,7 +153,11 @@ export default function ConnectAccountButton({
 			disabled={loading}
 			className={className}
 		>
-			{getButtonText()}
+			{loading
+				? "Traitement..."
+				: mode === "create"
+					? "Créer un compte vendeur"
+					: "Compléter le profil"}
 		</Button>
 	);
 }

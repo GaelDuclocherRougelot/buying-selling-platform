@@ -4,6 +4,7 @@ import StartConversationButton from "@/components/messages/StartConversationButt
 import PaymentButton from "@/components/stripe/PaymentButton";
 import Heart from "@/components/svg/Heart";
 import { Button } from "@/components/ui/button";
+import FavoriteButton from "@/components/ui/FavoriteButton";
 import Link from "next/link";
 
 interface ProductActionsProps {
@@ -69,9 +70,11 @@ export default function ProductActions({
 				amount={price}
 				productTitle={productTitle}
 			/>
-			<Button>
-				<Heart />
-			</Button>
+			<FavoriteButton
+				productId={productId}
+				size="sm"
+				className="cursor-pointer"
+			/>
 		</div>
 	);
 }

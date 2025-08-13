@@ -1,13 +1,29 @@
-import { addCorsHeaders, handleCors } from "@/lib/cors";
+import { handleApiRoute } from "@/lib/api-error-handler";
 import { getAllCategories } from "@/services/category";
-import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(request);
-	if (corsPreflightResponse) return corsPreflightResponse;
+/**
+ * @swagger
+ * /api/categories:
+ *   get:
+ *     summary: Récupérer toutes les catégories
+ *     description: Récupère la liste complète des catégories disponibles
+ *     tags: [Categories]
+ *     responses:
+ *       200:
+ *         description: Liste des catégories récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Category'
+ *       500:
+ *         description: Erreur interne du serveur
+ */
 
-	const categories = await getAllCategories();
-	const response = NextResponse.json(categories, { status: 200 });
-	return addCorsHeaders(response);
+export async function GET() {
+	return handleApiRoute(async () => {
+		const categories = await getAllCategories();
+		return categories;
+	});
 }

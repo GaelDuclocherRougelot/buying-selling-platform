@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useErrorHandler } from "./useErrorHandler";
 
 interface CommissionInfo {
 	currentSalesCount: number;
@@ -24,8 +25,9 @@ export function useCommissionInfo() {
 	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const { handleError, handleApiError } = useErrorHandler();
 
-	const fetchCommissionInfo = async () => {
+	const fetchCommissionInfo = useCallback(async () => {
 		try {
 			setLoading(true);
 			setError(null);
@@ -33,24 +35,33 @@ export function useCommissionInfo() {
 			const response = await fetch("/api/platform/commission-info");
 
 			if (!response.ok) {
-				throw new Error(
+				handleApiError(
+					response,
 					"Erreur lors de la récupération des informations"
 				);
+				return;
 			}
 
 			const result = await response.json();
 			setCommissionInfo(result.data);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Erreur inconnue");
-			console.error("Erreur useCommissionInfo:", err);
+			const error =
+				err instanceof Error ? err : new Error("Erreur inconnue");
+			setError(error.message);
+			handleError(error, {
+				fallbackMessage:
+					"Erreur lors de la récupération des informations de commission",
+				showToast: false,
+				logToConsole: true,
+			});
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [handleError, handleApiError]);
 
 	useEffect(() => {
 		fetchCommissionInfo();
-	}, []);
+	}, [fetchCommissionInfo]);
 
 	return {
 		commissionInfo,
@@ -59,4 +70,3 @@ export function useCommissionInfo() {
 		refetch: fetchCommissionInfo,
 	};
 }
-

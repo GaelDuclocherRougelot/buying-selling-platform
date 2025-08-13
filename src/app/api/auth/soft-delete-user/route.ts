@@ -1,29 +1,24 @@
-// app/api/delete-user/route.ts
-import { getUser } from "@/lib/auth-session";
-import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
-import { deleteUserAccount } from "@/services/user";
-import { NextRequest, NextResponse } from "next/server";
+import { handleApiRoute } from "@/lib/api-error-handler";
+import { prisma } from "@/lib/prisma";
+import { NextRequest } from "next/server";
 
-export async function POST(req: NextRequest) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(req);
-	if (corsPreflightResponse) return corsPreflightResponse;
+export async function DELETE(request: NextRequest) {
+	return handleApiRoute(async () => {
+		const { searchParams } = new URL(request.url);
+		const userId = searchParams.get("userId");
 
-	const user = await getUser();
+		if (!userId) {
+			throw new Error("userId parameter is required");
+		}
 
-	if (!user) {
-		return corsResponse({ error: "Unauthorized" }, 401);
-	}
+		// Soft delete en mettant à jour le statut
+		await prisma.user.update({
+			where: { id: userId },
+			data: {
+				deletedAt: new Date()
+			},
+		});
 
-	const { userId } = await req.json();
-
-	// Par sécurité, tu peux vérifier que l'userId correspond à session.user.id
-	if (user.id !== userId) {
-		return corsResponse({ error: "Forbidden" }, 403);
-	}
-
-	await deleteUserAccount(userId);
-
-	const response = NextResponse.json({ success: true });
-	return addCorsHeaders(response);
+		return { message: "User soft deleted successfully" };
+	});
 }

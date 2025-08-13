@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { MessageCircle } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +20,9 @@ export default function MessageNotifications() {
 
 	const fetchUnreadCount = async () => {
 		try {
-			const response = await fetch("/api/messages/conversations");
+			const response = await apiFetch("/api/messages/conversations", {
+				method: "GET",
+			});
 			if (response.ok) {
 				const data = await response.json();
 				const totalUnread = data.conversations.reduce(

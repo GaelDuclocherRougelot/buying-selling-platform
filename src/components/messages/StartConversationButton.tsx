@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -40,11 +41,8 @@ export default function StartConversationButton({
 		setIsLoading(true);
 
 		try {
-			const response = await fetch("/api/messages/conversations", {
+			const response = await apiFetch("/api/messages/conversations", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
 				body: JSON.stringify({
 					productId,
 					sellerId,

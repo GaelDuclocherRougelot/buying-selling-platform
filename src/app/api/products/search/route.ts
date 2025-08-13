@@ -1,122 +1,120 @@
-import { addCorsHeaders, handleCors } from "@/lib/cors";
+import { handleApiRoute } from "@/lib/api-error-handler";
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { NextRequest } from "next/server";
+
+/**
+ * @swagger
+ * /api/products/search:
+ *   get:
+ *     summary: Rechercher des produits
+ *     description: Recherche des produits avec des filtres avancés et pagination
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Terme de recherche (requis)
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *         description: ID de la catégorie pour filtrer les résultats
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Prix minimum pour filtrer les résultats
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Prix maximum pour filtrer les résultats
+ *       - in: query
+ *         name: condition
+ *         schema:
+ *           type: string
+ *         description: État du produit (new, good, mid, damaged)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Nombre maximum de résultats à retourner
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Nombre de résultats à ignorer pour la pagination
+ *     responses:
+ *       200:
+ *         description: Recherche effectuée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Products'
+ *       400:
+ *         description: Paramètre de recherche manquant
+ *       500:
+ *         description: Erreur interne du serveur
+ */
 
 export async function GET(request: NextRequest) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(request);
-	if (corsPreflightResponse) return corsPreflightResponse;
-
-	try {
+	return handleApiRoute(async () => {
 		const { searchParams } = new URL(request.url);
+		const query = searchParams.get("q");
+		const categoryId = searchParams.get("categoryId");
+		const minPrice = searchParams.get("minPrice");
+		const maxPrice = searchParams.get("maxPrice");
+		const condition = searchParams.get("condition");
+		const limit = parseInt(searchParams.get("limit") || "20");
+		const offset = parseInt(searchParams.get("offset") || "0");
 
-		// Récupération des paramètres de recherche
-		const query = searchParams.get("q") || "";
-		const category = searchParams.get("category") || "";
-		const condition = searchParams.get("condition") || "";
-		const minPrice = searchParams.get("minPrice") || "";
-		const maxPrice = searchParams.get("maxPrice") || "";
-		const delivery = searchParams.get("delivery") || "";
-		const city = searchParams.get("city") || "";
-		const sortBy = searchParams.get("sortBy") || "createdAt";
-		const sortOrder = searchParams.get("sortOrder") || "desc";
-		const page = parseInt(searchParams.get("page") || "1");
-		const limit = parseInt(searchParams.get("limit") || "12");
-		const offset = (page - 1) * limit;
+		if (!query) {
+			throw new Error("Query parameter 'q' is required");
+		}
 
-		// Construction des filtres
-		const where: Record<string, unknown> = {
-			status: "active", // Seulement les produits actifs
-		};
-
-		// Recherche textuelle
-		if (query) {
-			where.OR = [
+		const where: Prisma.ProductWhereInput = {
+			status: "approved",
+			OR: [
 				{ title: { contains: query, mode: "insensitive" } },
 				{ description: { contains: query, mode: "insensitive" } },
-			];
+			],
+		};
+
+		if (categoryId) {
+			where.categoryId = categoryId;
 		}
 
-		// Filtre par catégorie
-		if (category) {
-			where.category = {
-				name: category,
-			};
+		if (minPrice || maxPrice) {
+			where.price = {};
+			if (minPrice) where.price.gte = parseFloat(minPrice);
+			if (maxPrice) where.price.lte = parseFloat(maxPrice);
 		}
 
-		// Filtre par état
 		if (condition) {
 			where.condition = condition;
 		}
 
-		// Filtre par prix
-		if (minPrice || maxPrice) {
-			where.price = {};
-			if (minPrice) {
-				(where.price as Record<string, number>).gte =
-					parseFloat(minPrice);
-			}
-			if (maxPrice) {
-				(where.price as Record<string, number>).lte =
-					parseFloat(maxPrice);
-			}
-		}
-
-		// Filtre par livraison
-		if (delivery) {
-			where.delivery = delivery;
-		}
-
-		// Filtre par ville
-		if (city) {
-			where.city = { contains: city, mode: "insensitive" };
-		}
-
-		// Tri
-		const orderBy: Record<string, string> = {};
-		orderBy[sortBy] = sortOrder;
-
-		// Requête avec pagination
-		const [products, totalCount] = await Promise.all([
-			prisma.product.findMany({
-				where,
-				include: {
-					category: true,
-					owner: {
-						select: {
-							id: true,
-							name: true,
-							username: true,
-							displayUsername: true,
-						},
+		const products = await prisma.product.findMany({
+			where,
+			include: {
+				category: true,
+				owner: {
+					select: {
+						id: true,
+						displayUsername: true,
 					},
 				},
-				orderBy,
-				take: limit,
-				skip: offset,
-			}),
-			prisma.product.count({ where }),
-		]);
-
-		const totalPages = Math.ceil(totalCount / limit);
-
-		const response = NextResponse.json({
-			products,
-			pagination: {
-				currentPage: page,
-				totalPages,
-				totalCount,
-				hasNextPage: page < totalPages,
-				hasPrevPage: page > 1,
 			},
+			orderBy: { createdAt: "desc" },
+			take: limit,
+			skip: offset,
 		});
-		return addCorsHeaders(response);
-	} catch (error) {
-		console.error("Error searching products:", error);
-		const response = NextResponse.json(
-			{ error: "Internal Server Error" },
-			{ status: 500 }
-		);
-		return addCorsHeaders(response);
-	}
+
+		return products;
+	});
 }

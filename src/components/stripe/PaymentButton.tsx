@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
+import { useErrorHandler } from "@/lib/hooks/useErrorHandler";
 import { useState } from "react";
-import { toast } from "sonner";
 
 interface PaymentButtonProps {
 	productId: string;
@@ -19,10 +19,14 @@ export default function PaymentButton({
 }: PaymentButtonProps) {
 	const { data: session } = useSession();
 	const [loading, setLoading] = useState(false);
+	const { handleError, handleApiError } = useErrorHandler();
 
 	const handlePayment = async () => {
 		if (!session?.user) {
-			toast.error("Vous devez être connecté pour effectuer un achat");
+			handleError("Vous devez être connecté pour effectuer un achat", {
+				showToast: true,
+				logToConsole: true,
+			});
 			return;
 		}
 
@@ -45,12 +49,11 @@ export default function PaymentButton({
 			);
 
 			if (!response.ok) {
-				const error = await response.json();
-				console.error("Checkout session error:", error);
-				throw new Error(
-					error.error ||
-						"Erreur lors de la création de la session de paiement"
+				handleApiError(
+					response,
+					"Erreur lors de la création de la session de paiement"
 				);
+				return;
 			}
 
 			const { url } = await response.json();
@@ -59,15 +62,17 @@ export default function PaymentButton({
 			if (url) {
 				window.location.href = url;
 			} else {
-				throw new Error("URL de paiement manquante");
+				handleError("URL de paiement manquante", {
+					showToast: true,
+					logToConsole: true,
+				});
 			}
 		} catch (error) {
-			console.error("Payment error:", error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Erreur lors du paiement"
-			);
+			handleError(error, {
+				fallbackMessage: "Erreur lors du paiement",
+				showToast: true,
+				logToConsole: true,
+			});
 		} finally {
 			setLoading(false);
 		}

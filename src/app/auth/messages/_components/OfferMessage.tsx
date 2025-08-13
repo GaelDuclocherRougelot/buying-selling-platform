@@ -1,5 +1,6 @@
 "use client";
 import PaymentButton from "@/components/stripe/PaymentButton";
+import { apiFetch } from "@/lib/api";
 import { Conversation, Message } from "@/types/conversation";
 import { Check, Clock, Euro, X } from "lucide-react";
 import { useState } from "react";
@@ -42,13 +43,10 @@ export default function OfferMessage({
 
 		setIsResponding(true);
 		try {
-			const res = await fetch(
+			const res = await apiFetch(
 				`/api/messages/offers/${message.offer?.id}/respond`,
 				{
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
 					body: JSON.stringify({ response }),
 				}
 			);

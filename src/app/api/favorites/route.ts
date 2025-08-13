@@ -1,105 +1,193 @@
-import { auth } from "@/lib/auth";
-import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
-import { addToFavorites, getUserFavorites } from "@/services/favorites";
-import { NextRequest, NextResponse } from "next/server";
+import { handleApiRoute } from "@/lib/api-error-handler";
+import { prisma } from "@/lib/prisma";
+import { NextRequest } from "next/server";
 
 /**
  * @swagger
  * /api/favorites:
  *   get:
- *     summary: Get user favorites
- *     security:
- *       - bearerAuth: []
+ *     summary: Récupérer les favoris d'un utilisateur
+ *     description: Récupère la liste des produits favoris d'un utilisateur spécifique
+ *     tags: [Favorites]
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de l'utilisateur dont on veut récupérer les favoris
  *     responses:
  *       200:
- *         description: List of user favorites
- *       401:
- *         description: Unauthorized
+ *         description: Liste des favoris récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   userId:
+ *                     type: string
+ *                   productId:
+ *                     type: string
+ *                   product:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       title:
+ *                         type: string
+ *                       price:
+ *                         type: number
+ *                       imagesUrl:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       category:
+ *                         $ref: '#/components/schemas/Category'
+ *                       owner:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           displayUsername:
+ *                             type: string
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *       400:
+ *         description: Paramètre userId manquant
  *       500:
- *         description: Internal Server Error
+ *         description: Erreur interne du serveur
+ */
+
+export async function GET(request: NextRequest) {
+	return handleApiRoute(async () => {
+		const { searchParams } = new URL(request.url);
+		const userId = searchParams.get("userId");
+
+		if (!userId) {
+			throw new Error("userId parameter is required");
+		}
+
+		const favorites = await prisma.favorite.findMany({
+			where: {
+				userId: userId,
+			},
+			include: {
+				product: {
+					include: {
+						category: true,
+						owner: {
+							select: {
+								id: true,
+								displayUsername: true,
+							},
+						},
+					},
+				},
+			},
+			orderBy: {
+				createdAt: "desc",
+			},
+		});
+
+		return favorites;
+	});
+}
+
+/**
+ * @swagger
+ * /api/favorites:
  *   post:
- *     summary: Add a product to favorites
- *     security:
- *       - bearerAuth: []
+ *     summary: Ajouter un produit aux favoris
+ *     description: Ajoute un produit à la liste des favoris d'un utilisateur
+ *     tags: [Favorites]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - userId
+ *               - productId
  *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID de l'utilisateur
+ *                 example: "user_123"
  *               productId:
  *                 type: string
+ *                 description: ID du produit à ajouter aux favoris
+ *                 example: "product_456"
  *     responses:
- *       201:
- *         description: Product added to favorites
+ *       200:
+ *         description: Produit ajouté aux favoris avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 userId:
+ *                   type: string
+ *                 productId:
+ *                   type: string
+ *                 product:
+ *                   $ref: '#/components/schemas/Product'
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
  *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
+ *         description: Paramètres manquants ou produit déjà en favoris
  *       500:
- *         description: Internal Server Error
+ *         description: Erreur interne du serveur
  */
-export async function GET(request: NextRequest) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(request);
-	if (corsPreflightResponse) return corsPreflightResponse;
-
-	try {
-		const session = await auth.api.getSession({
-			headers: request.headers,
-		});
-
-		if (!session?.user?.id) {
-			return corsResponse({ error: "Unauthorized" }, 401);
-		}
-
-		const favorites = await getUserFavorites(session.user.id);
-		return addCorsHeaders(NextResponse.json(favorites, { status: 200 }));
-	} catch (error) {
-		console.error("Error fetching favorites:", error);
-		return corsResponse({ error: "Internal Server Error" }, 500);
-	}
-}
-
 export async function POST(request: NextRequest) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(request);
-	if (corsPreflightResponse) return corsPreflightResponse;
+	return handleApiRoute(async () => {
+		const body = await request.json();
+		const { userId, productId } = body;
 
-	try {
-		const session = await auth.api.getSession({
-			headers: request.headers,
+		if (!userId || !productId) {
+			throw new Error("userId and productId are required");
+		}
+
+		// Vérifier si le favori existe déjà
+		const existingFavorite = await prisma.favorite.findFirst({
+			where: {
+				userId,
+				productId,
+			},
 		});
 
-		if (!session?.user?.id) {
-			return corsResponse({ error: "Unauthorized" }, 401);
+		if (existingFavorite) {
+			throw new Error("Product already in favorites");
 		}
 
-		const body = await request.json();
-		const { productId } = body;
+		const favorite = await prisma.favorite.create({
+			data: {
+				userId,
+				productId,
+			},
+			include: {
+				product: {
+					include: {
+						category: true,
+						owner: {
+							select: {
+								id: true,
+								displayUsername: true,
+							},
+						},
+					},
+				},
+			},
+		});
 
-		if (!productId) {
-			return corsResponse({ error: "Product ID is required" }, 400);
-		}
-
-		const favorite = await addToFavorites(session.user.id, productId);
-		return addCorsHeaders(NextResponse.json(favorite, { status: 201 }));
-	} catch (error) {
-		console.error("Error adding favorite:", error);
-
-		if (error instanceof Error) {
-			if (error.message === "Product not found") {
-				return corsResponse({ error: "Product not found" }, 404);
-			}
-			if (error.message === "Product already in favorites") {
-				return corsResponse(
-					{ error: "Product already in favorites" },
-					400
-				);
-			}
-		}
-
-		return corsResponse({ error: "Internal Server Error" }, 500);
-	}
+		return favorite;
+	});
 }

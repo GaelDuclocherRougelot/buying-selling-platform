@@ -1,9 +1,9 @@
 "use client";
 
 import { useSession } from "@/lib/auth-client";
+import { useErrorHandler } from "@/lib/hooks/useErrorHandler";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import CategorySVG from "../svg/Category";
 import DashboardSVG from "../svg/Dashboard";
 import Heart from "../svg/Heart";
@@ -30,16 +30,24 @@ import { SearchBar } from "./SearchBar";
 const Header = (): JSX.Element => {
 	const user = useSession().data?.user;
 	const router = useRouter();
+	const { handleError } = useErrorHandler();
 
 	const handleLinkToPublish = () => {
 		if (!user) {
-			toast.error("Veuillez vous connecter pour déposer une annonce");
+			handleError("Veuillez vous connecter pour déposer une annonce", {
+				showToast: true,
+				logToConsole: true,
+			});
 			router.push("/auth/login");
 			return;
 		}
 		if (!user?.emailVerified) {
-			toast.error(
-				"Veuillez vérifier votre email pour déposer une annonce"
+			handleError(
+				"Veuillez vérifier votre email pour déposer une annonce",
+				{
+					showToast: true,
+					logToConsole: true,
+				}
 			);
 			router.push("/auth/profile/edit");
 			return;
@@ -126,9 +134,7 @@ const Header = (): JSX.Element => {
 															className="flex items-center gap-2 p-2 hover:bg-accent rounded"
 														>
 															<Person />
-															<span>
-																Mon profil
-															</span>
+															<span>Profil</span>
 														</Link>
 													</NavigationMenuLink>
 													<NavigationMenuLink asChild>
@@ -138,6 +144,17 @@ const Header = (): JSX.Element => {
 														>
 															<Heart />
 															<span>Favoris</span>
+														</Link>
+													</NavigationMenuLink>
+													<NavigationMenuLink asChild>
+														<Link
+															href="/auth/messages"
+															className="flex items-center gap-2 p-2 hover:bg-accent rounded"
+														>
+															<Tchat />
+															<span>
+																Messages
+															</span>
 														</Link>
 													</NavigationMenuLink>
 													<NavigationMenuLink asChild>
@@ -153,13 +170,11 @@ const Header = (): JSX.Element => {
 													</NavigationMenuLink>
 													<NavigationMenuLink asChild>
 														<Link
-															href="/auth/messages"
+															href="/auth/publish"
 															className="flex items-center gap-2 p-2 hover:bg-accent rounded"
 														>
-															<Tchat />
-															<span>
-																Messages
-															</span>
+															<DashboardSVG />
+															<span>Publier</span>
 														</Link>
 													</NavigationMenuLink>
 												</div>
@@ -167,21 +182,55 @@ const Header = (): JSX.Element => {
 										</NavigationMenuItem>
 									</>
 								) : (
-									<NavigationMenuItem>
-										<NavigationMenuLink asChild>
-											<Link href="/auth/login">
-												<Button
-													variant="outline"
-													className="cursor-pointer bg-transparent"
+									<>
+										<NavigationMenuItem>
+											<NavigationMenuLink asChild>
+												<Link
+													href="/auth/login"
+													className="flex items-center gap-2 p-2 hover:bg-accent rounded"
 												>
-													Se connecter
-												</Button>
-											</Link>
-										</NavigationMenuLink>
-									</NavigationMenuItem>
+													<Person />
+													<span>Connexion</span>
+												</Link>
+											</NavigationMenuLink>
+										</NavigationMenuItem>
+										<NavigationMenuItem>
+											<NavigationMenuLink asChild>
+												<Link
+													href="/auth/register"
+													className="flex items-center gap-2 p-2 hover:bg-accent rounded"
+												>
+													<Person />
+													<span>Inscription</span>
+												</Link>
+											</NavigationMenuLink>
+										</NavigationMenuItem>
+									</>
 								)}
 							</NavigationMenuList>
 						</NavigationMenu>
+
+						{/* Mobile menu button */}
+						<Button
+							variant="ghost"
+							size="icon"
+							className="md:hidden"
+							aria-label="Menu mobile"
+						>
+							<svg
+								className="h-6 w-6"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M4 6h16M4 12h16M4 18h16"
+								/>
+							</svg>
+						</Button>
 					</div>
 				</div>
 			</header>

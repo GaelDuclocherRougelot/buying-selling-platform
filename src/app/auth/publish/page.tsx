@@ -36,14 +36,31 @@ const CreateProductPage = () => {
 
 	// Fetch categories from /api/category on mount
 	useEffect(() => {
+		console.log("🔄 Chargement des catégories...");
 		apiFetch("/api/categories")
-			.then((res) => res.json())
+			.then((res) => {
+				console.log("📡 Réponse API catégories:", res);
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+				}
+				return res.json();
+			})
 			.then((data) => {
+				console.log("📊 Données catégories reçues:", data);
 				if (Array.isArray(data)) {
 					setCategories(data);
+					console.log("✅ Catégories mises à jour:", data.length);
+				} else {
+					console.error("❌ Format de données invalide:", data);
 				}
 			})
-			.catch(() => setCategories([]));
+			.catch((error) => {
+				console.error(
+					"💥 Erreur lors du chargement des catégories:",
+					error
+				);
+				setCategories([]);
+			});
 	}, []);
 
 	const handleCityChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

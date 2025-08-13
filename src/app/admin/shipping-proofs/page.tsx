@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiFetch } from "@/lib/api";
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -62,7 +63,7 @@ export default function ShippingProofsPage() {
 
 	const fetchProofs = async () => {
 		try {
-			const response = await fetch("/api/admin/shipping-proofs");
+			const response = await apiFetch("/api/admin/shipping-proofs");
 			const data = await response.json();
 			setProofs(data.proofs || []);
 		} catch (error) {
@@ -78,13 +79,10 @@ export default function ShippingProofsPage() {
 	) => {
 		setProcessing(proofId);
 		try {
-			const response = await fetch(
+			const response = await apiFetch(
 				`/api/admin/shipping-proofs/${proofId}/verify`,
 				{
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
 					body: JSON.stringify({
 						action,
 						adminId: "admin", // À remplacer par l'ID de l'admin connecté

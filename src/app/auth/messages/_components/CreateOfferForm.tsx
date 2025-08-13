@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { Conversation } from "@/types/conversation";
 import { Euro, Send, X } from "lucide-react";
 import { useState } from "react";
@@ -40,11 +41,8 @@ export default function CreateOfferForm({
 
 		setIsSubmitting(true);
 		try {
-			const response = await fetch("/api/messages/offers", {
+			const response = await apiFetch("/api/messages/offers", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
 				body: JSON.stringify({
 					conversationId: conversation.id,
 					amount: offerAmount,
@@ -81,7 +79,7 @@ export default function CreateOfferForm({
 	};
 
 	return (
-		<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+		<div className="fixed inset-0 backdrop-blur-lg bg-black/50  flex items-center justify-center z-50">
 			<div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
 				{/* En-tête */}
 				<div className="flex items-center justify-between mb-4">

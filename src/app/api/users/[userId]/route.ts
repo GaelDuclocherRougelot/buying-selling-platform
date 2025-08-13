@@ -1,160 +1,147 @@
-import { deleteMultipleImagesFromCloudinary } from "@/lib/cloudinary-utils";
-import { addCorsHeaders, corsResponse, handleCors } from "@/lib/cors";
+import { handleApiRoute } from "@/lib/api-error-handler";
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 /**
  * @swagger
  * /api/users/{userId}:
  *   get:
- *     summary: Get user by ID
+ *     summary: Récupérer un utilisateur par ID
+ *     description: Récupère les informations publiques d'un utilisateur spécifique
+ *     tags: [Users]
  *     parameters:
  *       - in: path
  *         name: userId
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the user to fetch
+ *         description: ID de l'utilisateur à récupérer
  *     responses:
  *       200:
- *         description: User information
+ *         description: Utilisateur récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 displayUsername:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
  *       404:
- *         description: User not found
+ *         description: Utilisateur non trouvé
  *       500:
- *         description: Internal Server Error
+ *         description: Erreur interne du serveur
  */
+
 export async function GET(
 	request: NextRequest,
 	{ params }: { params: Promise<{ userId: string }> }
 ) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(request);
-	if (corsPreflightResponse) return corsPreflightResponse;
-
-	try {
+	return handleApiRoute(async () => {
 		const { userId } = await params;
 
-		if (!userId) {
-			return corsResponse({ error: "Missing userId" }, 400);
-		}
-
 		const user = await prisma.user.findUnique({
-			where: {
-				id: userId,
-				deletedAt: null, // Exclude deleted users
-			},
+			where: { id: userId },
 			select: {
 				id: true,
-				name: true,
-				username: true,
 				displayUsername: true,
-				image: true,
+				email: true,
 				createdAt: true,
-				// Don't include sensitive information like email
+				// Ne pas inclure les informations sensibles
 			},
 		});
 
 		if (!user) {
-			return corsResponse({ error: "User not found" }, 404);
+			throw new Error("User not found");
 		}
 
-		return addCorsHeaders(NextResponse.json(user, { status: 200 }));
-	} catch (error) {
-		console.error("Error fetching user:", error);
-		return corsResponse({ error: "Internal Server Error" }, 500);
-	}
+		return user;
+	});
 }
 
 /**
  * @swagger
  * /api/users/{userId}:
- *   delete:
- *     summary: Delete user by ID
+ *   put:
+ *     summary: Mettre à jour un utilisateur
+ *     description: Met à jour les informations d'un utilisateur spécifique
+ *     tags: [Users]
  *     parameters:
  *       - in: path
  *         name: userId
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the user to delete
+ *         description: ID de l'utilisateur à mettre à jour
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               displayUsername:
+ *                 type: string
+ *                 description: Nouveau nom d'utilisateur
+ *                 example: "john_doe_new"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Nouvelle adresse email
+ *                 example: "john.new@example.com"
  *     responses:
  *       200:
- *         description: User deleted successfully
+ *         description: Utilisateur mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 displayUsername:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: Données de requête invalides
  *       404:
- *         description: User not found
+ *         description: Utilisateur non trouvé
  *       500:
- *         description: Internal Server Error
+ *         description: Erreur interne du serveur
  */
-export async function DELETE(
+export async function PUT(
 	request: NextRequest,
 	{ params }: { params: Promise<{ userId: string }> }
 ) {
-	// Handle CORS preflight
-	const corsPreflightResponse = handleCors(request);
-	if (corsPreflightResponse) return corsPreflightResponse;
-
-	try {
+	return handleApiRoute(async () => {
 		const { userId } = await params;
+		const body = await request.json();
+		const { displayUsername, email } = body;
 
-		if (!userId) {
-			return corsResponse({ error: "Missing userId" }, 400);
-		}
-
-		// Get user with all their products to collect image URLs
-		const user = await prisma.user.findUnique({
-			where: {
-				id: userId,
-				deletedAt: null,
-			},
-			include: {
-				products: {
-					select: {
-						imagesUrl: true,
-					},
-				},
-			},
-		});
-
-		if (!user) {
-			return corsResponse({ error: "User not found" }, 404);
-		}
-
-		// Collect all image URLs from user's products
-		const allImageUrls: string[] = [];
-		user.products.forEach((product) => {
-			if (product.imagesUrl && product.imagesUrl.length > 0) {
-				allImageUrls.push(...product.imagesUrl);
-			}
-		});
-
-		// Add user's profile image if it exists
-		if (user.image) {
-			allImageUrls.push(user.image);
-		}
-
-		// Delete all images from Cloudinary
-		if (allImageUrls.length > 0) {
-			const deleteResult =
-				await deleteMultipleImagesFromCloudinary(allImageUrls);
-			console.log(
-				`Images supprimées de Cloudinary lors de la suppression de l'utilisateur: ${deleteResult.success} réussies, ${deleteResult.failed} échouées`
-			);
-		}
-
-		// Delete the user (soft delete)
-		await prisma.user.update({
+		const updatedUser = await prisma.user.update({
 			where: { id: userId },
-			data: { deletedAt: new Date() },
+			data: {
+				displayUsername,
+				email,
+			},
+			select: {
+				id: true,
+				displayUsername: true,
+				email: true,
+				createdAt: true,
+			},
 		});
 
-		return addCorsHeaders(
-			NextResponse.json(
-				{ message: "User deleted successfully" },
-				{ status: 200 }
-			)
-		);
-	} catch (error) {
-		console.error("Error deleting user:", error);
-		return corsResponse({ error: "Internal Server Error" }, 500);
-	}
+		return updatedUser;
+	});
 }

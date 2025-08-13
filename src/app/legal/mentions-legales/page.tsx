@@ -68,6 +68,13 @@ export default function MentionsLegalesPage() {
 						Neon.tech
 					</Link>
 				</p>
+				<h2>4. Système de paiement</h2>
+				<p>
+					Le système de paiement est géré par{" "}
+					<Link href="https://stripe.com" target="blank" className="underline">
+						Stripe
+					</Link>
+				</p>
 			</main>
 			<Footer />
 		</>

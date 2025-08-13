@@ -1,4 +1,3 @@
-import { Product } from "@prisma/client";
 
 export interface Message {
 	id: string;
@@ -33,7 +32,13 @@ export interface Conversation {
 	sellerId: string;
 	createdAt: string;
 	updatedAt: string;
-	product: Product;
+	product: {
+		id: string;
+		title: string;
+		imagesUrl: string[];
+		price: number;
+		status: string;
+	};
 	buyer: {
 		id: string;
 		name: string;
@@ -47,7 +52,7 @@ export interface Conversation {
 		username?: string;
 	};
 	messages: Message[];
-	lastMessage?: Message;
+	lastMessage: Message;
 	unreadCount: number;
 }
 

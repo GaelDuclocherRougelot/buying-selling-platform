@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { apiFetch } from "@/lib/api";
 import {
 	AlertCircle,
 	Calendar,
@@ -98,11 +99,8 @@ export default function TrackingStatus({
 			setError(null);
 
 			try {
-				const response = await fetch("/api/shipping/tracking", {
+				const response = await apiFetch("/api/shipping/tracking", {
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
 					body: JSON.stringify({
 						paymentId,
 						trackingNumber: trackingNum,
@@ -131,8 +129,11 @@ export default function TrackingStatus({
 	useEffect(() => {
 		const fetchShippingProof = async () => {
 			try {
-				const response = await fetch(
-					`/api/shipping/proof?paymentId=${paymentId}`
+				const response = await apiFetch(
+					`/api/shipping/proof?paymentId=${paymentId}`,
+					{
+						method: "GET",
+					}
 				);
 				if (response.ok) {
 					const data = await response.json();

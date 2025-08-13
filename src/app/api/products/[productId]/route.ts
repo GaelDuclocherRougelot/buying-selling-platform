@@ -11,7 +11,7 @@ const updateProductSchema = z.object({
 	price: z.number().min(0, "Price must be non-negative").optional(),
 	condition: z.string().min(1, "Condition is required").optional(),
 	imagesUrl: z
-		.array(z.string().url("Each image must be a valid URL"))
+		.array(z.string().min(1, "Image URL cannot be empty"))
 		.optional(),
 	categoryId: z.string().min(1, "Category ID is required").optional(),
 	delivery: z.string().min(1, "Delivery is required").optional(),
@@ -26,27 +26,27 @@ const updateProductSchema = z.object({
  * @swagger
  * /api/products/{productId}:
  *   get:
- *     description: Get a product by ID
+ *     summary: Récupérer un produit par ID
+ *     description: Récupère les détails complets d'un produit spécifique
+ *     tags: [Products]
  *     parameters:
  *       - in: path
  *         name: productId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *         description: ID du produit à récupérer
  *     responses:
  *       200:
- *         description: Product details
+ *         description: Détails du produit récupérés avec succès
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Product'
  *       404:
- *         description: Product not found
- *       400:
- *         description: Bad Request
+ *         description: Produit non trouvé
  *       500:
- *         description: Internal Server Error
- *
+ *         description: Erreur interne du serveur
  */
 export async function GET(request: Request) {
 	try {
@@ -72,32 +72,69 @@ export async function GET(request: Request) {
  * @swagger
  * /api/products/{productId}:
  *   put:
- *     description: Update a product by ID
+ *     summary: Mettre à jour un produit
+ *     description: Met à jour les informations d'un produit existant
+ *     tags: [Products]
  *     parameters:
  *       - in: path
  *         name: productId
  *         required: true
  *         schema:
  *           type: string
+ *         description: ID du produit à mettre à jour
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/ProductUpdate'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: Nouveau titre du produit
+ *               description:
+ *                 type: string
+ *                 description: Nouvelle description du produit
+ *               price:
+ *                 type: number
+ *                 description: Nouveau prix du produit
+ *               condition:
+ *                 type: string
+ *                 description: Nouvel état du produit
+ *               imagesUrl:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Nouvelles URLs des images
+ *               categoryId:
+ *                 type: string
+ *                 description: Nouvelle catégorie du produit
+ *               delivery:
+ *                 type: string
+ *                 description: Nouvelle option de livraison
+ *               city:
+ *                 type: string
+ *                 description: Nouvelle ville du produit
+ *               deliveryPrice:
+ *                 type: number
+ *                 description: Nouveau prix de livraison
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive, pending, sold, rejected]
+ *                 description: Nouveau statut du produit
  *     responses:
  *       200:
- *         description: Product updated successfully
+ *         description: Produit mis à jour avec succès
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Product'
  *       400:
- *         description: Bad Request
+ *         description: Données de requête invalides
  *       404:
- *         description: Product not found
+ *         description: Produit non trouvé
  *       500:
- *         description: Internal Server Error
+ *         description: Erreur interne du serveur
  */
 export async function PUT(request: Request) {
 	try {
@@ -132,7 +169,7 @@ export async function PUT(request: Request) {
 		// If imagesUrl is being updated, delete removed images from Cloudinary
 		if (parseResult.data.imagesUrl && existingProduct.imagesUrl) {
 			const removedImages = existingProduct.imagesUrl.filter(
-				(url) => !parseResult.data.imagesUrl!.includes(url)
+				(url: string) => !parseResult.data.imagesUrl!.includes(url)
 			);
 
 			if (removedImages.length > 0) {

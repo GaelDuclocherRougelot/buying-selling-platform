@@ -1,11 +1,14 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { useErrorHandler } from "./useErrorHandler";
 
 import { Conversation, Message } from "@/types/conversation";
+import { apiFetch } from "../api";
 
 export function useMessages() {
 	const [loading, setLoading] = useState(false);
 	const [sending, setSending] = useState(false);
+	const { handleError, handleApiError } = useErrorHandler();
 
 	// Récupérer les conversations
 	const fetchConversations = useCallback(async (): Promise<
@@ -15,20 +18,26 @@ export function useMessages() {
 		try {
 			const response = await fetch("/api/messages/conversations");
 			if (!response.ok) {
-				throw new Error(
+				handleApiError(
+					response,
 					"Erreur lors de la récupération des conversations"
 				);
+				return [];
 			}
 			const data = await response.json();
 			return data.conversations || [];
 		} catch (error) {
-			console.error("Erreur fetchConversations:", error);
-			toast.error("Erreur lors de la récupération des conversations");
+			handleError(error, {
+				fallbackMessage:
+					"Erreur lors de la récupération des conversations",
+				showToast: true,
+				logToConsole: true,
+			});
 			return [];
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [handleError, handleApiError]);
 
 	// Récupérer les messages d'une conversation
 	const fetchConversationMessages = useCallback(
@@ -38,19 +47,25 @@ export function useMessages() {
 					`/api/messages/conversations/${conversationId}/messages`
 				);
 				if (!response.ok) {
-					throw new Error(
+					handleApiError(
+						response,
 						"Erreur lors de la récupération des messages"
 					);
+					return [];
 				}
 				const data = await response.json();
 				return data.messages || [];
 			} catch (error) {
-				console.error("Erreur fetchConversationMessages:", error);
-				toast.error("Erreur lors de la récupération des messages");
+				handleError(error, {
+					fallbackMessage:
+						"Erreur lors de la récupération des messages",
+					showToast: true,
+					logToConsole: true,
+				});
 				return [];
 			}
 		},
-		[]
+		[handleError, handleApiError]
 	);
 
 	// Envoyer un message
@@ -62,11 +77,8 @@ export function useMessages() {
 		): Promise<Message | null> => {
 			setSending(true);
 			try {
-				const response = await fetch("/api/messages/send", {
+				const response = await apiFetch("/api/messages/send", {
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
 					body: JSON.stringify({
 						conversationId,
 						content,
@@ -75,28 +87,35 @@ export function useMessages() {
 				});
 
 				if (!response.ok) {
-					throw new Error("Erreur lors de l'envoi du message");
+					handleApiError(
+						response,
+						"Erreur lors de l'envoi du message"
+					);
+					return null;
 				}
 
 				const data = await response.json();
 				toast.success("Message envoyé");
 				return data.message;
 			} catch (error) {
-				console.error("Erreur sendMessage:", error);
-				toast.error("Erreur lors de l'envoi du message");
+				handleError(error, {
+					fallbackMessage: "Erreur lors de l'envoi du message",
+					showToast: true,
+					logToConsole: true,
+				});
 				return null;
 			} finally {
 				setSending(false);
 			}
 		},
-		[]
+		[handleError, handleApiError]
 	);
 
 	// Marquer les messages comme lus
 	const markMessagesAsRead = useCallback(
 		async (conversationId: string): Promise<boolean> => {
 			try {
-				const response = await fetch(
+				const response = await apiFetch(
 					`/api/messages/conversations/${conversationId}/read`,
 					{
 						method: "POST",
@@ -104,78 +123,99 @@ export function useMessages() {
 				);
 
 				if (!response.ok) {
-					throw new Error("Erreur lors du marquage des messages");
+					handleApiError(
+						response,
+						"Erreur lors du marquage des messages"
+					);
+					return false;
 				}
 
 				return true;
 			} catch (error) {
-				console.error("Erreur markMessagesAsRead:", error);
+				handleError(error, {
+					fallbackMessage: "Erreur lors du marquage des messages",
+					showToast: false,
+					logToConsole: true,
+				});
 				return false;
 			}
 		},
-		[]
+		[handleError, handleApiError]
+	);
+
+	// Récupérer les nouveaux messages depuis un ID donné
+	const refreshMessages = useCallback(
+		async (
+			conversationId: string,
+			sinceMessageId?: string
+		): Promise<Message[]> => {
+			try {
+				const url = sinceMessageId
+					? `/api/messages/conversations/${conversationId}/messages?since=${sinceMessageId}`
+					: `/api/messages/conversations/${conversationId}/messages`;
+
+				const response = await apiFetch(url);
+				if (!response.ok) {
+					handleApiError(
+						response,
+						"Erreur lors de la récupération des nouveaux messages"
+					);
+					return [];
+				}
+				const data = await response.json();
+				return data.messages || [];
+			} catch (error) {
+				handleError(error, {
+					fallbackMessage:
+						"Erreur lors de la récupération des nouveaux messages",
+					showToast: false,
+					logToConsole: true,
+				});
+				return [];
+			}
+		},
+		[handleError, handleApiError]
 	);
 
 	// Créer une nouvelle conversation
 	const createConversation = useCallback(
 		async (
 			productId: string,
-			sellerId: string
+			sellerId: string,
+			initialMessage: string
 		): Promise<Conversation | null> => {
 			try {
-				const response = await fetch("/api/messages/conversations", {
+				const response = await apiFetch("/api/messages/conversations", {
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
 					body: JSON.stringify({
 						productId,
 						sellerId,
+						initialMessage,
 					}),
 				});
 
 				if (!response.ok) {
-					throw new Error(
+					handleApiError(
+						response,
 						"Erreur lors de la création de la conversation"
 					);
+					return null;
 				}
 
 				const data = await response.json();
+				toast.success("Conversation créée");
 				return data.conversation;
 			} catch (error) {
-				console.error("Erreur createConversation:", error);
-				toast.error("Erreur lors de la création de la conversation");
+				handleError(error, {
+					fallbackMessage:
+						"Erreur lors de la création de la conversation",
+					showToast: true,
+					logToConsole: true,
+				});
 				return null;
 			}
 		},
-		[]
-	);
-
-	// Rafraîchir les messages d'une conversation (pour le polling)
-	const refreshMessages = useCallback(
-		async (
-			conversationId: string,
-			lastMessageId?: string
-		): Promise<Message[]> => {
-			try {
-				const response = await fetch(
-					`/api/messages/conversations/${conversationId}/messages${
-						lastMessageId ? `?since=${lastMessageId}` : ""
-					}`
-				);
-				if (!response.ok) {
-					throw new Error(
-						"Erreur lors du rafraîchissement des messages"
-					);
-				}
-				const data = await response.json();
-				return data.messages || [];
-			} catch (error) {
-				console.error("Erreur refreshMessages:", error);
-				return [];
-			}
-		},
-		[]
+		[handleError, handleApiError]
 	);
 
 	return {
@@ -185,7 +225,7 @@ export function useMessages() {
 		fetchConversationMessages,
 		sendMessage,
 		markMessagesAsRead,
-		createConversation,
 		refreshMessages,
+		createConversation,
 	};
 }
