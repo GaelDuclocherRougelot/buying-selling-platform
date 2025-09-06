@@ -1,7 +1,7 @@
-import { handleApiRoute } from "@/lib/api-error-handler";
-import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
-import { NextRequest } from "next/server";
+import { handleApiRoute } from '@/lib/api-error-handler';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+import { NextRequest } from 'next/server';
 
 /**
  * @swagger
@@ -63,58 +63,78 @@ import { NextRequest } from "next/server";
  */
 
 export async function GET(request: NextRequest) {
-	return handleApiRoute(async () => {
-		const { searchParams } = new URL(request.url);
-		const query = searchParams.get("q");
-		const categoryId = searchParams.get("categoryId");
-		const minPrice = searchParams.get("minPrice");
-		const maxPrice = searchParams.get("maxPrice");
-		const condition = searchParams.get("condition");
-		const limit = parseInt(searchParams.get("limit") || "20");
-		const offset = parseInt(searchParams.get("offset") || "0");
+  return handleApiRoute(async () => {
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q');
+    const categoryParam = searchParams.get('category');
+    const categoryId =
+      searchParams.get('categoryId') || categoryParam || undefined;
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const condition = searchParams.get('condition');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
 
-		if (!query) {
-			throw new Error("Query parameter 'q' is required");
-		}
+    // Note: "q" is optional to allow the generic /search page to load
 
-		const where: Prisma.ProductWhereInput = {
-			status: "approved",
-			OR: [
-				{ title: { contains: query, mode: "insensitive" } },
-				{ description: { contains: query, mode: "insensitive" } },
-			],
-		};
+    const where: Prisma.ProductWhereInput = {
+      status: 'approved',
+    };
 
-		if (categoryId) {
-			where.categoryId = categoryId;
-		}
+    if (query) {
+      where.OR = [
+        { title: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+      ];
+    }
 
-		if (minPrice || maxPrice) {
-			where.price = {};
-			if (minPrice) where.price.gte = parseFloat(minPrice);
-			if (maxPrice) where.price.lte = parseFloat(maxPrice);
-		}
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
 
-		if (condition) {
-			where.condition = condition;
-		}
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+    }
 
-		const products = await prisma.product.findMany({
-			where,
-			include: {
-				category: true,
-				owner: {
-					select: {
-						id: true,
-						displayUsername: true,
-					},
-				},
-			},
-			orderBy: { createdAt: "desc" },
-			take: limit,
-			skip: offset,
-		});
+    if (condition) {
+      where.condition = condition;
+    }
 
-		return products;
-	});
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          owner: {
+            select: {
+              id: true,
+              displayUsername: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit) || 1;
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      products,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        hasNextPage,
+        hasPrevPage,
+      },
+    };
+  });
 }

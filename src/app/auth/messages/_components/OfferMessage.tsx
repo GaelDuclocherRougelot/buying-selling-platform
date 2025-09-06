@@ -1,5 +1,6 @@
 "use client";
 import PaymentButton from "@/components/stripe/PaymentButton";
+import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { Conversation, Message } from "@/types/conversation";
 import { Check, Clock, Euro, X } from "lucide-react";
@@ -143,22 +144,21 @@ export default function OfferMessage({
 			{/* Boutons d'action */}
 			{canRespond && (
 				<div className="flex space-x-2">
-					<button
+					<Button
 						onClick={() => handleRespondToOffer("accepted")}
 						disabled={isResponding}
-						className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
 					>
 						<Check className="w-4 h-4" />
 						<span>Accepter</span>
-					</button>
-					<button
+					</Button>
+					<Button
 						onClick={() => handleRespondToOffer("rejected")}
 						disabled={isResponding}
-						className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+						variant="destructive"
 					>
 						<X className="w-4 h-4" />
 						<span>Refuser</span>
-					</button>
+					</Button>
 				</div>
 			)}
 

@@ -131,9 +131,9 @@ export function SearchResults({
 	}
 
 	const { products, pagination } = results;
-
+	console.log(results);
 	return (
-		<div className="space-y-6 w-full overflow-y-scroll h-full">
+		<div className="space-y-6 w-full overflow-y-scroll h-full mt-5 lg:mt-0">
 			{/* En-tête des résultats */}
 			<div className="flex items-center justify-between">
 				<div>

@@ -97,7 +97,7 @@ const ProfilePage = async () => {
 			<Header />
 			<main className="flex justify-center px-4 lg:px-10 py-8">
 				<Card className="flex flex-col gap-10 w-full max-w-[1300px] h-fit">
-					<CardHeader className="flex justify-between items-center border-b pb-4">
+					<CardHeader className="flex flex-col lg:flex-row justify-between lg:items-center border-b pb-4">
 						<div className="flex items-center space-x-4">
 							<Avatar className="h-16 w-16">
 								<AvatarImage
@@ -124,7 +124,7 @@ const ProfilePage = async () => {
 								</CardTitle>
 							</div>
 						</div>
-						<div className="space-x-2">
+						<div className="flex gap-2 mt-4 lg:mt-0">
 							<Link href="/auth/profile/edit">
 								<Button variant="default">
 									Paramètres du compte

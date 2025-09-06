@@ -195,7 +195,7 @@ export default function ProfileForm({ user }: { user: UserWithUsername }) {
 							type="file"
 							accept="image/*"
 							onChange={handleImageChange}
-							className="w-fit h-fit cursor-pointer"
+							className="w-full md:w-fit h-fit cursor-pointer"
 						/>
 					</div>
 				)}

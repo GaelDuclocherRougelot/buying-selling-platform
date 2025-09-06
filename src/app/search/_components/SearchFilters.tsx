@@ -102,7 +102,7 @@ export function SearchFilters({
 	);
 
 	return (
-		<Card className="sticky top-20 h-fit">
+		<Card className="lg:sticky top-20 h-fit">
 			<CardHeader className="pb-4">
 				<div className="flex items-center justify-between">
 					<CardTitle className="flex items-center gap-2">

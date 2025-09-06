@@ -9,8 +9,8 @@ import React from "react";
  */
 const Footer: React.FC = (): JSX.Element => {
 	return (
-		<footer className="py-4 bg-muted text-center text-sm border-t border-border w-full h-16">
-			<nav className="flex justify-center gap-6">
+		<footer className="py-4 bg-muted text-center text-sm border-t border-border w-full h-full">
+			<nav className="flex flex-col lg:flex-row justify-center gap-6">
 				<Link
 					href="/legal/cgv"
 					className="text-foreground hover:underline"

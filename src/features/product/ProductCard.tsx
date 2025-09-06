@@ -1,9 +1,9 @@
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import FavoriteButton from "@/components/ui/FavoriteButton";
 import { Category } from "@prisma/client";
@@ -15,7 +15,7 @@ interface ProductCardProps {
 	title: string;
 	description: string | null;
 	price: number;
-	imageUrl: string;
+	imageUrl?: string;
 	category: Category;
 	productId: string;
 }

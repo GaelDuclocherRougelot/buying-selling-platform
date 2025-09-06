@@ -1,3 +1,4 @@
+import LogoWhite from "@/components/svg/LogoWhite";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -9,14 +10,14 @@ import Link from "next/link";
  */
 export default function Banner(): JSX.Element {
 	return (
-		<section className="w-full h-[calc(100vh-5rem)] bg-[url('/images/banner.webp')] bg-cover bg-center flex items-center">
+		<section className="w-full h-[calc(100vh-10rem)] bg-[url('/images/banner.webp')] bg-cover bg-center flex items-center">
 			<div className="max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
 				<h1 className="text-7xl font-extrabold text-white">
-					Zon<span className="text-primary">e</span>
+					<LogoWhite width={280} height={110} />
 				</h1>
-				<p className="text-5xl font-bold text-white">
+				<h2 className="text-5xl font-bold text-white">
 					Le grand nettoyage de printemps, <br /> toute l’année.
-				</p>
+				</h2>
 				<Button className="w-fit text-lg py-6 cursor-pointer">
 					<Link href="/auth/publish">Vendre maintenant</Link>
 				</Button>

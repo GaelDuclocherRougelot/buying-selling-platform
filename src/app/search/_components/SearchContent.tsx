@@ -68,13 +68,13 @@ export function SearchContent() {
 
 	return (
 		<main className="flex flex-col items-center justify-center min-h-screen p-0 bg-gray-50">
-			<div className="max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
+			<div className="max-w-[85rem] mx-auto py-10 lg:py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
 				<SearchHeader
 					query={filters.q}
 					onSearch={(query) => applyFilters({ q: query })}
 				/>
 
-				<div className="flex gap-4 h-full">
+				<div className="flex flex-col lg:flex-row gap-4 h-full">
 					{/* Filtres */}
 					<SearchFilters
 						filters={filters}

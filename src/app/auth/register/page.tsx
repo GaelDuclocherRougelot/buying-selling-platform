@@ -33,7 +33,7 @@ export const metadata: Metadata = {
  */
 export default function page(): JSX.Element {
 	return (
-		<main className="flex flex-col items-center justify-center min-h-screen p-0">
+		<main className="flex flex-col items-center justify-center min-h-screen p-4 lg:p-0">
 			<SignUp />
 		</main>
 	);

@@ -32,7 +32,7 @@ export default function CGU() {
 	return (
 		<>
 			<Header />
-			<main className="prose max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
+			<main className="prose max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6 bg-white">
 				<h1>Conditions générales d&apos;utilisation</h1>
 				<p className="text-sm">
 					L&apos;accès et l&apos;utilisation du site et de ses
