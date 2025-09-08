@@ -1,5 +1,6 @@
 "use client";
 
+import Footer from "@/components/global/Footer";
 import Header from "@/components/global/Header";
 import ProductCard from "@/features/product/ProductCard";
 import { apiFetch } from "@/lib/api";
@@ -64,6 +65,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 						</div>
 					</div>
 				</main>
+				<Footer />
 			</>
 		);
 	}

@@ -1,5 +1,6 @@
 "use client";
 
+import Footer from "@/components/global/Footer";
 import Header from "@/components/global/Header";
 import CategoryCard from "@/features/category/CategoryCard";
 import { apiFetch } from "@/lib/api";
@@ -32,7 +33,7 @@ export default function CategoriesPage() {
 		return (
 			<>
 				<Header />
-				<main className="flex justify-center px-4 lg:px-10 py-8">
+				<main className="flex justify-center px-4 lg:px-10 py-8 min-h-screen">
 					<div className="w-full max-w-7xl">
 						<div className="text-center py-12">
 							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
@@ -42,6 +43,7 @@ export default function CategoriesPage() {
 						</div>
 					</div>
 				</main>
+				<Footer />
 			</>
 		);
 	}
@@ -49,12 +51,12 @@ export default function CategoriesPage() {
 	return (
 		<>
 			<Header />
-			<main className="flex justify-center px-4 lg:px-10 py-8">
+			<main className="flex justify-center px-4 lg:px-10 py-8 min-h-screen">
 				<div className="w-full max-w-7xl">
 					<h1 className="text-3xl font-bold text-gray-900 mb-8">
 						Toutes les catégories
 					</h1>
-					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+					<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 						{categories?.map((category) => (
 							<CategoryCard
 								key={category.id}
@@ -68,6 +70,7 @@ export default function CategoriesPage() {
 					</div>
 				</div>
 			</main>
+			<Footer />
 		</>
 	);
 }

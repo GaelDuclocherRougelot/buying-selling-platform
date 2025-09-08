@@ -52,19 +52,19 @@ const CGVPage = () => (
 			<section>
 				<h2>3. Prix</h2>
 				<p>
-					Les prix sont indiqués en euros, toutes taxes comprises.
-					Nous nous réservons le droit de modifier les prix à tout
-					moment, mais les produits seront facturés sur la base des
-					tarifs en vigueur au moment de la validation de la commande.
+					Les prix sont indiqués en euros par les vendeurs.					
 				</p>
+				<p>Les acheteurs peuvent négocier les prix avec les vendeurs.</p>
+				<p>Les frais de livraison sont pris en charge par les vendeurs.</p>
+				<p>Les prix peuvent être modifiés par les vendeurs à tout moment.</p>
 			</section>
 			<section>
 				<h2>4. Livraison</h2>
 				<p>
-					Les produits sont livrés à l&apos;adresse indiquée lors de
-					la commande. Les délais de livraison sont donnés à titre
-					indicatif.
+					Les produits sont expédiés par les vendeurs. Les délais de
+					livraison sont donnés à titreindicatif.
 				</p>
+				<p>Les frais de livraison sont pris en charge par les vendeurs. <br /> ils peuvent donc hausser le prix du produit pour couvrir les frais de livraison.</p>
 			</section>
 			<section>
 				<h2>5. Droit de rétractation</h2>
@@ -81,6 +81,8 @@ const CGVPage = () => (
 					en cas de dommages résultant d&apos;une mauvaise utilisation
 					du produit acheté.
 				</p>
+				<p>Les vendeurs sont responsables des produits qu&apos;ils mettent en vente.</p>
+				<p>La plateforme vérifie les produits avant leur mise en vente.</p>
 			</section>
 			<section>
 				<h2>7. Loi applicable</h2>

@@ -124,7 +124,7 @@ export default function Home(): JSX.Element {
 					<h2 className="text-2xl font-bold pb-6">
 						Fil d&apos;actualités
 					</h2>
-					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-8">
+					<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-8">
 						{products && products.length > 0 ? (
 							products.map((product) => (
 								<ProductCard
@@ -144,7 +144,7 @@ export default function Home(): JSX.Element {
 				</section>
 				<section className="max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full">
 					<h2 className="text-2xl font-bold pb-6">Top catégories</h2>
-					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-8">
+					<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-8">
 						{categories && categories.length > 0 ? (
 							categories.map((category) => (
 								<CategoryCard

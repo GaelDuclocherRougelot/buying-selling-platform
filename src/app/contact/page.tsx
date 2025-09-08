@@ -53,7 +53,7 @@ export default function ContactPage() {
 	return (
 		<>
 			<Header />
-			<main className="prose max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
+			<main className="prose max-w-[85rem] h-screen mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
 				<h1>Contact</h1>
 				<p>
 					Une question, une remarque, un partenariat ? Envoyez-nous un

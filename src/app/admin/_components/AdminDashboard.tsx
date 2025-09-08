@@ -134,7 +134,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 								)}
 							</div>
 							<p className="text-xs text-muted-foreground">
-								Utilisateurs vérifiés
+								Utilisateurs vérifiés (hors admins)
 							</p>
 						</CardContent>
 					</Card>
@@ -327,7 +327,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 							</Link>
 
 							<Link href="/admin/error-logs">
-								<Card className="hover:shadow-md transition-shadow cursor-pointer">
+								<Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
 									<CardHeader>
 										<CardTitle className="flex items-center space-x-2">
 											<AlertTriangle size={20} />
