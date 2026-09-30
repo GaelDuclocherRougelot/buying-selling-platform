@@ -149,6 +149,7 @@ model Payment {
   seller                User              @relation("Seller", fields: [sellerId], references: [id])
   shipmentTracking      ShipmentTracking?
   shippingProof         ShippingProof?
+  weighings             Weighing[]
 
   @@map("payments")
 }
@@ -271,4 +272,16 @@ model ErrorLog {
   user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("error_logs")
+}
+
+model Weighing {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  deviceId    String
+  weightGrams Int
+  paymentId   String?
+  createdAt   DateTime @default(now())
+  payment     Payment? @relation(fields: [paymentId], references: [id])
+
+  @@map("weighings")
 }
