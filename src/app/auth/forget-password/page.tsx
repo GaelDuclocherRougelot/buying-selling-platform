@@ -28,7 +28,7 @@ function ForgetPasswordInner() {
 						className="flex flex-col gap-4"
 						action={async (formData) => {
 							const email = formData.get("email");
-							await authClient.forgetPassword(
+							await authClient.requestPasswordReset(
 								{
 									email: String(email),
 									redirectTo: "/auth/reset-password",
