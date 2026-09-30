@@ -10,8 +10,7 @@ const ACCEPTED_IMAGE_TYPES = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Schéma de validation Zod pour le formulaire d'inscription
-const signUpSchema = z
-  .object({
+const signUpFields = z.object({
     firstName: z
       .string()
       .min(1, 'Le prénom est requis')
@@ -77,11 +76,15 @@ const signUpSchema = z
         if (!files || files.length === 0) return true; // Optionnel
         return ACCEPTED_IMAGE_TYPES.includes(files[0]?.type);
       }, 'Seuls les formats JPEG, PNG et WebP sont acceptés'),
-  })
-  .refine(data => data.password === data.passwordConfirmation, {
+});
+
+const signUpSchema = signUpFields.refine(
+  data => data.password === data.passwordConfirmation,
+  {
     message: 'Les mots de passe ne correspondent pas',
     path: ['passwordConfirmation'],
-  });
+  }
+);
 
 describe('SignUp Form Validation', () => {
   describe('firstName validation', () => {
@@ -89,7 +92,7 @@ describe('SignUp Form Validation', () => {
       const validNames = ['Jean', 'Marie-Claire', "D'Artagnan", 'José'];
 
       validNames.forEach(name => {
-        const result = signUpSchema.shape.firstName.safeParse(name);
+        const result = signUpFields.shape.firstName.safeParse(name);
         expect(result.success).toBe(true);
       });
     });
@@ -98,7 +101,7 @@ describe('SignUp Form Validation', () => {
       const invalidNames = ['', 'A', 'Jean123', 'Marie@', 'A'.repeat(51)];
 
       invalidNames.forEach(name => {
-        const result = signUpSchema.shape.firstName.safeParse(name);
+        const result = signUpFields.shape.firstName.safeParse(name);
         expect(result.success).toBe(false);
       });
     });
@@ -109,7 +112,7 @@ describe('SignUp Form Validation', () => {
       const validUsernames = ['john_doe', 'user123', 'test-user', 'JohnDoe123'];
 
       validUsernames.forEach(username => {
-        const result = signUpSchema.shape.username.safeParse(username);
+        const result = signUpFields.shape.username.safeParse(username);
         expect(result.success).toBe(true);
       });
     });
@@ -125,7 +128,7 @@ describe('SignUp Form Validation', () => {
       ];
 
       invalidUsernames.forEach(username => {
-        const result = signUpSchema.shape.username.safeParse(username);
+        const result = signUpFields.shape.username.safeParse(username);
         expect(result.success).toBe(false);
       });
     });
@@ -140,7 +143,7 @@ describe('SignUp Form Validation', () => {
       ];
 
       validEmails.forEach(email => {
-        const result = signUpSchema.shape.email.safeParse(email);
+        const result = signUpFields.shape.email.safeParse(email);
         expect(result.success).toBe(true);
       });
     });
@@ -155,7 +158,7 @@ describe('SignUp Form Validation', () => {
       ];
 
       invalidEmails.forEach(email => {
-        const result = signUpSchema.shape.email.safeParse(email);
+        const result = signUpFields.shape.email.safeParse(email);
         expect(result.success).toBe(false);
       });
     });
@@ -166,7 +169,7 @@ describe('SignUp Form Validation', () => {
       const validPasswords = ['MyPass123!', 'Secure#456', 'Test1234@'];
 
       validPasswords.forEach(password => {
-        const result = signUpSchema.shape.password.safeParse(password);
+        const result = signUpFields.shape.password.safeParse(password);
         expect(result.success).toBe(true);
       });
     });
@@ -183,7 +186,7 @@ describe('SignUp Form Validation', () => {
       ];
 
       invalidPasswords.forEach(password => {
-        const result = signUpSchema.shape.password.safeParse(password);
+        const result = signUpFields.shape.password.safeParse(password);
         expect(result.success).toBe(false);
       });
     });
@@ -237,12 +240,12 @@ describe('SignUp Form Validation', () => {
         length: 1,
       };
 
-      const result = signUpSchema.shape.image.safeParse(validFile);
+      const result = signUpFields.shape.image.safeParse(validFile);
       expect(result.success).toBe(true);
     });
 
     it('should accept no image (optional)', () => {
-      const result = signUpSchema.shape.image.safeParse(undefined);
+      const result = signUpFields.shape.image.safeParse(undefined);
       expect(result.success).toBe(true);
     });
 
@@ -256,7 +259,7 @@ describe('SignUp Form Validation', () => {
         length: 1,
       };
 
-      const result = signUpSchema.shape.image.safeParse(largeFile);
+      const result = signUpFields.shape.image.safeParse(largeFile);
       expect(result.success).toBe(false);
     });
 
@@ -270,7 +273,7 @@ describe('SignUp Form Validation', () => {
         length: 1,
       };
 
-      const result = signUpSchema.shape.image.safeParse(invalidFile);
+      const result = signUpFields.shape.image.safeParse(invalidFile);
       expect(result.success).toBe(false);
     });
   });
