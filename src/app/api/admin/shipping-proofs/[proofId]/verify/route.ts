@@ -172,9 +172,26 @@ export async function POST(
 	{ params }: { params: Promise<{ proofId: string }> }
 ) {
 	try {
+		const user = await getUser();
+
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Non autorisé" },
+				{ status: 401 }
+			);
+		}
+
+		// Vérifier que l'utilisateur est admin
+		if (user.role !== "admin") {
+			return NextResponse.json(
+				{ error: "Accès refusé" },
+				{ status: 403 }
+			);
+		}
+
 		const { proofId } = await params;
 		const body = await request.json();
-		const { action, adminId, status } = body; // Accepter les deux formats
+		const { action, status } = body; // Accepter les deux formats
 
 		// Déterminer l'action à partir des paramètres
 		let finalAction = action;
@@ -301,7 +318,7 @@ export async function POST(
 					data: {
 						status: "verified",
 						verifiedAt: new Date(),
-						verifiedBy: adminId || "admin",
+						verifiedBy: user.id,
 					},
 				});
 
@@ -360,7 +377,7 @@ export async function POST(
 					data: {
 						status: "rejected",
 						rejectedAt: new Date(),
-						rejectedBy: adminId || "admin",
+						rejectedBy: user.id,
 					},
 				});
 
