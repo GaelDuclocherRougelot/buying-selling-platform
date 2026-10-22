@@ -1,3 +1,4 @@
+import { getUser } from "@/lib/auth-session";
 import { deleteMultipleImagesFromCloudinary } from "@/lib/cloudinary-utils";
 import { prisma } from "@/lib/prisma";
 import { getProductWithOwnerById } from "@/services/product";
@@ -131,6 +132,10 @@ export async function GET(request: Request) {
  *               $ref: '#/components/schemas/Product'
  *       400:
  *         description: Données de requête invalides
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Interdit (ni propriétaire, ni admin/modérateur)
  *       404:
  *         description: Produit non trouvé
  *       500:
@@ -138,6 +143,14 @@ export async function GET(request: Request) {
  */
 export async function PUT(request: Request) {
 	try {
+		const user = await getUser();
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 }
+			);
+		}
+
 		const url = new URL(request.url);
 		const productId = url.pathname.split("/").pop() as string;
 		const body = await request.json();
@@ -164,6 +177,27 @@ export async function PUT(request: Request) {
 				{ error: "Product not found" },
 				{ status: 404 }
 			);
+		}
+
+		// Only the owner or an admin/moderator can update a product
+		const isStaff = user.role === "admin" || user.role === "moderator";
+		if (!isStaff && existingProduct.ownerId !== user.id) {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+		}
+
+		// Owners can only toggle a live listing between active and inactive;
+		// every other status is reserved to admins/moderators (moderation, sales)
+		if (!isStaff && parseResult.data.status !== undefined) {
+			const ownerStatuses = ["active", "inactive"];
+			if (
+				!ownerStatuses.includes(existingProduct.status) ||
+				!ownerStatuses.includes(parseResult.data.status)
+			) {
+				return NextResponse.json(
+					{ error: "Forbidden: status change not allowed" },
+					{ status: 403 }
+				);
+			}
 		}
 
 		// If imagesUrl is being updated, delete removed images from Cloudinary
