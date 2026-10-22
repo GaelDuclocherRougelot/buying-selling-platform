@@ -95,7 +95,9 @@ Récupère les informations publiques d'un utilisateur.
 - `userId` : ID de l'utilisateur
 
 #### `PUT /api/users/{userId}`
-Met à jour les informations d'un utilisateur.
+Met à jour le nom d'utilisateur affiché de l'utilisateur connecté.
+
+**Authentification requise** : l'utilisateur connecté doit être le propriétaire du profil (`userId` = ID de la session), sinon `401` (non authentifié) ou `403` (accès refusé).
 
 **Paramètres de chemin :**
 - `userId` : ID de l'utilisateur
@@ -103,10 +105,10 @@ Met à jour les informations d'un utilisateur.
 **Corps de la requête :**
 ```json
 {
-  "displayUsername": "john_doe_new",
-  "email": "john.new@example.com"
+  "displayUsername": "john_doe_new"
 }
 ```
+`displayUsername` peut être `null` pour effacer la valeur. Les autres champs sont ignorés ; l'email ne peut pas être modifié (envoyer `email` renvoie `400`).
 
 ### 📦 Commandes
 
