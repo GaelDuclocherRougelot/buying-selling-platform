@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/utils";
 import { SmartTrackingSimulation } from "@/services/smart-tracking-simulation";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -111,54 +110,8 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		// Si le colis est livré et que le paiement est en attente de validation d'expédition, déclencher le transfert
-		if (
-			trackingStatus.isDelivered &&
-			payment.status === "pending_shipping_validation"
-		) {
-			try {
-				// Transférer l'argent au vendeur (moins les frais de plateforme)
-				const transferAmount = Math.round(
-					(payment.amount - (payment.applicationFeeAmount || 0)) * 100
-				);
-
-				await stripe.transfers.create({
-					amount: transferAmount,
-					currency: "eur",
-					destination: payment.seller.stripeAccountId!,
-					metadata: {
-						paymentId: payment.id,
-						productId: payment.productId,
-						buyerId: payment.buyerId,
-						sellerId: payment.sellerId,
-					},
-				});
-
-				// Mettre à jour le statut du paiement
-				await prisma.payment.update({
-					where: { id: paymentId },
-					data: {
-						status: "succeeded",
-						updatedAt: new Date(),
-					},
-				});
-
-				// Marquer le produit comme vendu
-				await prisma.product.update({
-					where: { id: payment.productId },
-					data: { status: "sold" },
-				});
-
-				console.log(`✅ Paiement transféré au vendeur: ${paymentId}`);
-				console.log(`💰 Montant transféré: ${transferAmount / 100}€`);
-			} catch (transferError) {
-				console.error("❌ Erreur lors du transfert:", transferError);
-				return NextResponse.json(
-					{ error: "Erreur lors du transfert au vendeur" },
-					{ status: 500 }
-				);
-			}
-		}
+		// Le suivi est purement informatif : la libération des fonds passe uniquement
+		// par la vérification admin de la preuve ou la validation de l'acheteur.
 
 		return NextResponse.json({
 			tracking: shipmentTracking,
