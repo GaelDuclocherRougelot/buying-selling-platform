@@ -1,6 +1,7 @@
 "use client";
 
 import { apiFetch } from "@/lib/api";
+import { isCloudinaryUrl } from "@/lib/cloudinary-url";
 import { Conversation, Message } from "@/types/conversation";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -307,6 +308,13 @@ export default function ChatWindow({
 		});
 	};
 
+	// Les messages déjà stockés peuvent contenir une URL hostile (ex: javascript:)
+	const openImage = (url: string) => {
+		if (isCloudinaryUrl(url)) {
+			window.open(url, "_blank", "noopener,noreferrer");
+		}
+	};
+
 	const renderMessageContent = (message: Message) => {
 		// Messages d'offre
 		if (message.messageType === "offer") {
@@ -353,9 +361,7 @@ export default function ChatWindow({
 							width={300}
 							height={300}
 							className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-							onClick={() =>
-								window.open(message.content, "_blank")
-							}
+							onClick={() => openImage(message.content)}
 						/>
 					</div>
 					<div className="flex items-center justify-start gap-2">
@@ -395,9 +401,7 @@ export default function ChatWindow({
 											width={300}
 											height={300}
 											className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-											onClick={() =>
-												window.open(imageUrl, "_blank")
-											}
+											onClick={() => openImage(imageUrl)}
 										/>
 									</div>
 								)

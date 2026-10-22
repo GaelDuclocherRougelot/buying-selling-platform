@@ -1,6 +1,24 @@
 import { auth } from "@/lib/auth";
+import { isCloudinaryUrl } from "@/lib/cloudinary-url";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+
+// Types envoyés par le client de chat ("offer" est créé par /api/messages/offers)
+const ALLOWED_MESSAGE_TYPES = ["text", "image", "file", "mixed"];
+
+// Les messages image/mixed ne doivent contenir que des URLs Cloudinary en https
+function hasValidImageUrls(content: unknown, messageType: string): boolean {
+	if (messageType === "image") return isCloudinaryUrl(content);
+	if (messageType === "mixed") {
+		try {
+			const { images } = JSON.parse(content as string);
+			return Array.isArray(images) && images.every(isCloudinaryUrl);
+		} catch {
+			return false;
+		}
+	}
+	return true;
+}
 
 export async function POST(request: NextRequest) {
 	try {
@@ -26,6 +44,16 @@ export async function POST(request: NextRequest) {
 		if (!conversationId || !content) {
 			return NextResponse.json(
 				{ error: "conversationId et content sont requis" },
+				{ status: 400 }
+			);
+		}
+
+		if (
+			!ALLOWED_MESSAGE_TYPES.includes(messageType) ||
+			!hasValidImageUrls(content, messageType)
+		) {
+			return NextResponse.json(
+				{ error: "Type ou contenu de message invalide" },
 				{ status: 400 }
 			);
 		}
