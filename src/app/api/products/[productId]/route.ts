@@ -259,6 +259,10 @@ export async function PUT(request: Request) {
  *     responses:
  *       200:
  *         description: Product deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not the product owner, admin or moderator)
  *       404:
  *         description: Product not found
  *       500:
@@ -266,6 +270,11 @@ export async function PUT(request: Request) {
  */
 export async function DELETE(request: Request) {
 	try {
+		const user = await getUser();
+		if (!user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
 		const url = new URL(request.url);
 		const productId = url.pathname.split("/").pop() as string;
 
@@ -279,6 +288,15 @@ export async function DELETE(request: Request) {
 				{ error: "Product not found" },
 				{ status: 404 }
 			);
+		}
+
+		// Only the owner, an admin or a moderator can delete the product
+		if (
+			existingProduct.ownerId !== user.id &&
+			user.role !== "admin" &&
+			user.role !== "moderator"
+		) {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
 		// Delete images from Cloudinary if they exist
