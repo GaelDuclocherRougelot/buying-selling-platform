@@ -1,6 +1,15 @@
-import { handleApiRoute } from "@/lib/api-error-handler";
+import { ApiErrorHandler, handleApiRoute } from "@/lib/api-error-handler";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
+import { z } from "zod";
+
+// Seul displayUsername est modifiable ; l'email ne peut pas être changé ici
+// (prise de contrôle de compte). Les autres clés sont ignorées.
+const updateUserSchema = z.object({
+	displayUsername: z.string().nullable().optional(),
+	email: z.never().optional(),
+});
 
 /**
  * @swagger
@@ -88,13 +97,9 @@ export async function GET(
  *             properties:
  *               displayUsername:
  *                 type: string
- *                 description: Nouveau nom d'utilisateur
+ *                 nullable: true
+ *                 description: Nouveau nom d'utilisateur (null pour l'effacer). Les autres champs sont ignorés ; envoyer `email` est refusé (400).
  *                 example: "john_doe_new"
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Nouvelle adresse email
- *                 example: "john.new@example.com"
  *     responses:
  *       200:
  *         description: Utilisateur mis à jour avec succès
@@ -113,7 +118,11 @@ export async function GET(
  *                   type: string
  *                   format: date-time
  *       400:
- *         description: Données de requête invalides
+ *         description: Données de requête invalides (y compris toute tentative de modification de l'email)
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé (l'utilisateur connecté n'est pas le propriétaire du profil)
  *       404:
  *         description: Utilisateur non trouvé
  *       500:
@@ -125,14 +134,32 @@ export async function PUT(
 ) {
 	return handleApiRoute(async () => {
 		const { userId } = await params;
-		const body = await request.json();
-		const { displayUsername, email } = body;
+
+		const session = await auth.api.getSession({
+			headers: request.headers,
+		});
+		if (!session?.user) {
+			throw ApiErrorHandler.createAuthErrorResponse();
+		}
+		if (session.user.id !== userId) {
+			throw ApiErrorHandler.createForbiddenErrorResponse();
+		}
+
+		const parseResult = updateUserSchema.safeParse(await request.json());
+		if (!parseResult.success) {
+			throw ApiErrorHandler.createErrorResponse(
+				new Error("Données de requête invalides"),
+				400,
+				"VALIDATION_ERROR",
+				parseResult.error.flatten()
+			);
+		}
+		const { displayUsername } = parseResult.data;
 
 		const updatedUser = await prisma.user.update({
 			where: { id: userId },
 			data: {
 				displayUsername,
-				email,
 			},
 			select: {
 				id: true,
