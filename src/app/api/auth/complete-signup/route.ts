@@ -49,9 +49,6 @@ export async function POST(request: NextRequest) {
         name,
         username,
         displayUsername: username,
-        role: 'user',
-        stripeAccountId: '',
-        stripeAccountStatus: '',
       },
     });
 
@@ -62,6 +59,9 @@ export async function POST(request: NextRequest) {
         emailVerified: true,
         ...(image ? { image } : {}),
         displayUsername: username,
+        // server-side (Prisma is unaffected by input:false); preserves the values signUpEmail used to store
+        stripeAccountId: '',
+        stripeAccountStatus: '',
       },
     });
 

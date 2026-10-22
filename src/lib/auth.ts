@@ -60,19 +60,23 @@ export const auth = betterAuth({
       stripeAccountId: {
         type: 'string',
         unique: false,
+        input: false, // server-controlled, never client-settable
       },
       stripeAccountStatus: {
         type: 'string',
         unique: false,
+        input: false, // server-controlled, never client-settable
       },
       role: {
         type: 'string',
-        default: 'user', // Default role for new users
+        defaultValue: 'user', // Default role for new users
+        input: false, // server-controlled, never client-settable
       },
       deletedAt: {
         type: 'date',
         default: null, // Field to mark user deletion
         required: false,
+        input: false, // server-controlled, never client-settable
       },
     },
     deleteUser: {
