@@ -27,12 +27,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token expired' }, { status: 400 });
     }
 
-    const { email, username, name, image, role } = decryptJson<{
+    const { email, username, name, image } = decryptJson<{
       email: string;
       username: string;
       name: string;
       image: string;
-      role: string;
     }>(verification.value);
 
     // If a user already exists (race/previous completion), short-circuit
@@ -62,7 +61,6 @@ export async function POST(request: NextRequest) {
       data: {
         emailVerified: true,
         ...(image ? { image } : {}),
-        ...(role ? { role } : {}),
         displayUsername: username,
       },
     });

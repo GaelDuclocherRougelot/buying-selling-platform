@@ -10,13 +10,12 @@ const bodySchema = z.object({
   username: z.string().min(3).max(20),
   name: z.string().min(1),
   image: z.string().optional().nullable(),
-  role: z.string().optional().default('user'),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const json = await request.json();
-    const { email, username, name, image, role } = bodySchema.parse(json);
+    const { email, username, name, image } = bodySchema.parse(json);
 
     // Prevent duplicates if a verified user already exists
     const existingVerified = await prisma.user.findUnique({ where: { email } });
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Create a short-lived verification token in Better Auth's Verification table
     // We'll store only a minimal encrypted payload in value
-    const payload = { email, username, name, image, role };
+    const payload = { email, username, name, image };
     const encrypted = encryptJson(payload);
     const tokenId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
