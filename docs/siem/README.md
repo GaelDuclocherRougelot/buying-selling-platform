@@ -91,6 +91,20 @@ puis coller une ligne de `logs/security.json`.
 | XSS chat | `COOKIE=… CONVERSATION_ID=… siem/attack.sh xss` | 100130 | *[capture]* |
 | Scan | `siem/attack.sh scan` (ou un scan ZAP avec `zap.yaml`) | 100131 | *[capture]* |
 
+### Validation : alertes levées (2026-11-03)
+
+Un manager Wazuh 4.12 lit un fichier `security.json` dans lequel on écrit les événements des 5 scénarios, au format produit par `securityLog()`. Les alertes ci-dessous sont extraites de `/var/ossec/logs/alerts/alerts.json`. Les horodatages sont ceux du manager.
+
+| # | Scénario | Horodatage (UTC) | Règle | Niveau | MITRE | Description de l'alerte |
+|---|---|---|---|---|---|---|
+| 1 | Brute force | 2026-11-03T15:45:11.809 | 100102 | 10 | T1110.001 | brute force - 5 échecs de connexion en 2 min depuis 203.0.113.7 |
+| 2 | IDOR | 2026-11-03T15:45:11.809 | 100111 | 10 | T1190 | énumération IDOR - 5 accès refusés en 5 min pour l'utilisateur u_attacker |
+| 3 | Fraude au paiement | 2026-11-03T15:45:11.834 | 100120 | 12 | T1565 | tentative de déblocage des fonds du paiement pay1 par un non-acheteur (u_seller, vendeur=true) |
+| 4 | XSS dans le chat | 2026-11-03T15:45:11.834 | 100130 | 8 | T1059.007 | payload XSS bloqué dans le chat (utilisateur u_x) |
+| 5 | Scan | 2026-11-03T15:45:13.752 | 100131 | 10 | T1595 | scan - 10 refus 401/403 en 1 min depuis 192.0.2.50 |
+
+Les alertes unitaires qui précèdent chaque corrélation ont aussi été levées : 4 × 100101, 4 × 100110 et 9 × 100112. Le dernier événement de chaque série ne produit pas d'alerte unitaire : il déclenche directement la règle de corrélation. Les horodatages sont presque identiques parce que le logcollector a lu le fichier en une seule fois. Lors d'une démo avec `siem/attack.sh`, ils seront étalés.
+
 ## 7. Limites
 
 - **Démo en local** : l'IP source vaut `::1` / `127.0.0.1`. Les corrélations par IP marchent, mais il n'y a pas de géolocalisation.
