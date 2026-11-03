@@ -1,11 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { createAuthMiddleware, isAPIError } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { openAPI, username } from 'better-auth/plugins';
 import { resend } from './resend';
+import { securityLog } from './security-log';
 
 const prisma = new PrismaClient();
+
+const SIGN_IN_PATHS = ['/sign-in/email', '/sign-in/username'];
 
 /**
  * Authentication configuration for the application.
@@ -82,6 +86,22 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
     },
+  },
+  hooks: {
+    // Événements de connexion envoyés au SIEM (brute force)
+    after: createAuthMiddleware(async ctx => {
+      if (!SIGN_IN_PATHS.includes(ctx.path) || !ctx.headers) return;
+      const failed = isAPIError(ctx.context.returned);
+      await securityLog(
+        failed ? 'auth.login_failed' : 'auth.login_success',
+        ctx.headers,
+        {
+          path: ctx.path,
+          login: ctx.body?.email ?? ctx.body?.username,
+          userId: ctx.context.newSession?.user.id,
+        },
+      );
+    }),
   },
   rateLimit: {
     enabled: true,

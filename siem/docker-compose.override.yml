@@ -1,0 +1,6 @@
+# Copié par siem/setup.sh dans siem/wazuh-docker/single-node/ (chemins relatifs à ce dossier)
+services:
+  wazuh.manager:
+    volumes:
+      - ../../../logs:/var/log/app:ro
+      - ../../rules/local_rules.xml:/var/ossec/etc/rules/local_rules.xml:ro

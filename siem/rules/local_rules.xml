@@ -1,0 +1,87 @@
+<!--
+  Règles de détection de la plateforme (montées dans /var/ossec/etc/rules/local_rules.xml).
+  Source : logs/security.json, une ligne JSON par événement (src/lib/security-log.ts).
+-->
+<group name="buying_selling_platform,">
+
+  <!-- Base : tout événement émis par l'application -->
+  <rule id="100100" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="app">buying-selling-platform</field>
+    <description>Plateforme : événement de sécurité $(siem_event)</description>
+  </rule>
+
+  <!-- ===== Brute force ===== -->
+  <rule id="100101" level="5">
+    <if_sid>100100</if_sid>
+    <field name="siem_event">^auth.login_failed$</field>
+    <description>Plateforme : échec de connexion pour $(login) depuis $(srcip)</description>
+    <mitre><id>T1110</id></mitre>
+    <group>authentication_failed,</group>
+  </rule>
+
+  <rule id="100102" level="10" frequency="5" timeframe="120">
+    <if_matched_sid>100101</if_matched_sid>
+    <same_srcip />
+    <description>Plateforme : brute force - 5 échecs de connexion en 2 min depuis $(srcip)</description>
+    <mitre><id>T1110.001</id></mitre>
+    <group>authentication_failures,</group>
+  </rule>
+
+  <rule id="100103" level="3">
+    <if_sid>100100</if_sid>
+    <field name="siem_event">^auth.login_success$</field>
+    <description>Plateforme : connexion réussie pour $(login)</description>
+    <group>authentication_success,</group>
+  </rule>
+
+  <!-- ===== Contrôle d'accès / IDOR ===== -->
+  <rule id="100110" level="6">
+    <if_sid>100100</if_sid>
+    <field name="siem_event">^authz.denied$</field>
+    <description>Plateforme : accès refusé à $(resource) $(resourceId) pour l'utilisateur $(userId)</description>
+    <mitre><id>T1190</id></mitre>
+    <group>authz_fail,access_denied,</group>
+  </rule>
+
+  <rule id="100111" level="10" frequency="5" timeframe="300">
+    <if_matched_sid>100110</if_matched_sid>
+    <same_field>userId</same_field>
+    <description>Plateforme : énumération IDOR - 5 accès refusés en 5 min pour l'utilisateur $(userId)</description>
+    <mitre><id>T1190</id></mitre>
+  </rule>
+
+  <rule id="100112" level="4">
+    <if_sid>100100</if_sid>
+    <field name="siem_event">^authz.unauthenticated$</field>
+    <description>Plateforme : requête non authentifiée sur $(method) $(path)</description>
+    <group>authz_fail,</group>
+  </rule>
+
+  <!-- ===== Fraude au paiement ===== -->
+  <rule id="100120" level="12">
+    <if_sid>100100</if_sid>
+    <field name="siem_event">^payment.release_denied$</field>
+    <description>Plateforme : tentative de déblocage des fonds du paiement $(resourceId) par un non-acheteur ($(userId), vendeur=$(isSeller))</description>
+    <mitre><id>T1565</id></mitre>
+    <group>fraud,</group>
+  </rule>
+
+  <!-- ===== XSS / scan ===== -->
+  <rule id="100130" level="8">
+    <if_sid>100100</if_sid>
+    <field name="siem_event">^input.xss_blocked$</field>
+    <description>Plateforme : payload XSS bloqué dans le chat (utilisateur $(userId))</description>
+    <mitre><id>T1059.007</id></mitre>
+    <group>web_attack,</group>
+  </rule>
+
+  <rule id="100131" level="10" frequency="10" timeframe="60">
+    <if_matched_group>authz_fail</if_matched_group>
+    <same_srcip />
+    <description>Plateforme : scan - 10 refus 401/403 en 1 min depuis $(srcip)</description>
+    <mitre><id>T1595</id></mitre>
+    <group>web_scan,</group>
+  </rule>
+
+</group>
