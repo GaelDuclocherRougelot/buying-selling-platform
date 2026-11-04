@@ -1,5 +1,6 @@
 import Link from "next/link";
 import React from "react";
+import ManageCookiesLink from "./ManageCookiesLink";
 
 /**
  * Footer component displays the footer section of the application.
@@ -33,6 +34,7 @@ const Footer: React.FC = (): JSX.Element => {
 					href="/legal/mentions-legales"
 					className="text-foreground hover:underline"
 				>Mentions légales</Link>
+				<ManageCookiesLink />
 			</nav>
 		</footer>
 	);

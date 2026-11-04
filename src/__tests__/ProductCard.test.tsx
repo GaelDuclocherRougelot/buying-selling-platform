@@ -64,7 +64,7 @@ describe('ProductCard', () => {
   })
 
   it('should render with default image when imageUrl is not provided', () => {
-    const {...propsWithoutImage } = defaultProps
+    const propsWithoutImage = { ...defaultProps, imageUrl: undefined }
 
     render(<ProductCard {...propsWithoutImage} />)
 

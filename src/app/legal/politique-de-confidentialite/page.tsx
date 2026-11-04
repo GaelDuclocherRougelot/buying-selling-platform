@@ -80,8 +80,9 @@ const PolitiqueDeConfidentialite = () => (
 				</li>
 				<li>Répondre aux demandes des utilisateurs (FAQ et robot)</li>
 				<li>
-					Améliorer le site (analyse anonyme de fréquentation si
-					accepté, Google Analytics)
+					Améliorer le site (mesure d&apos;audience et analyse
+					d&apos;usage avec PostHog, hébergé dans l&apos;Union
+					européenne, uniquement si vous l&apos;acceptez)
 				</li>
 				<li>
 					Traiter les paiements et gérer les transactions (via Stripe)
@@ -200,15 +201,10 @@ const PolitiqueDeConfidentialite = () => (
 					<strong>Cookies d&apos;analyse :</strong> Nous aident à
 					comprendre comment vous utilisez le site (avec votre accord)
 				</li>
-				<li>
-					<strong>Cookies marketing :</strong> Utilisés pour vous
-					proposer des contenus personnalisés (avec votre
-					consentement)
-				</li>
 			</ul>
 			<p>
 				Vous pouvez à tout moment modifier vos préférences via le
-				bandeau cookies en bas de page ou dans les paramètres de votre
+				lien &quot;Gérer les cookies&quot; en bas de page ou dans les paramètres de votre
 				navigateur.
 			</p>
 

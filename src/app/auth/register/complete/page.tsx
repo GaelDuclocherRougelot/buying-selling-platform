@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { trackSignupCompleted } from '@/lib/analytics';
 import { apiFetch } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -34,6 +35,7 @@ function CompleteRegistrationInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),
       });
+      trackSignupCompleted();
       toast.success('Compte créé ! Vous pouvez vous connecter.');
       router.push('/auth/login');
     } catch {

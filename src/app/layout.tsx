@@ -1,9 +1,8 @@
-import GoogleAnalytics from '@/components/analytics/GoogleAnalytics';
+import PostHogProvider from '@/components/analytics/PostHogProvider';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import CookieBanner from '@/components/ui/cookie-banner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Poppins } from 'next/font/google';
-import { headers } from 'next/headers';
 import { Toaster } from 'sonner';
 import './globals.css';
 
@@ -102,27 +101,22 @@ export const metadata: Metadata = {
  *
  * @returns {JSX.Element} The root layout component.
  */
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const nonce = (await headers()).get('x-nonce') || undefined;
   return (
     <html lang='fr'>
-      <head>
-        <GoogleAnalytics
-          GA_TRACKING_ID={process.env.NEXT_PUBLIC_GA_TRACKING_ID}
-          nonce={nonce}
-        />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased bg-white`}
       >
         <ErrorBoundary>
-          <Toaster />
-          {children}
-          <CookieBanner />
+          <PostHogProvider>
+            <Toaster />
+            {children}
+            <CookieBanner />
+          </PostHogProvider>
         </ErrorBoundary>
       </body>
     </html>

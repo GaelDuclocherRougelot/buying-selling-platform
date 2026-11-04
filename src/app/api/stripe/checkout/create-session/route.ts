@@ -1,5 +1,9 @@
 import { auth } from "@/lib/auth";
 import {
+	ANALYTICS_CONSENT_COOKIE,
+	isAnalyticsConsentCookie,
+} from "@/lib/consent";
+import {
 	calculatePlatformFee,
 	getPlatformFeeInCents,
 	getSellerSalesCount,
@@ -185,6 +189,12 @@ export async function POST(request: NextRequest) {
 				productId,
 				buyerId: session.user.id,
 				sellerId: product.ownerId,
+				// Consentement analytics de l'acheteur, relu par le webhook (purchase_completed)
+				analyticsConsent: isAnalyticsConsentCookie(
+					request.cookies.get(ANALYTICS_CONSENT_COOKIE)?.value
+				)
+					? "true"
+					: "false",
 			},
 			// Pour Stripe Connect, ajouter les frais de plateforme
 			payment_intent_data: {

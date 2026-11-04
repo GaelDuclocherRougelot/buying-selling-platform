@@ -83,6 +83,8 @@
     "next-zod-route": "^0.2.6",
     "nuqs": "^2.10.1",
     "pg": "^8.23.0",
+    "posthog-js": "^1.445.3",
+    "posthog-node": "^5.61.2",
     "pusher": "^5.3.4",
     "pusher-js": "^8.6.0",
     "react": "^18.3.1",

@@ -1,5 +1,6 @@
 "use client";
 
+import { trackFavoriteAdded } from "@/lib/analytics";
 import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { useErrorHandler } from "@/lib/hooks/useErrorHandler";
@@ -105,6 +106,7 @@ export default function FavoriteButton({
 
 				if (response.ok) {
 					setIsFavorite(true);
+					trackFavoriteAdded({ listingId: productId });
 					toast.success("Produit ajouté aux favoris");
 				} else {
 					const errorData = await response.json();

@@ -4,7 +4,7 @@ module.exports = {
 	moduleNameMapper: {
 		"^@/(.*)$": "<rootDir>/src/$1",
 	},
-	testPathIgnorePatterns: ["/node_modules/", "/.next/"],
+	testPathIgnorePatterns: ["/node_modules/", "/.next/", "/src/__tests__/setup\\.tsx?$"],
 	transform: {
 		"^.+\\.(ts|tsx)$": [
 			"ts-jest",

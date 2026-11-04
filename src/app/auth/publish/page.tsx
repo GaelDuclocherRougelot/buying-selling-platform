@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { trackListingPublished } from "@/lib/analytics";
 import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { ProductWithCategory } from "@/types/product";
@@ -173,6 +174,11 @@ const CreateProductPage = () => {
 				console.error("Product creation failed");
 				return;
 			}
+
+			trackListingPublished({
+				category:
+					categories.find((c) => c.id === category)?.name ?? category,
+			});
 		}
 
 		reset();

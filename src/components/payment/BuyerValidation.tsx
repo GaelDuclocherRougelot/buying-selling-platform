@@ -81,7 +81,7 @@ export default function BuyerValidation({
 	};
 
 	return (
-		<Card className="w-full max-w-2xl mx-auto">
+		<Card className="w-full max-w-2xl mx-auto ph-no-capture">
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					🤝 Validation de la remise en main propre
