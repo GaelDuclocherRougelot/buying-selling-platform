@@ -80,8 +80,9 @@ const PolitiqueDeConfidentialite = () => (
 				</li>
 				<li>Répondre aux demandes des utilisateurs (FAQ et robot)</li>
 				<li>
-					Améliorer le site (analyse anonyme de fréquentation si
-					accepté, Google Analytics)
+					Améliorer le site (mesure d&apos;audience et analyse
+					d&apos;usage avec PostHog, hébergé dans l&apos;Union
+					européenne, uniquement si vous l&apos;acceptez)
 				</li>
 				<li>
 					Traiter les paiements et gérer les transactions (via Stripe)
