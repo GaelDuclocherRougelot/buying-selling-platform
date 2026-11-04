@@ -72,8 +72,15 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  // Next.js lit le nonce dans la CSP des en-têtes de la *requête* pour
+  // l'appliquer à ses propres scripts inline (hydratation, payload RSC).
+  // Sans cela, ces scripts sont bloqués (erreur React #412).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', cspPolicy);
+
   // Créer la réponse et ajouter tous les en-têtes de sécurité
-  const response = NextResponse.next();
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
 
   // Ajouter les en-têtes CORS
   Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -88,8 +95,6 @@ export async function middleware(request: NextRequest) {
     response.headers.set(key, value);
   });
 
-  // Ajouter le nonce dans les headers pour utilisation côté client si nécessaire
-  response.headers.set('X-Nonce', nonce);
 
   // Définir les routes qui nécessitent une authentification
   const protectedRoutes = [
