@@ -49,7 +49,7 @@ export default function CategoriesNavbar() {
         <li className='border-b'>
           <Link href='/categories'>Toutes les catégories</Link>
         </li>
-        <span>•</span>
+        <li aria-hidden='true'>•</li>
         {categories.map(category => (
           <li key={category.id} className='whitespace-nowrap'>
             <Link

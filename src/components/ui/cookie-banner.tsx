@@ -106,6 +106,7 @@ export default function CookieBanner() {
 									size="sm"
 									onClick={() => setShowBanner(false)}
 									className="text-gray-500 hover:text-gray-700"
+									aria-label="Fermer"
 								>
 									<X size={16} />
 								</Button>
@@ -156,6 +157,7 @@ export default function CookieBanner() {
 									variant="ghost"
 									size="sm"
 									onClick={() => setShowSettings(false)}
+									aria-label="Fermer"
 								>
 									<X size={16} />
 								</Button>

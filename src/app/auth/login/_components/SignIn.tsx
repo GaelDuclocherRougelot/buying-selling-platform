@@ -145,7 +145,7 @@ export default function SignIn() {
               id='password'
               type='password'
               placeholder='Mot de passe'
-              autoComplete='Mot de passe'
+              autoComplete='current-password'
               value={password}
               onChange={e => setPassword(e.target.value)}
             />

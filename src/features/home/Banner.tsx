@@ -18,7 +18,7 @@ export default function Banner(): JSX.Element {
 				<h2 className="text-5xl font-bold text-white">
 					Le grand nettoyage de printemps, <br /> toute l’année.
 				</h2>
-				<Button className="w-fit text-lg py-6 cursor-pointer">
+				<Button asChild className="w-fit text-lg py-6 cursor-pointer">
 					<Link href="/auth/publish">Vendre maintenant</Link>
 				</Button>
 			</div>

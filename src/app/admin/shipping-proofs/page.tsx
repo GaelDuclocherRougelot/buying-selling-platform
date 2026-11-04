@@ -130,7 +130,7 @@ export default function ShippingProofsPage() {
 
   return (
     <div className='container mx-auto p-6'>
-      <Button variant='outline' className='mb-6 cursor-pointer'>
+      <Button asChild variant='outline' className='mb-6 cursor-pointer'>
         <Link href='/admin' className='flex items-center gap-2'>
           <ArrowLeft size={16} />
           <span>Retour</span>

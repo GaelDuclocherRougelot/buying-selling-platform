@@ -80,7 +80,7 @@ const ProfileEditPage = async () => {
 						</div>
 						<div className="flex flex-col gap-2 mt-4">
 							<label>Mot de passe </label>
-							<Button className="w-fit">
+							<Button asChild className="w-fit">
 								<Link href="/auth/forget-password">
 									Réinitialiser mon mot de passe
 								</Link>

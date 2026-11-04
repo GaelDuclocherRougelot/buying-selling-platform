@@ -65,7 +65,7 @@ const Header = (): JSX.Element => {
       <header className='flex flex-row items-center h-20 border sticky top-0 bg-background z-50 shadow-sm'>
         <div className='max-w-[85rem] mx-auto py-4 px-4 lg:px-10 w-full flex justify-between md:justify-normal items-center'>
           <div className='flex items-center w-fit'>
-            <Link href='/' className='text-2xl font-extrabold'>
+            <Link href='/' aria-label='ZONE - Accueil' className='text-2xl font-extrabold'>
               <Logo />
             </Link>
           </div>
