@@ -17,7 +17,19 @@ const SIGN_IN_PATHS = ['/sign-in/email', '/sign-in/username'];
  * It includes email and password authentication, social login with Google,
  * and username validation.
  */
+/**
+ * Origines autorisées en plus de BETTER_AUTH_URL : URLs des déploiements
+ * de preview Vercel (fournies par Vercel au build/runtime).
+ */
+const vercelPreviewOrigins =
+  process.env.VERCEL_ENV === 'preview'
+    ? [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+        .filter((host): host is string => Boolean(host))
+        .map(host => `https://${host}`)
+    : [];
+
 export const auth = betterAuth({
+  trustedOrigins: vercelPreviewOrigins,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),

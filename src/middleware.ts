@@ -21,17 +21,22 @@ const corsHeaders = {
 function getCSPHeader() {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
 
+  // Barre d'outils Vercel (commentaires, feedback), injectée uniquement sur
+  // les déploiements de preview : https://vercel.com/docs/vercel-toolbar
+  const isPreview = process.env.VERCEL_ENV === 'preview';
+  const vercelLive = isPreview ? ' https://vercel.live' : '';
+
   const cspPolicy = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://m.stripe.network https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'nonce-${nonce}'`,
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com",
-    "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com data:",
-    "img-src 'self' data: blob: https://images.unsplash.com https://lh3.googleusercontent.com https://res.cloudinary.com https://*.stripe.com",
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://m.stripe.network https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net${vercelLive} 'nonce-${nonce}'`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com${vercelLive}`,
+    `font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com data:${isPreview ? ' https://vercel.live https://assets.vercel.com' : ''}`,
+    `img-src 'self' data: blob: https://images.unsplash.com https://lh3.googleusercontent.com https://res.cloudinary.com https://*.stripe.com${isPreview ? ' https://vercel.live https://vercel.com' : ''}`,
     "media-src 'self' https://res.cloudinary.com",
-    "connect-src 'self' https://api.stripe.com https://api.cloudinary.com https://res.cloudinary.com https://upload.cloudinary.com ws: wss:",
+    `connect-src 'self' https://api.stripe.com https://api.cloudinary.com https://res.cloudinary.com https://upload.cloudinary.com ws: wss:${vercelLive}`,
     // PostHog session replay compresse dans un Web Worker (blob:)
     "worker-src 'self' blob:",
-    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+    `frame-src 'self' https://js.stripe.com https://hooks.stripe.com${vercelLive}`,
     "form-action 'self'",
     "base-uri 'self'",
     "object-src 'none'",
