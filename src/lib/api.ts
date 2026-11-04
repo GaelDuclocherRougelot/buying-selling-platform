@@ -1,10 +1,13 @@
-import { handleApiError } from "./error-handler";
+import { handleApiError, handleError } from "./error-handler";
 
 /**
  * Utility function to get the base URL for API calls
- * Uses NEXT_PUBLIC_APP_URL environment variable or falls back to localhost:3000
+ * - Navigateur : origine courante (même origine → CSP connect-src 'self',
+ *   fonctionne aussi sur les previews Vercel et les domaines alternatifs)
+ * - Serveur : NEXT_PUBLIC_APP_URL ou localhost:3000
  */
 export const getBaseURL = (): string => {
+	if (typeof window !== "undefined") return window.location.origin;
 	return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 };
 
@@ -46,11 +49,11 @@ export const apiFetch = async (
 
 		return response;
 	} catch (error) {
-		// Gérer les erreurs de réseau
-		handleApiError(
-			new Response(null, { status: 0, statusText: "Network Error" }),
-			errorMessage || "Erreur de connexion"
-		);
+		// Erreur réseau (ou requête bloquée) : pas de Response HTTP.
+		// `new Response(null, { status: 0 })` lève une RangeError qui masquait l'erreur d'origine.
+		handleError(error, {
+			fallbackMessage: errorMessage || "Erreur de connexion",
+		});
 		throw error;
 	}
 };

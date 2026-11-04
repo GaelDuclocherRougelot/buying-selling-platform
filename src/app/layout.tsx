@@ -3,6 +3,7 @@ import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import CookieBanner from '@/components/ui/cookie-banner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Poppins } from 'next/font/google';
+import { connection } from 'next/server';
 import { Toaster } from 'sonner';
 import './globals.css';
 
@@ -101,11 +102,14 @@ export const metadata: Metadata = {
  *
  * @returns {JSX.Element} The root layout component.
  */
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Rendu dynamique obligatoire : la CSP utilise un nonce généré à chaque
+  // requête par le middleware, impossible à injecter dans une page statique.
+  await connection();
   return (
     <html lang='fr'>
       <body
