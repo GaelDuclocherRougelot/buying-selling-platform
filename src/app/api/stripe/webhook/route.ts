@@ -1,4 +1,6 @@
+import { createPostHogServerClient } from "@/lib/posthog-server";
 import { prisma } from "@/lib/prisma";
+import { createHash } from "crypto";
 import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -80,6 +82,10 @@ export async function POST(request: NextRequest) {
 				await handleCheckoutSessionCompleted(
 					event.data.object as Stripe.Checkout.Session
 				);
+				await capturePurchaseCompleted(
+					event,
+					event.data.object as Stripe.Checkout.Session
+				);
 				break;
 
 			case "payment_intent.succeeded":
@@ -137,6 +143,51 @@ export async function POST(request: NextRequest) {
 			{ status: 500 }
 		);
 	}
+}
+
+/**
+ * Envoie purchase_completed à PostHog (côté serveur).
+ * - distinctId = id de l'acheteur uniquement (aucune donnée personnelle)
+ * - uuid déterministe dérivé de l'event Stripe : les retries du webhook
+ *   ne créent pas de doublon
+ * - await shutdown() obligatoire en serverless (Vercel) pour flusher
+ */
+async function capturePurchaseCompleted(
+	event: Stripe.Event,
+	checkoutSession: Stripe.Checkout.Session
+) {
+	const { productId, buyerId } = checkoutSession.metadata || {};
+	if (!productId || !buyerId) return;
+	if (checkoutSession.payment_status !== "paid") return;
+
+	const posthog = createPostHogServerClient();
+	if (!posthog) return;
+
+	try {
+		posthog.capture({
+			distinctId: buyerId,
+			event: "purchase_completed",
+			uuid: deterministicUuid(`stripe:${checkoutSession.id}`),
+			timestamp: new Date(event.created * 1000),
+			properties: {
+				listingId: productId,
+				price: (checkoutSession.amount_total || 0) / 100,
+				currency: checkoutSession.currency || "eur",
+				$process_person_profile: true,
+			},
+		});
+	} catch (error) {
+		console.error("❌ PostHog purchase_completed:", error);
+	} finally {
+		await posthog.shutdown();
+	}
+}
+
+/** UUID (format v4) stable dérivé d'une chaîne. */
+function deterministicUuid(input: string): string {
+	const h = createHash("sha256").update(input).digest("hex");
+	const variant = ((parseInt(h[16], 16) & 0x3) | 0x8).toString(16);
+	return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${variant}${h.slice(17, 20)}-${h.slice(20, 32)}`;
 }
 
 async function handleCheckoutSessionCompleted(

@@ -53,3 +53,6 @@ next-env.d.ts
 *.backup
 *.sql.backup
 backup.log
+
+# Modèle de variables d'environnement (versionné)
+!.env.example

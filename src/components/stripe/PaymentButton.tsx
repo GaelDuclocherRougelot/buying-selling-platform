@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { trackCheckoutStarted } from "@/lib/analytics";
 import { apiFetch } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { useErrorHandler } from "@/lib/hooks/useErrorHandler";
@@ -31,6 +32,7 @@ export default function PaymentButton({
 		}
 
 		setLoading(true);
+		trackCheckoutStarted({ listingId: productId, price: amount });
 		try {
 			// Créer une session de paiement Stripe Checkout
 			const response = await apiFetch(

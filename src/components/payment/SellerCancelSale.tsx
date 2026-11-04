@@ -79,7 +79,7 @@ export default function SellerCancelSale({
 	};
 
 	return (
-		<Card className="w-full border-red-200">
+		<Card className="w-full border-red-200 ph-no-capture">
 			<CardHeader className="bg-red-50">
 				<CardTitle className="flex items-center gap-2 text-red-800">
 					<AlertTriangle className="h-5 w-5" />

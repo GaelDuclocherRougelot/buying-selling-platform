@@ -213,7 +213,7 @@ export default function PaymentStatus({ paymentId }: PaymentStatusProps) {
 	};
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-4 ph-no-capture">
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">

@@ -4,6 +4,21 @@ const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	// Optimize build output
 	output: "standalone",
+	// Requis par le reverse proxy PostHog (/ingest)
+	skipTrailingSlashRedirect: true,
+
+	async rewrites() {
+		return [
+			{
+				source: "/ingest/static/:path*",
+				destination: "https://eu-assets.i.posthog.com/static/:path*",
+			},
+			{
+				source: "/ingest/:path*",
+				destination: "https://eu.i.posthog.com/:path*",
+			},
+		];
+	},
 
 	images: {
 		remotePatterns: [

@@ -125,7 +125,7 @@ export default function ConnectReturnPage() {
 
 	return (
 		<div className="min-h-screen flex items-center justify-center p-4">
-			<Card className="w-full max-w-md">
+			<Card className="w-full max-w-md ph-no-capture">
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
 						{status === "success" ? (

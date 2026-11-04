@@ -9,7 +9,9 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
+import { resetAnalytics } from "@/lib/analytics";
 import { signOut } from "@/lib/auth-client";
+import { hasAnalyticsConsent } from "@/lib/consent";
 import { User } from "better-auth";
 import {
 	AlertTriangle,
@@ -53,6 +55,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 	const [loading, setLoading] = useState(true);
 	const handleSignOut = async () => {
 		await signOut();
+		resetAnalytics(hasAnalyticsConsent());
 		toast.success("Déconnexion réussie");
 		router.push("/");
 	};

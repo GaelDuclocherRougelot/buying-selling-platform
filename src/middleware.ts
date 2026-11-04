@@ -29,6 +29,8 @@ function getCSPHeader() {
     "img-src 'self' data: blob: https://images.unsplash.com https://lh3.googleusercontent.com https://res.cloudinary.com https://*.stripe.com https://www.google-analytics.com",
     "media-src 'self' https://res.cloudinary.com",
     "connect-src 'self' https://api.stripe.com https://api.cloudinary.com https://res.cloudinary.com https://upload.cloudinary.com https://www.google-analytics.com https://region1.google-analytics.com ws: wss:",
+    // PostHog session replay compresse dans un Web Worker (blob:)
+    "worker-src 'self' blob:",
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
     "form-action 'self'",
     "base-uri 'self'",
@@ -134,6 +136,7 @@ export const config = {
     '/auth/profile/edit',
     '/admin/:path*',
     // Routes publiques pour appliquer les en-têtes CSP et de sécurité
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // (/ingest = reverse proxy PostHog, exclu)
+    '/((?!api|ingest|_next/static|_next/image|favicon.ico).*)',
   ],
 };

@@ -1,7 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { resetAnalytics } from "@/lib/analytics";
 import { signOut, useSession } from "@/lib/auth-client";
+import { hasAnalyticsConsent } from "@/lib/consent";
 import { LoginLogger } from "@/lib/login-logger";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -43,6 +45,7 @@ export function LogoutButton({
 
 			// Effectuer la déconnexion
 			await signOut();
+			resetAnalytics(hasAnalyticsConsent());
 		} catch (error) {
 			console.error("Erreur lors de la déconnexion:", error);
 		} finally {

@@ -1,3 +1,4 @@
+import ListingViewTracker from "@/components/analytics/ListingViewTracker";
 import Header from "@/components/global/Header";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { CardTitle } from "@/components/ui/card";
@@ -116,6 +117,11 @@ export default async function ProductPage(props: {
 
 	return (
 		<>
+			<ListingViewTracker
+				listingId={product.id}
+				category={product.category?.name ?? decodeURIComponent(params.category)}
+				price={Number(product.price)}
+			/>
 			<Header />
 			<ProductNavBar
 				image={product.imagesUrl[0]}
@@ -153,6 +159,15 @@ export default async function ProductPage(props: {
 										<VerifiedUser />
 									)}
 								</CardTitle>
+								{/*
+								 * TODO(trust-score): afficher ici le badge Trust Score du vendeur
+								 * (composant client) et brancher le tracking :
+								 *   const { onBadgeHover, onOpen } =
+								 *     useTrustScoreTracking(product.ownerId, score);
+								 *   <TrustScoreBadge onMouseEnter={onBadgeHover} onFocus={onBadgeHover}
+								 *     onClick={onOpen} />
+								 * Hook : src/lib/hooks/useTrustScoreTracking.ts
+								 */}
 							</div>
 						</div>
 						<ProductActions

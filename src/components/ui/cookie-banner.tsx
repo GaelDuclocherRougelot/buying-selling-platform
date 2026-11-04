@@ -2,14 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+	type CookiePreferences,
+	OPEN_COOKIE_BANNER_EVENT,
+	readConsent,
+	writeConsent,
+} from "@/lib/consent";
 import { Cookie, Settings, X } from "lucide-react";
+import posthog from "posthog-js";
 import { useEffect, useState } from "react";
-
-interface CookiePreferences {
-	essential: boolean;
-	analytics: boolean;
-	marketing: boolean;
-}
 
 export default function CookieBanner() {
 	const [showBanner, setShowBanner] = useState(false);
@@ -21,11 +22,23 @@ export default function CookieBanner() {
 	});
 
 	useEffect(() => {
-		// Vérifier si le consentement a déjà été donné
-		const consent = localStorage.getItem("cookie-consent");
+		// Vérifier si le consentement a déjà été donné (et n'a pas expiré)
+		const consent = readConsent();
 		if (!consent) {
 			setShowBanner(true);
+		} else {
+			setPreferences(consent);
 		}
+
+		// Lien "Gérer les cookies" du footer
+		const open = () => {
+			const current = readConsent();
+			if (current) setPreferences(current);
+			setShowSettings(false);
+			setShowBanner(true);
+		};
+		window.addEventListener(OPEN_COOKIE_BANNER_EVENT, open);
+		return () => window.removeEventListener(OPEN_COOKIE_BANNER_EVENT, open);
 	}, []);
 
 	const handleAcceptAll = () => {
@@ -57,18 +70,12 @@ export default function CookieBanner() {
 	};
 
 	const saveConsent = (prefs: CookiePreferences) => {
-		localStorage.setItem("cookie-consent", JSON.stringify(prefs));
-		localStorage.setItem("cookie-consent-date", new Date().toISOString());
-
-		// Appliquer les préférences
-		if (prefs.analytics) {
-			// Activer Google Analytics
-			console.log("Analytics activé");
+		// Appliquer les préférences analytics (PostHog)
+		if (posthog.__loaded) {
+			if (prefs.analytics) posthog.opt_in_capturing();
+			else posthog.opt_out_capturing();
 		}
-		if (prefs.marketing) {
-			// Activer les cookies marketing
-			console.log("Marketing activé");
-		}
+		writeConsent(prefs);
 	};
 
 	const handlePreferenceChange = (key: keyof CookiePreferences) => {
@@ -108,22 +115,28 @@ export default function CookieBanner() {
 							<p className="text-sm text-gray-600">
 								Nous utilisons des cookies pour améliorer votre
 								expérience, analyser le trafic et personnaliser
-								le contenu. En cliquant sur &quot;Accepter
-								tout&quot;, vous consentez à l&apos;utilisation
-								de tous les cookies. Vous pouvez également
-								choisir les types de cookies que vous acceptez.
+								le contenu. Vous pouvez accepter ou refuser
+								les cookies non essentiels, et modifier votre
+								choix à tout moment via le lien &quot;Gérer
+								les cookies&quot; en bas de page.
 							</p>
 
-							<div className="flex flex-wrap gap-2">
+							{/* CNIL : "Refuser" aussi simple et visible que "Accepter" */}
+							<div className="grid grid-cols-2 gap-2">
 								<Button
 									onClick={handleAcceptEssential}
-									variant="outline"
+									className="w-full"
 								>
-									Cookies essentiels uniquement
+									Refuser
 								</Button>
-								<Button onClick={handleAcceptAll}>
-									Accepter tout
+								<Button
+									onClick={handleAcceptAll}
+									className="w-full"
+								>
+									Accepter
 								</Button>
+							</div>
+							<div className="flex justify-center">
 								<Button
 									onClick={() => setShowSettings(true)}
 									variant="ghost"

@@ -1,4 +1,5 @@
 import GoogleAnalytics from '@/components/analytics/GoogleAnalytics';
+import PostHogProvider from '@/components/analytics/PostHogProvider';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import CookieBanner from '@/components/ui/cookie-banner';
 import type { Metadata } from 'next';
@@ -120,9 +121,11 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased bg-white`}
       >
         <ErrorBoundary>
-          <Toaster />
-          {children}
-          <CookieBanner />
+          <PostHogProvider>
+            <Toaster />
+            {children}
+            <CookieBanner />
+          </PostHogProvider>
         </ErrorBoundary>
       </body>
     </html>

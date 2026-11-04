@@ -232,7 +232,8 @@ export default function MessagesPage() {
         )}
       </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-250px)]'>
+      {/* ph-no-capture : messagerie exclue du session replay */}
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-250px)] ph-no-capture'>
         {/* Liste des conversations */}
         <div
           className={`lg:col-span-1 bg-white rounded-lg shadow-sm border border-gray-200 ${
