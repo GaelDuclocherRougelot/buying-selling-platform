@@ -6,6 +6,7 @@ import {
 	type CookiePreferences,
 	OPEN_COOKIE_BANNER_EVENT,
 	readConsent,
+	syncConsentCookie,
 	writeConsent,
 } from "@/lib/consent";
 import { Cookie, Settings, X } from "lucide-react";
@@ -24,6 +25,7 @@ export default function CookieBanner() {
 	useEffect(() => {
 		// Vérifier si le consentement a déjà été donné (et n'a pas expiré)
 		const consent = readConsent();
+		syncConsentCookie();
 		if (!consent) {
 			setShowBanner(true);
 		} else {

@@ -17,6 +17,18 @@ export const OPEN_COOKIE_BANNER_EVENT = "zone:open-cookie-banner";
 /** Événement DOM émis quand le consentement change. */
 export const CONSENT_CHANGED_EVENT = "zone:consent-changed";
 
+/**
+ * Cookie (strictement nécessaire : il ne fait que mémoriser le choix)
+ * permettant au serveur de connaître le consentement analytics.
+ * Valeur : "1" (accepté) ou "0" (refusé).
+ */
+export const ANALYTICS_CONSENT_COOKIE = "zone_analytics_consent";
+
+/** Lit le consentement analytics depuis la valeur du cookie (côté serveur). */
+export function isAnalyticsConsentCookie(value: string | undefined): boolean {
+	return value === "1";
+}
+
 /** La CNIL recommande de redemander le consentement après 13 mois max. */
 const CONSENT_MAX_AGE_MS = 395 * 24 * 60 * 60 * 1000;
 
@@ -40,7 +52,22 @@ export function readConsent(): CookiePreferences | null {
 	}
 }
 
+function setConsentCookie(analytics: boolean | null): void {
+	const secure = window.location.protocol === "https:" ? "; Secure" : "";
+	document.cookie =
+		analytics === null
+			? `${ANALYTICS_CONSENT_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`
+			: `${ANALYTICS_CONSENT_COOKIE}=${analytics ? "1" : "0"}; Path=/; Max-Age=${Math.floor(CONSENT_MAX_AGE_MS / 1000)}; SameSite=Lax${secure}`;
+}
+
+/** Aligne le cookie serveur sur le choix stocké (choix antérieurs, expiration). */
+export function syncConsentCookie(): void {
+	if (typeof window === "undefined") return;
+	setConsentCookie(readConsent()?.analytics ?? null);
+}
+
 export function writeConsent(prefs: CookiePreferences): void {
+	setConsentCookie(prefs.analytics);
 	try {
 		window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(prefs));
 		window.localStorage.setItem(

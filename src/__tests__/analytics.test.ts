@@ -18,7 +18,12 @@ import {
 	trackCheckoutStarted,
 	trackListingViewed,
 } from "@/lib/analytics";
-import { hasAnalyticsConsent, readConsent, writeConsent } from "@/lib/consent";
+import {
+	hasAnalyticsConsent,
+	isAnalyticsConsentCookie,
+	readConsent,
+	writeConsent,
+} from "@/lib/consent";
 
 const ph = posthog as jest.Mocked<typeof posthog>;
 
@@ -70,5 +75,25 @@ describe("consent", () => {
 		writeConsent({ essential: true, analytics: true, marketing: false });
 		localStorage.setItem("cookie-consent-date", "2000-01-01T00:00:00.000Z");
 		expect(readConsent()).toBeNull();
+	});
+});
+
+describe("consent cookie", () => {
+	beforeEach(() => {
+		localStorage.clear();
+		document.cookie = "zone_analytics_consent=; Path=/; Max-Age=0";
+	});
+
+	it("pose le cookie serveur selon le choix", () => {
+		writeConsent({ essential: true, analytics: true, marketing: false });
+		expect(document.cookie).toContain("zone_analytics_consent=1");
+		writeConsent({ essential: true, analytics: false, marketing: false });
+		expect(document.cookie).toContain("zone_analytics_consent=0");
+	});
+
+	it("isAnalyticsConsentCookie n'accepte que '1'", () => {
+		expect(isAnalyticsConsentCookie("1")).toBe(true);
+		expect(isAnalyticsConsentCookie("0")).toBe(false);
+		expect(isAnalyticsConsentCookie(undefined)).toBe(false);
 	});
 });

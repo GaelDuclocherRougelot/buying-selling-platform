@@ -147,6 +147,8 @@ export async function POST(request: NextRequest) {
 
 /**
  * Envoie purchase_completed à PostHog (côté serveur).
+ * - uniquement si l'acheteur a accepté les cookies analytics
+ *   (metadata.analyticsConsent posée à la création de la session Checkout)
  * - distinctId = id de l'acheteur uniquement (aucune donnée personnelle)
  * - uuid déterministe dérivé de l'event Stripe : les retries du webhook
  *   ne créent pas de doublon
@@ -156,7 +158,9 @@ async function capturePurchaseCompleted(
 	event: Stripe.Event,
 	checkoutSession: Stripe.Checkout.Session
 ) {
-	const { productId, buyerId } = checkoutSession.metadata || {};
+	const { productId, buyerId, analyticsConsent } =
+		checkoutSession.metadata || {};
+	if (analyticsConsent !== "true") return;
 	if (!productId || !buyerId) return;
 	if (checkoutSession.payment_status !== "paid") return;
 
