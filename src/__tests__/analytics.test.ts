@@ -67,12 +67,12 @@ describe("consent", () => {
 	});
 
 	it("mémorise le choix", () => {
-		writeConsent({ essential: true, analytics: true, marketing: false });
+		writeConsent({ essential: true, analytics: true });
 		expect(hasAnalyticsConsent()).toBe(true);
 	});
 
 	it("expire après 13 mois", () => {
-		writeConsent({ essential: true, analytics: true, marketing: false });
+		writeConsent({ essential: true, analytics: true });
 		localStorage.setItem("cookie-consent-date", "2000-01-01T00:00:00.000Z");
 		expect(readConsent()).toBeNull();
 	});
@@ -85,9 +85,9 @@ describe("consent cookie", () => {
 	});
 
 	it("pose le cookie serveur selon le choix", () => {
-		writeConsent({ essential: true, analytics: true, marketing: false });
+		writeConsent({ essential: true, analytics: true });
 		expect(document.cookie).toContain("zone_analytics_consent=1");
-		writeConsent({ essential: true, analytics: false, marketing: false });
+		writeConsent({ essential: true, analytics: false });
 		expect(document.cookie).toContain("zone_analytics_consent=0");
 	});
 

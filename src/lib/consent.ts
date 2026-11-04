@@ -7,7 +7,6 @@
 export interface CookiePreferences {
 	essential: boolean;
 	analytics: boolean;
-	marketing: boolean;
 }
 
 export const CONSENT_STORAGE_KEY = "cookie-consent";
@@ -45,7 +44,6 @@ export function readConsent(): CookiePreferences | null {
 		return {
 			essential: true,
 			analytics: parsed.analytics === true,
-			marketing: parsed.marketing === true,
 		};
 	} catch {
 		return null;

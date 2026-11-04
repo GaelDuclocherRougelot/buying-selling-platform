@@ -19,7 +19,6 @@ export default function CookieBanner() {
 	const [preferences, setPreferences] = useState<CookiePreferences>({
 		essential: true, // Toujours activé
 		analytics: false,
-		marketing: false,
 	});
 
 	useEffect(() => {
@@ -47,7 +46,6 @@ export default function CookieBanner() {
 		const allPreferences = {
 			essential: true,
 			analytics: true,
-			marketing: true,
 		};
 		setPreferences(allPreferences);
 		saveConsent(allPreferences);
@@ -58,7 +56,6 @@ export default function CookieBanner() {
 		const essentialPreferences = {
 			essential: true,
 			analytics: false,
-			marketing: false,
 		};
 		setPreferences(essentialPreferences);
 		saveConsent(essentialPreferences);
@@ -198,26 +195,6 @@ export default function CookieBanner() {
 										checked={preferences.analytics}
 										onChange={() =>
 											handlePreferenceChange("analytics")
-										}
-										className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-									/>
-								</div>
-
-								<div className="flex items-center justify-between p-3 border rounded-lg">
-									<div>
-										<h4 className="font-medium">
-											Cookies marketing
-										</h4>
-										<p className="text-sm text-gray-600">
-											Utilisés pour vous proposer des
-											contenus personnalisés
-										</p>
-									</div>
-									<input
-										type="checkbox"
-										checked={preferences.marketing}
-										onChange={() =>
-											handlePreferenceChange("marketing")
 										}
 										className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
 									/>
