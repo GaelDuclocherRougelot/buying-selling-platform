@@ -62,3 +62,6 @@ backup.log
 
 # SIEM : copie locale de wazuh-docker (siem/setup.sh)
 /siem/wazuh-docker/
+
+# Rapport d'audit ZAP et captures (local uniquement, jamais versionné)
+/docs/zap-audit/
