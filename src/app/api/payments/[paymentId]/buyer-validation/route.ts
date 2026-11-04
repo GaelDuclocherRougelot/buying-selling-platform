@@ -1,4 +1,5 @@
 import { getUser } from "@/lib/auth-session";
+import { securityLog } from "@/lib/security-log";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
@@ -46,6 +47,13 @@ export async function POST(
 
 		// Vérifier que l'utilisateur est bien l'acheteur
 		if (payment.buyerId !== user.id) {
+			await securityLog("payment.release_denied", request.headers, {
+				userId: user.id,
+				isSeller: payment.sellerId === user.id,
+				path: request.nextUrl.pathname,
+				resource: "payment",
+				resourceId: paymentId,
+			});
 			return NextResponse.json(
 				{ error: "Vous n'êtes pas autorisé à valider ce paiement" },
 				{ status: 403 }

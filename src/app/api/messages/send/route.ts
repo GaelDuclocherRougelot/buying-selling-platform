@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { isCloudinaryUrl } from "@/lib/cloudinary-url";
 import { prisma } from "@/lib/prisma";
+import { securityLog } from "@/lib/security-log";
 import { NextRequest, NextResponse } from "next/server";
 
 // Types envoyés par le client de chat ("offer" est créé par /api/messages/offers)
@@ -52,6 +53,13 @@ export async function POST(request: NextRequest) {
 			!ALLOWED_MESSAGE_TYPES.includes(messageType) ||
 			!hasValidImageUrls(content, messageType)
 		) {
+			await securityLog("input.xss_blocked", request.headers, {
+				userId: user.id,
+				path: request.nextUrl.pathname,
+				messageType,
+				// tronqué : on garde une trace du payload sans remplir le disque
+				payload: String(content).slice(0, 200),
+			});
 			return NextResponse.json(
 				{ error: "Type ou contenu de message invalide" },
 				{ status: 400 }

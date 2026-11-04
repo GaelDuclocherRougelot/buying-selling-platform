@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { securityLog } from "@/lib/security-log";
 import { prisma } from "@/lib/prisma";
 import { SmartTrackingSimulation } from "@/services/smart-tracking-simulation";
 import { NextRequest, NextResponse } from "next/server";
@@ -10,6 +11,10 @@ export async function POST(request: NextRequest) {
 		});
 
 		if (!session?.user) {
+			await securityLog("authz.unauthenticated", request.headers, {
+				path: request.nextUrl.pathname,
+				method: request.method,
+			});
 			return NextResponse.json(
 				{ error: "Non authentifié" },
 				{ status: 401 }
@@ -48,6 +53,13 @@ export async function POST(request: NextRequest) {
 			payment.buyerId !== session.user.id &&
 			payment.sellerId !== session.user.id
 		) {
+			await securityLog("authz.denied", request.headers, {
+				userId: session.user.id,
+				path: request.nextUrl.pathname,
+				method: "POST",
+				resource: "payment",
+				resourceId: paymentId,
+			});
 			return NextResponse.json(
 				{ error: "Accès non autorisé" },
 				{ status: 403 }
@@ -136,6 +148,10 @@ export async function GET(request: NextRequest) {
 		});
 
 		if (!session?.user) {
+			await securityLog("authz.unauthenticated", request.headers, {
+				path: request.nextUrl.pathname,
+				method: request.method,
+			});
 			return NextResponse.json(
 				{ error: "Non authentifié" },
 				{ status: 401 }
@@ -178,6 +194,13 @@ export async function GET(request: NextRequest) {
 			shipmentTracking.payment.buyerId !== session.user.id &&
 			shipmentTracking.payment.sellerId !== session.user.id
 		) {
+			await securityLog("authz.denied", request.headers, {
+				userId: session.user.id,
+				path: request.nextUrl.pathname,
+				method: "GET",
+				resource: "payment",
+				resourceId: paymentId,
+			});
 			return NextResponse.json(
 				{ error: "Accès non autorisé" },
 				{ status: 403 }

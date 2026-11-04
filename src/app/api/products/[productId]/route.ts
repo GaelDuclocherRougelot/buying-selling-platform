@@ -1,4 +1,5 @@
 import { getUser } from "@/lib/auth-session";
+import { securityLog } from "@/lib/security-log";
 import { deleteMultipleImagesFromCloudinary } from "@/lib/cloudinary-utils";
 import { prisma } from "@/lib/prisma";
 import { getProductWithOwnerById } from "@/services/product";
@@ -145,6 +146,10 @@ export async function PUT(request: Request) {
 	try {
 		const user = await getUser();
 		if (!user) {
+			await securityLog("authz.unauthenticated", request.headers, {
+				path: new URL(request.url).pathname,
+				method: "PUT",
+			});
 			return NextResponse.json(
 				{ error: "Unauthorized" },
 				{ status: 401 }
@@ -182,6 +187,13 @@ export async function PUT(request: Request) {
 		// Only the owner or an admin/moderator can update a product
 		const isStaff = user.role === "admin" || user.role === "moderator";
 		if (!isStaff && existingProduct.ownerId !== user.id) {
+			await securityLog("authz.denied", request.headers, {
+				userId: user.id,
+				path: url.pathname,
+				method: "PUT",
+				resource: "product",
+				resourceId: productId,
+			});
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
@@ -272,6 +284,10 @@ export async function DELETE(request: Request) {
 	try {
 		const user = await getUser();
 		if (!user) {
+			await securityLog("authz.unauthenticated", request.headers, {
+				path: new URL(request.url).pathname,
+				method: "DELETE",
+			});
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
@@ -296,6 +312,13 @@ export async function DELETE(request: Request) {
 			user.role !== "admin" &&
 			user.role !== "moderator"
 		) {
+			await securityLog("authz.denied", request.headers, {
+				userId: user.id,
+				path: url.pathname,
+				method: "DELETE",
+				resource: "product",
+				resourceId: productId,
+			});
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 

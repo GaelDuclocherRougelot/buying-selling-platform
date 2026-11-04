@@ -56,3 +56,9 @@ backup.log
 
 # Modèle de variables d'environnement (versionné)
 !.env.example
+
+# SIEM (événements de sécurité lus par Wazuh)
+/logs/
+
+# SIEM : copie locale de wazuh-docker (siem/setup.sh)
+/siem/wazuh-docker/
