@@ -91,19 +91,24 @@ puis coller une ligne de `logs/security.json`.
 | XSS chat | `COOKIE=… CONVERSATION_ID=… siem/attack.sh xss` | 100130 | *[capture]* |
 | Scan | `siem/attack.sh scan` (ou un scan ZAP avec `zap.yaml`) | 100131 | *[capture]* |
 
-### Validation : alertes levées (2026-11-03)
+### Validation : alertes levées (2026-11-05)
 
-Un manager Wazuh 4.12 lit un fichier `security.json` dans lequel on écrit les événements des 5 scénarios, au format produit par `securityLog()`. Les alertes ci-dessous sont extraites de `/var/ossec/logs/alerts/alerts.json`. Les horodatages sont ceux du manager.
+Les 5 scénarios ont été joués avec `siem/attack.sh` contre l'application, sur la stack Wazuh 4.12 complète (manager, indexer, dashboard). Les alertes sont extraites de `/var/ossec/logs/alerts/alerts.json`, et leur présence dans l'indexer a été vérifiée. Les horodatages sont ceux du manager, en UTC (le dashboard affiche l'heure locale).
 
-| # | Scénario | Horodatage (UTC) | Règle | Niveau | MITRE | Description de l'alerte |
+| # | Scénario | Horodatage (UTC) | Règle | Niveau | MITRE | Réponse de l'app |
 |---|---|---|---|---|---|---|
-| 1 | Brute force | 2026-11-03T15:45:11.809 | 100102 | 10 | T1110.001 | brute force - 5 échecs de connexion en 2 min depuis 203.0.113.7 |
-| 2 | IDOR | 2026-11-03T15:45:11.809 | 100111 | 10 | T1190 | énumération IDOR - 5 accès refusés en 5 min pour l'utilisateur u_attacker |
-| 3 | Fraude au paiement | 2026-11-03T15:45:11.834 | 100120 | 12 | T1565 | tentative de déblocage des fonds du paiement pay1 par un non-acheteur (u_seller, vendeur=true) |
-| 4 | XSS dans le chat | 2026-11-03T15:45:11.834 | 100130 | 8 | T1059.007 | payload XSS bloqué dans le chat (utilisateur u_x) |
-| 5 | Scan | 2026-11-03T15:45:13.752 | 100131 | 10 | T1595 | scan - 10 refus 401/403 en 1 min depuis 192.0.2.50 |
+| 1 | Brute force | 2026-11-05T11:03:05.520 | 100102 | 10 | T1110.001 | 401 |
+| 2 | Scan | 2026-11-05T11:03:33.576 | 100131 | 10 | T1595 | 401 |
+| 3 | Fraude au paiement | 2026-11-05T11:33:30.786 | 100120 | 12 | T1565 | 403 |
+| 4 | XSS dans le chat | 2026-11-05T11:33:30.786 | 100130 | 8 | T1059.007 | 400 |
+| 5 | IDOR | 2026-11-05T11:33:50.779 | 100111 | 10 | T1190 | 403 |
 
-Les alertes unitaires qui précèdent chaque corrélation ont aussi été levées : 4 × 100101, 4 × 100110 et 9 × 100112. Le dernier événement de chaque série ne produit pas d'alerte unitaire : il déclenche directement la règle de corrélation. Les horodatages sont presque identiques parce que le logcollector a lu le fichier en une seule fois. Lors d'une démo avec `siem/attack.sh`, ils seront étalés.
+Conditions du test :
+
+- **Environnement** : l'application tourne en local. L'IP source est donc `::1`.
+- **Données** : les scénarios 3, 4 et 5 ont été joués sur une base PostgreSQL jetable, avec deux comptes de test (un vendeur attaquant, une victime), un produit et un paiement fictifs (`pay_demo`). Les attaques ont été refusées : le titre du produit et le statut du paiement sont restés inchangés.
+- **IDOR** : un premier passage (5 requêtes en 2 s) n'a pas déclenché 100111. Elle s'est déclenchée au deuxième passage, avec 3 s entre les requêtes, alors que les refus du premier passage étaient encore dans la fenêtre de 5 min. Le seuil de 5 n'est donc pas démontré sur un passage unique contre l'application. Il l'est en revanche sur des événements injectés directement dans le fichier de logs (2026-11-03).
+- **Rythme des attaques** : `attack.sh` espace volontairement ses requêtes, pour les raisons décrites dans les limites ci-dessous.
 
 ## 7. Limites
 
@@ -112,6 +117,10 @@ Les alertes unitaires qui précèdent chaque corrélation ont aussi été levée
 - **Pas de notification** : les alertes sont consultées dans le dashboard. Wazuh sait envoyer des emails ou appeler un webhook (`<integration>`) si besoin.
 - **Données personnelles** : `login` (email) et un extrait du payload sont journalisés. En production il faudrait une durée de rétention définie (RGPD) et éventuellement un hachage de l'email.
 - **Intégrité** : le fichier de logs est accessible en écriture par l'app. En production, il faut envoyer les logs hors de la machine dès leur émission.
+- **Rafales non corrélées** : deux scans de 12 requêtes envoyées sans pause (alertes en quelques millisecondes) n'ont pas déclenché 100131, et 5 requêtes IDOR en 2 s n'ont pas déclenché 100111, alors que chaque événement a bien produit son alerte unitaire. Avec des requêtes espacées, les corrélations se déclenchent. La cause exacte n'est pas identifiée : la lecture des logs par lots et le traitement parallèle de Wazuh sont une piste, à confirmer hors émulation. Un scanner rapide peut donc échapper aux règles de corrélation. Une alerte sur le volume, calculée côté indexer, serait une parade à évaluer.
+- **Tentatives bloquées par le rate limit** : better-auth limite `/sign-in` à 3 requêtes, et le compteur ne repart à zéro qu'après 10 s sans requête. Les requêtes bloquées (429) ne passent pas par le hook et ne sont pas journalisées. Le SIEM sous-estime donc l'intensité d'un brute force, et une attaque courte reste sous le seuil de 100102. C'est pour cette raison que `attack.sh` attend 11 s entre deux essais.
+- **Stabilité en émulation** : sur Mac Apple Silicon, `wazuh-logcollector` s'est arrêté environ 12 minutes après chaque démarrage (`CRITICAL: (1600): Internal error`), après des erreurs `select()`. L'émulation amd64 est suspectée, sans preuve. Tant qu'il est arrêté, plus aucun événement n'est lu, et rien ne le signale dans le dashboard. Il se relance avec `docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-logcollector`.
+- **Espace disque** : la stack complète a contribué à saturer le disque de la machine de test, ce qui a fait planter Docker. Prévoir plusieurs Go libres.
 
 ## 8. Passage en production
 
