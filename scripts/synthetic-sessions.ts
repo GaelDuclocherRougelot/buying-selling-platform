@@ -345,11 +345,22 @@ async function openTrustScore(page: Page) {
 
 async function login(page: Page) {
   const back = page.url();
-  await page.goto(BASE_URL + '/auth/login', { waitUntil: 'domcontentloaded' });
+  // networkidle : le formulaire doit être hydraté, sinon le clic le soumet en
+  // HTML classique (GET avec le mot de passe dans l'URL) et rien ne se passe
+  await page.goto(BASE_URL + '/auth/login', { waitUntil: 'networkidle' });
   await page.locator('#email').fill(TEST_USER_EMAIL!);
   await page.locator('#password').fill(TEST_USER_PASSWORD!);
   await pause();
+  const signIn = page.waitForResponse(r => r.url().includes('/api/auth/sign-in/'), {
+    timeout: 20000,
+  });
   await page.locator('button[type="submit"]').first().click();
+  const res = await signIn;
+  if (!res.ok()) {
+    throw new Error(
+      `connexion refusée (HTTP ${res.status()}) : vérifie TEST_USER_EMAIL / TEST_USER_PASSWORD`
+    );
+  }
   await page.waitForURL(u => !u.pathname.startsWith('/auth/login'), { timeout: 20000 });
   // La personne PostHog du compte de test est aussi marquée (après identify())
   await page
@@ -361,15 +372,16 @@ async function login(page: Page) {
   await page.goto(back, { waitUntil: 'networkidle' });
 }
 
-/** Ajoute en favori puis retire (ne laisse rien en base). */
+/**
+ * Ajoute en favori. Pas de retrait : l'API de suppression est cassée côté app
+ * (userId manquant) ; les favoris du compte de test partent avec SEED_RESET=true.
+ */
 async function addFavorite(page: Page) {
   const add = page.getByRole('button', { name: 'Ajouter aux favoris' });
   if ((await add.count()) === 0) return false;
   await add.first().click();
-  const remove = page.getByRole('button', { name: 'Retirer des favoris' });
-  await remove.first().waitFor({ timeout: 10000 });
+  await page.getByRole('button', { name: 'Retirer des favoris' }).first().waitFor({ timeout: 10000 });
   await pause();
-  await remove.first().click();
   return true;
 }
 
@@ -417,7 +429,13 @@ async function payWithTestCard(page: Page) {
 
 // ---------- Exécution ----------
 
-type SessionReport = { target: Stage; reached: Stage | 'none'; notes: string[] };
+type SessionReport = {
+  target: Stage;
+  reached: Stage | 'none';
+  /** Étapes réellement franchies (le badge Trust Score peut manquer). */
+  achieved: Set<Stage>;
+  notes: string[];
+};
 
 async function probeBotFilter(browser: Browser) {
   console.log('🔎 Filtrage des navigateurs automatisés par posthog-js :');
@@ -440,7 +458,11 @@ async function probeBotFilter(browser: Browser) {
 async function runSession(browser: Browser, index: number, flags: { noPayment: boolean }) {
   const device = DEVICES[Math.floor(Math.random() * DEVICES.length)];
   let target = drawTargetStage();
-  const report: SessionReport = { target, reached: 'none', notes: [device.label] };
+  const report: SessionReport = { target, reached: 'none', achieved: new Set(), notes: [device.label] };
+  const reach = (stage: Stage) => {
+    report.reached = stage;
+    report.achieved.add(stage);
+  };
   const sent = new Map<string, number>();
 
   // Étapes connectées : seulement si la base de la preview est isolée
@@ -458,35 +480,42 @@ async function runSession(browser: Browser, index: number, flags: { noPayment: b
   const page = await ctx.newPage();
   trackIngestion(page, sent);
 
+  let step = 'bandeau cookies';
   try {
     await acceptCookiesAndTag(page);
+    step = 'ouverture annonce';
     await openRandomListing(page);
-    report.reached = 'listing_viewed';
+    reach('listing_viewed');
 
     if (wants(target, 'trust_score_opened')) {
-      if (await openTrustScore(page)) report.reached = 'trust_score_opened';
+      step = 'Trust Score';
+      if (await openTrustScore(page)) reach('trust_score_opened');
       else report.notes.push('badge Trust Score absent');
     }
     if (wants(target, 'favorite_added')) {
+      step = 'connexion';
       await login(page);
-      if (await addFavorite(page)) report.reached = 'favorite_added';
-      else report.notes.push('bouton favori absent');
+      step = 'favori';
+      if (await addFavorite(page)) reach('favorite_added');
+      else report.notes.push('déjà en favori');
     }
     if (wants(target, 'checkout_started')) {
+      step = 'checkout';
       await pause();
       const { result } = await startCheckout(page);
-      if (result === 'started') report.reached = 'checkout_started';
+      if (result === 'started') reach('checkout_started');
       else if (result === 'live_keys') {
         flags.noPayment = true;
         report.notes.push('⚠️ clés Stripe LIVE détectées : paiement annulé');
       } else report.notes.push('achat impossible sur cette annonce');
     }
     if (target === 'purchase_completed' && report.reached === 'checkout_started') {
+      step = 'paiement Stripe';
       await payWithTestCard(page);
-      report.reached = 'purchase_completed';
+      reach('purchase_completed');
     }
   } catch (error) {
-    report.notes.push(`erreur : ${(error as Error).message.split('\n')[0]}`);
+    report.notes.push(`erreur (${step}) : ${(error as Error).message.split('\n')[0]}`);
   } finally {
     await sleep(4000); // laisse posthog-js vider sa file d'envoi
     await ctx.close();
@@ -524,7 +553,7 @@ async function main() {
   for (let i = 0; i < SESSIONS; i++) {
     const { report, sent } = await runSession(browser, i, flags);
     for (const stage of STAGES) {
-      if (report.reached !== 'none' && wants(report.reached, stage)) {
+      if (report.achieved.has(stage)) {
         reached.set(stage, (reached.get(stage) || 0) + 1);
       }
     }
@@ -534,7 +563,7 @@ async function main() {
   await browser.close();
 
   console.log(`\n📊 ${SESSIONS} sessions (${RUN_ID}), ${errors} en erreur`);
-  console.log('   Étape atteinte (sessions ayant atteint au moins cette étape) :');
+  console.log('   Étapes réellement franchies (nombre de sessions) :');
   for (const stage of STAGES) {
     const n = reached.get(stage) || 0;
     console.log(`   ${stage.padEnd(20)} ${String(n).padStart(3)}  (${Math.round((100 * n) / SESSIONS)} %)`);
