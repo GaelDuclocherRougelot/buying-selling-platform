@@ -1,21 +1,38 @@
-import { handleApiRoute } from "@/lib/api-error-handler";
+import {
+	createAuthErrorResponse,
+	createValidationErrorResponse,
+	handleApiRoute,
+} from "@/lib/api-error-handler";
+import { getUser } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
+import { securityLog } from "@/lib/security-log";
 import { NextRequest } from "next/server";
+
+/**
+ * Utilisateur connecté, ou réponse 401 levée (renvoyée par handleApiRoute).
+ * L'identité vient toujours de la session, jamais d'un userId fourni par le client.
+ */
+async function requireUser(request: NextRequest) {
+	const user = await getUser();
+	if (!user) {
+		await securityLog("authz.unauthenticated", request.headers, {
+			path: request.nextUrl.pathname,
+			method: request.method,
+		});
+		throw createAuthErrorResponse();
+	}
+	return user;
+}
 
 /**
  * @swagger
  * /api/favorites:
  *   get:
- *     summary: Récupérer les favoris d'un utilisateur
- *     description: Récupère la liste des produits favoris d'un utilisateur spécifique
+ *     summary: Récupérer mes favoris
+ *     description: Récupère la liste des produits favoris de l'utilisateur connecté (session)
  *     tags: [Favorites]
- *     parameters:
- *       - in: query
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: ID de l'utilisateur dont on veut récupérer les favoris
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: Liste des favoris récupérée avec succès
@@ -57,24 +74,19 @@ import { NextRequest } from "next/server";
  *                   createdAt:
  *                     type: string
  *                     format: date-time
- *       400:
- *         description: Paramètre userId manquant
+ *       401:
+ *         description: Non connecté
  *       500:
  *         description: Erreur interne du serveur
  */
 
 export async function GET(request: NextRequest) {
 	return handleApiRoute(async () => {
-		const { searchParams } = new URL(request.url);
-		const userId = searchParams.get("userId");
-
-		if (!userId) {
-			throw new Error("userId parameter is required");
-		}
+		const user = await requireUser(request);
 
 		const favorites = await prisma.favorite.findMany({
 			where: {
-				userId: userId,
+				userId: user.id,
 			},
 			include: {
 				product: {
@@ -103,8 +115,10 @@ export async function GET(request: NextRequest) {
  * /api/favorites:
  *   post:
  *     summary: Ajouter un produit aux favoris
- *     description: Ajoute un produit à la liste des favoris d'un utilisateur
+ *     description: Ajoute un produit aux favoris de l'utilisateur connecté (session). Idempotent si le produit est déjà en favori.
  *     tags: [Favorites]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -112,13 +126,8 @@ export async function GET(request: NextRequest) {
  *           schema:
  *             type: object
  *             required:
- *               - userId
  *               - productId
  *             properties:
- *               userId:
- *                 type: string
- *                 description: ID de l'utilisateur
- *                 example: "user_123"
  *               productId:
  *                 type: string
  *                 description: ID du produit à ajouter aux favoris
@@ -143,49 +152,54 @@ export async function GET(request: NextRequest) {
  *                   type: string
  *                   format: date-time
  *       400:
- *         description: Paramètres manquants ou produit déjà en favoris
+ *         description: productId manquant
+ *       401:
+ *         description: Non connecté
  *       500:
  *         description: Erreur interne du serveur
  */
 export async function POST(request: NextRequest) {
 	return handleApiRoute(async () => {
-		const body = await request.json();
-		const { userId, productId } = body;
+		const user = await requireUser(request);
+		const { productId } = await request.json();
 
-		if (!userId || !productId) {
-			throw new Error("userId and productId are required");
+		if (!productId) {
+			throw createValidationErrorResponse([], "productId is required");
 		}
 
-		// Vérifier si le favori existe déjà
-		const existingFavorite = await prisma.favorite.findFirst({
-			where: {
-				userId,
-				productId,
-			},
-		});
-
-		if (existingFavorite) {
-			throw new Error("Product already in favorites");
-		}
-
-		const favorite = await prisma.favorite.create({
-			data: {
-				userId,
-				productId,
-			},
-			include: {
-				product: {
-					include: {
-						category: true,
-						owner: {
-							select: {
-								id: true,
-								displayUsername: true,
-							},
+		const include = {
+			product: {
+				include: {
+					category: true,
+					owner: {
+						select: {
+							id: true,
+							displayUsername: true,
 						},
 					},
 				},
 			},
+		};
+
+		// Ajout idempotent : un favori déjà présent est simplement renvoyé
+		const existingFavorite = await prisma.favorite.findFirst({
+			where: {
+				userId: user.id,
+				productId,
+			},
+			include,
+		});
+
+		if (existingFavorite) {
+			return existingFavorite;
+		}
+
+		const favorite = await prisma.favorite.create({
+			data: {
+				userId: user.id,
+				productId,
+			},
+			include,
 		});
 
 		return favorite;
