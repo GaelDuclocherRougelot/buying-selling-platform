@@ -8,7 +8,7 @@
  * Usage :
  *   BASE_URL=https://<preview>.vercel.app SESSIONS=40 pnpm synthetic
  *
- * Variables :
+ * Variables (ligne de commande, .env.local ou .env) :
  *   BASE_URL                 URL de preview Vercel (production refusée)
  *   SESSIONS                 nombre de sessions (défaut 40)
  *   TEST_USER_EMAIL / TEST_USER_PASSWORD   compte de test (étapes connectées)
@@ -25,6 +25,7 @@
 /// <reference types="node" />
 import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { gunzipSync } from 'zlib';
+import { config } from 'dotenv';
 import type { PostHog } from 'posthog-js';
 
 // scripts/ n'est pas dans le tsconfig de l'app : on déclare ici window.posthog
@@ -36,6 +37,10 @@ declare global {
 }
 
 // ---------- Configuration et garde-fous ----------
+
+// Comme les autres scripts du projet : tsx ne charge pas les .env (seul Next.js
+// le fait). Priorité : variables de la commande > .env.local > .env
+config({ path: ['.env.local', '.env'], quiet: true });
 
 const BASE_URL = (process.env.BASE_URL || '').replace(/\/$/, '');
 const SESSIONS = Number(process.env.SESSIONS || 40);
