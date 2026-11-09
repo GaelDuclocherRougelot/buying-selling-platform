@@ -207,11 +207,51 @@ function trackIngestion(page: Page, sent: Map<string, number>) {
 
 // ---------- Étapes ----------
 
+/**
+ * Ouvre l'accueil et attend posthog-js. En cas d'échec, explique pourquoi
+ * (protection Vercel, clé PostHog absente sur la preview…) au lieu d'un timeout.
+ */
+async function openHomeWithPostHog(page: Page) {
+  const ingest: string[] = [];
+  const onRequest = (r: { url(): string }) => {
+    if (r.url().includes('/ingest/')) ingest.push(r.url());
+  };
+  page.on('request', onRequest);
+  const res = await page.goto(BASE_URL + '/', { waitUntil: 'domcontentloaded' });
+  try {
+    await page.waitForFunction(() => Boolean(window.posthog?.__loaded), null, {
+      timeout: 20000,
+    });
+  } catch {
+    const finalUrl = new URL(page.url());
+    const status = res?.status() ?? 0;
+    const title = await page.title().catch(() => '');
+    let reason: string;
+    if (finalUrl.host !== baseHost || status === 401 || status === 403) {
+      reason =
+        `la preview est protégée par Vercel (HTTP ${status}, page « ${title} » sur ${finalUrl.host}).\n` +
+        '   → Ajoute VERCEL_AUTOMATION_BYPASS_SECRET (Vercel → Settings → Deployment Protection →\n' +
+        '     Protection Bypass for Automation), ou désactive la protection des previews.';
+    } else if (status >= 400) {
+      reason = `la page d'accueil répond HTTP ${status} (« ${title} »).`;
+    } else if (ingest.length === 0) {
+      reason =
+        "posthog-js ne démarre pas : aucune requête vers /ingest.\n" +
+        '   → Vérifie que NEXT_PUBLIC_POSTHOG_KEY est définie pour l\'environnement « Preview »\n' +
+        '     sur Vercel (Settings → Environment Variables), puis redéploie la preview.';
+    } else {
+      reason =
+        'posthog-js démarre mais window.posthog est absent : la preview est antérieure à\n' +
+        '   la PR #9 (exposition de window.posthog). Utilise une preview plus récente.';
+    }
+    fail(`PostHog introuvable sur ${BASE_URL} : ${reason}`);
+  } finally {
+    page.off('request', onRequest);
+  }
+}
+
 async function acceptCookiesAndTag(page: Page) {
-  await page.goto(BASE_URL + '/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => Boolean(window.posthog?.__loaded), null, {
-    timeout: 20000,
-  });
+  await openHomeWithPostHog(page);
   // Avant l'accord : le marquage s'applique dès l'événement $opt_in
   await page.evaluate(
     run => window.posthog!.register({ synthetic: true, source: 'playwright', synthetic_run: run }),
@@ -331,10 +371,7 @@ async function probeBotFilter(browser: Browser) {
   for (const standardUa of [false, true]) {
     const ctx = await newContext(browser, DEVICES[0], standardUa);
     const page = await ctx.newPage();
-    await page.goto(BASE_URL + '/', { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => Boolean(window.posthog?.__loaded), null, {
-      timeout: 20000,
-    });
+    await openHomeWithPostHog(page);
     const isBot = await page.evaluate(() => window.posthog!._is_bot());
     const ua = await page.evaluate(() => navigator.userAgent);
     console.log(
