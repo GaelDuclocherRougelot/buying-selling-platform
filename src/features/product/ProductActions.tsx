@@ -28,7 +28,7 @@ export default function ProductActions({
 }: ProductActionsProps) {
 	if (isOwner) {
 		return (
-			<div className="flex items-center gap-4">
+			<div className="flex flex-wrap items-center gap-4">
 				<Link href="/auth/profile">
 					<Button variant="outline" className="cursor-pointer">
 						Gérer mes annonces
@@ -40,7 +40,7 @@ export default function ProductActions({
 
 	if (status === "sold") {
 		return (
-			<div className="flex items-center gap-4">
+			<div className="flex flex-wrap items-center gap-4">
 				<StartConversationButton
 					productId={productId}
 					sellerId={sellerId}
@@ -58,7 +58,7 @@ export default function ProductActions({
 	}
 
 	return (
-		<div className="flex items-center gap-4">
+		<div className="flex flex-wrap items-center gap-4">
 			<StartConversationButton
 				productId={productId}
 				sellerId={sellerId}
