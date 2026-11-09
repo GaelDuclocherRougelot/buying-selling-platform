@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import {
 	ANALYTICS_CONSENT_COOKIE,
 	isAnalyticsConsentCookie,
+	SYNTHETIC_TRAFFIC_COOKIE,
 } from "@/lib/consent";
 import {
 	calculatePlatformFee,
@@ -195,6 +196,11 @@ export async function POST(request: NextRequest) {
 				)
 					? "true"
 					: "false",
+				// Trafic synthétique (scripts/synthetic-sessions.ts) : marque purchase_completed
+				synthetic:
+					request.cookies.get(SYNTHETIC_TRAFFIC_COOKIE)?.value === "1"
+						? "true"
+						: "false",
 			},
 			// Pour Stripe Connect, ajouter les frais de plateforme
 			payment_intent_data: {

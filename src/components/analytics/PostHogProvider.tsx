@@ -8,6 +8,12 @@ import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { Suspense, useEffect, useRef, useState } from "react";
 
+declare global {
+	interface Window {
+		posthog?: typeof posthog;
+	}
+}
+
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
 function initPostHog() {
@@ -29,6 +35,8 @@ function initPostHog() {
 			maskAllInputs: true,
 		},
 		loaded: (ph) => {
+			// Exposé comme le snippet officiel (debug, scripts de trafic synthétique)
+			window.posthog = posthog;
 			if (hasAnalyticsConsent()) ph.opt_in_capturing();
 		},
 	});

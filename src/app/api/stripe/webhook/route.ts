@@ -158,7 +158,7 @@ async function capturePurchaseCompleted(
 	event: Stripe.Event,
 	checkoutSession: Stripe.Checkout.Session
 ) {
-	const { productId, buyerId, analyticsConsent } =
+	const { productId, buyerId, analyticsConsent, synthetic } =
 		checkoutSession.metadata || {};
 	if (analyticsConsent !== "true") return;
 	if (!productId || !buyerId) return;
@@ -177,6 +177,11 @@ async function capturePurchaseCompleted(
 				listingId: productId,
 				price: (checkoutSession.amount_total || 0) / 100,
 				currency: checkoutSession.currency || "eur",
+				// Achats du script de trafic synthétique : filtrables dans PostHog
+				...(synthetic === "true" && {
+					synthetic: true,
+					source: "playwright",
+				}),
 				$process_person_profile: true,
 			},
 		});
