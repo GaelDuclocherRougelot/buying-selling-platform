@@ -1,0 +1,11 @@
+{
+  // Utilisé par l'éditeur et `tsc -p scripts` : les scripts tournent sous
+  // Node (tsx), hors du tsconfig de l'app Next.js qui ne couvre que src/.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "incremental": false,
+    "noEmit": true
+  },
+  "include": ["./**/*.ts"]
+}
