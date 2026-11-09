@@ -22,8 +22,18 @@
  *   VERCEL_AUTOMATION_BYPASS_SECRET  si la preview est protégée par Vercel
  *   HEADED=true              navigateur visible (headless: false)
  */
+/// <reference types="node" />
 import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { gunzipSync } from 'zlib';
+import type { PostHog } from 'posthog-js';
+
+// scripts/ n'est pas dans le tsconfig de l'app : on déclare ici window.posthog
+// (exposé par src/components/analytics/PostHogProvider.tsx)
+declare global {
+  interface Window {
+    posthog?: PostHog;
+  }
+}
 
 // ---------- Configuration et garde-fous ----------
 
