@@ -23,7 +23,13 @@
  *   HEADED=true              navigateur visible (headless: false)
  */
 /// <reference types="node" />
-import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type Locator,
+  type Page,
+} from '@playwright/test';
 import { gunzipSync } from 'zlib';
 import { config } from 'dotenv';
 import type { PostHog } from 'posthog-js';
@@ -373,27 +379,48 @@ async function login(page: Page) {
 }
 
 /**
- * Ajoute en favori. Pas de retrait : l'API de suppression est cassée côté app
- * (userId manquant) ; les favoris du compte de test partent avec SEED_RESET=true.
+ * Clic « humain » ; si le bouton est hors de l'écran (débordement horizontal de
+ * la page annonce sur mobile), déclenche le clic sur l'élément et le signale.
  */
-async function addFavorite(page: Page) {
+async function tap(locator: Locator, notes: string[]) {
+  try {
+    await locator.click({ timeout: 8000 });
+  } catch {
+    await locator.dispatchEvent('click');
+    const note = 'clic forcé : bouton hors écran (débordement mobile)';
+    if (!notes.includes(note)) notes.push(note);
+  }
+}
+
+/** Ajoute en favori puis retire (ne laisse rien en base). */
+async function addFavorite(page: Page, notes: string[]) {
   const add = page.getByRole('button', { name: 'Ajouter aux favoris' });
   if ((await add.count()) === 0) return false;
-  await add.first().click();
-  await page.getByRole('button', { name: 'Retirer des favoris' }).first().waitFor({ timeout: 10000 });
+  await tap(add.first(), notes);
+  const remove = page.getByRole('button', { name: 'Retirer des favoris' });
+  await remove.first().waitFor({ timeout: 10000 });
   await pause();
+  const removed = page.waitForResponse(
+    r => r.request().method() === 'DELETE' && r.url().includes('/api/favorites/')
+  );
+  await tap(remove.first(), notes);
+  const res = await removed;
+  if (!res.ok()) throw new Error(`retrait du favori refusé (HTTP ${res.status()})`);
   return true;
 }
 
 type CheckoutResult = 'started' | 'live_keys' | 'unavailable';
 
-async function startCheckout(page: Page): Promise<{ result: CheckoutResult; url?: string }> {
+async function startCheckout(
+  page: Page,
+  notes: string[]
+): Promise<{ result: CheckoutResult; url?: string }> {
   const buy = page.getByRole('button', { name: /Acheter pour/ });
   if ((await buy.count()) === 0) return { result: 'unavailable' };
   const response = page.waitForResponse(r =>
     r.url().includes('/api/stripe/checkout/create-session')
   );
-  await buy.first().click(); // checkout_started
+  await tap(buy.first(), notes); // checkout_started
   const res = await response;
   if (!res.ok()) return { result: 'unavailable' };
   const { url } = (await res.json()) as { url?: string };
@@ -496,13 +523,13 @@ async function runSession(browser: Browser, index: number, flags: { noPayment: b
       step = 'connexion';
       await login(page);
       step = 'favori';
-      if (await addFavorite(page)) reach('favorite_added');
+      if (await addFavorite(page, report.notes)) reach('favorite_added');
       else report.notes.push('déjà en favori');
     }
     if (wants(target, 'checkout_started')) {
       step = 'checkout';
       await pause();
-      const { result } = await startCheckout(page);
+      const { result } = await startCheckout(page, report.notes);
       if (result === 'started') reach('checkout_started');
       else if (result === 'live_keys') {
         flags.noPayment = true;

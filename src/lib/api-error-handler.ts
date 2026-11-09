@@ -51,7 +51,7 @@ export class ApiErrorHandler {
 		errors: unknown[],
 		message: string = "Données invalides"
 	): NextResponse<ApiError> {
-		return this.createErrorResponse(
+		return ApiErrorHandler.createErrorResponse(
 			new Error(message),
 			422,
 			"VALIDATION_ERROR",
@@ -66,7 +66,7 @@ export class ApiErrorHandler {
 		message: string = "Vous devez être connecté",
 		code: string = "UNAUTHORIZED"
 	): NextResponse<ApiError> {
-		return this.createErrorResponse(new Error(message), 401, code);
+		return ApiErrorHandler.createErrorResponse(new Error(message), 401, code);
 	}
 
 	/**
@@ -76,7 +76,7 @@ export class ApiErrorHandler {
 		message: string = "Accès refusé",
 		code: string = "FORBIDDEN"
 	): NextResponse<ApiError> {
-		return this.createErrorResponse(new Error(message), 403, code);
+		return ApiErrorHandler.createErrorResponse(new Error(message), 403, code);
 	}
 
 	/**
@@ -86,7 +86,7 @@ export class ApiErrorHandler {
 		message: string = "Ressource non trouvée",
 		code: string = "NOT_FOUND"
 	): NextResponse<ApiError> {
-		return this.createErrorResponse(new Error(message), 404, code);
+		return ApiErrorHandler.createErrorResponse(new Error(message), 404, code);
 	}
 
 	/**
@@ -96,7 +96,7 @@ export class ApiErrorHandler {
 		message: string = "Conflit de données",
 		code: string = "CONFLICT"
 	): NextResponse<ApiError> {
-		return this.createErrorResponse(new Error(message), 409, code);
+		return ApiErrorHandler.createErrorResponse(new Error(message), 409, code);
 	}
 
 	/**
@@ -106,7 +106,7 @@ export class ApiErrorHandler {
 		message: string = "Trop de requêtes",
 		code: string = "RATE_LIMIT_EXCEEDED"
 	): NextResponse<ApiError> {
-		return this.createErrorResponse(new Error(message), 429, code);
+		return ApiErrorHandler.createErrorResponse(new Error(message), 429, code);
 	}
 
 	/**
@@ -116,7 +116,7 @@ export class ApiErrorHandler {
 		error: Error | string | unknown,
 		code: string = "INTERNAL_SERVER_ERROR"
 	): NextResponse<ApiError> {
-		return this.createErrorResponse(error, 500, code);
+		return ApiErrorHandler.createErrorResponse(error, 500, code);
 	}
 
 	/**
@@ -126,7 +126,7 @@ export class ApiErrorHandler {
 		message: string = "Service temporairement indisponible",
 		code: string = "SERVICE_UNAVAILABLE"
 	): NextResponse<ApiError> {
-		return this.createErrorResponse(new Error(message), 503, code);
+		return ApiErrorHandler.createErrorResponse(new Error(message), 503, code);
 	}
 
 	/**
@@ -153,7 +153,7 @@ export class ApiErrorHandler {
 					error.message.includes("validation") ||
 					error.message.includes("invalide")
 				) {
-					return this.createValidationErrorResponse(
+					return ApiErrorHandler.createValidationErrorResponse(
 						[],
 						error.message
 					);
@@ -163,24 +163,26 @@ export class ApiErrorHandler {
 					error.message.includes("non trouvé") ||
 					error.message.includes("not found")
 				) {
-					return this.createNotFoundErrorResponse(error.message);
+					return ApiErrorHandler.createNotFoundErrorResponse(error.message);
 				}
 
 				if (
 					error.message.includes("accès") ||
 					error.message.includes("autorisation")
 				) {
-					return this.createForbiddenErrorResponse(error.message);
+					return ApiErrorHandler.createForbiddenErrorResponse(error.message);
 				}
 			}
 
 			// Erreur générique
-			return this.createInternalErrorResponse(error, "INTERNAL_ERROR");
+			return ApiErrorHandler.createInternalErrorResponse(error, "INTERNAL_ERROR");
 		}
 	}
 }
 
-// Export des fonctions utilitaires pour un usage direct
+// Export des fonctions utilitaires pour un usage direct.
+// Les méthodes appellent ApiErrorHandler.* (et non this.*) : déstructurées,
+// elles perdent `this`, ce qui faisait planter toute réponse d'erreur (500 vide).
 export const {
 	createErrorResponse,
 	createValidationErrorResponse,
