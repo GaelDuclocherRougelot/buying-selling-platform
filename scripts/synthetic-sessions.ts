@@ -271,7 +271,11 @@ async function acceptCookiesAndTag(page: Page) {
 async function openRandomListing(page: Page) {
   await humanScroll(page);
   const links = page.locator('a[href^="/products/"]');
-  await links.first().waitFor({ timeout: 20000 });
+  try {
+    await links.first().waitFor({ timeout: 20000 });
+  } catch {
+    await explainMissingListings(page, await links.count());
+  }
   const hrefs = [...new Set(await links.evaluateAll(as => as.map(a => a.getAttribute('href')!)))];
   const href = hrefs[Math.floor(Math.random() * hrefs.length)];
   await pause();
@@ -280,6 +284,50 @@ async function openRandomListing(page: Page) {
   await page.waitForLoadState('networkidle');
   await humanScroll(page);
   return href;
+}
+
+/**
+ * Aucune annonce sur l'accueil : interroge l'API qui l'alimente pour donner la
+ * cause et arrêter le script (toutes les sessions échoueraient de la même façon).
+ */
+async function explainMissingListings(page: Page, attached: number): Promise<never> {
+  if (attached > 0) {
+    fail(
+      `${attached} lien(s) d'annonce présents mais invisibles à l'écran : vérifie la mise en page ` +
+        `(viewport ${JSON.stringify(page.viewportSize())}).`
+    );
+  }
+  const api = await page.evaluate(async () => {
+    const res = await fetch('/api/products/featured');
+    const text = await res.text();
+    let count: number | null = null;
+    try {
+      const data = JSON.parse(text);
+      if (Array.isArray(data)) count = data.length;
+    } catch {
+      // réponse non JSON
+    }
+    return { status: res.status, count, text: text.slice(0, 200) };
+  });
+  if (api.status >= 400) {
+    fail(
+      `l'accueil n'affiche aucune annonce : /api/products/featured répond HTTP ${api.status}.\n` +
+        `   Réponse : ${api.text}\n` +
+        '   → Cause probable : la preview ne joint pas sa base. Vérifie DATABASE_URL pour\n' +
+        "     l'environnement « Preview » sur Vercel, et les logs de la fonction dans Vercel."
+    );
+  }
+  if (api.count === 0) {
+    fail(
+      "l'accueil n'affiche aucune annonce : la base de la preview ne contient aucune annonce\n" +
+        '   au statut « active ». Publie au moins une annonce sur cette base (avec un compte\n' +
+        '   vendeur différent du compte de test), puis relance.'
+    );
+  }
+  fail(
+    `/api/products/featured renvoie ${api.count ?? '?'} annonce(s) mais aucun lien n'apparaît ` +
+      `sur l'accueil après 20 s. Réponse : ${api.text}`
+  );
 }
 
 /** Retourne false si le badge Trust Score n'existe pas encore dans l'UI. */
