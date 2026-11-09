@@ -23,6 +23,12 @@ export const CONSENT_CHANGED_EVENT = "zone:consent-changed";
  */
 export const ANALYTICS_CONSENT_COOKIE = "zone_analytics_consent";
 
+/**
+ * Cookie posé uniquement par le script de trafic synthétique
+ * (scripts/synthetic-sessions.ts) pour marquer les achats côté serveur.
+ */
+export const SYNTHETIC_TRAFFIC_COOKIE = "zone_synthetic";
+
 /** Lit le consentement analytics depuis la valeur du cookie (côté serveur). */
 export function isAnalyticsConsentCookie(value: string | undefined): boolean {
 	return value === "1";

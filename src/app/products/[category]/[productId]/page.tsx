@@ -167,6 +167,8 @@ export default async function ProductPage(props: {
 								 *   <TrustScoreBadge onMouseEnter={onBadgeHover} onFocus={onBadgeHover}
 								 *     onClick={onOpen} />
 								 * Hook : src/lib/hooks/useTrustScoreTracking.ts
+								 * Garder data-testid="trust-score-badge" sur le badge : utilisé par
+								 * scripts/synthetic-sessions.ts
 								 */}
 							</div>
 						</div>
