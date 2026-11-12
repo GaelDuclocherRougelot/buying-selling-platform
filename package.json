@@ -46,7 +46,8 @@
     "backup:sync:cleanup": "tsx scripts/backup-sync.ts cleanup",
     "sitemap:generate": "tsx scripts/generate-sitemap.ts",
     "synthetic": "tsx scripts/synthetic-sessions.ts",
-    "seed:synthetic": "tsx scripts/seed-synthetic.ts"
+    "seed:synthetic": "tsx scripts/seed-synthetic.ts",
+    "db:reset": "tsx scripts/reset-database.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

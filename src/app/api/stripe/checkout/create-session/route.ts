@@ -1,3 +1,4 @@
+import { getBaseURL } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import {
 	ANALYTICS_CONSENT_COOKIE,
@@ -184,8 +185,8 @@ export async function POST(request: NextRequest) {
 					quantity: 1,
 				},
 			],
-			success_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/profile?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/profile?payment=cancelled`,
+			success_url: `${getBaseURL()}/auth/profile?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${getBaseURL()}/auth/profile?payment=cancelled`,
 			metadata: {
 				productId,
 				buyerId: session.user.id,

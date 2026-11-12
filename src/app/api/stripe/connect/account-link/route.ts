@@ -1,3 +1,4 @@
+import { getBaseURL } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/utils";
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
 		// Create account link for onboarding
 		const accountLink = await stripe.accountLinks.create({
 			account: user.stripeAccountId,
-			refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/profile/connect`,
-			return_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/profile/connect`,
+			refresh_url: `${getBaseURL()}/auth/profile/connect`,
+			return_url: `${getBaseURL()}/auth/profile/connect`,
 			type: "account_onboarding",
 		});
 

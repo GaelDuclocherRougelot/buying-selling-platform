@@ -29,6 +29,9 @@ const vercelPreviewOrigins =
     : [];
 
 export const auth = betterAuth({
+  // En preview, les liens des emails (vérification, mot de passe oublié)
+  // doivent rester sur la preview et non pointer vers BETTER_AUTH_URL (prod).
+  baseURL: vercelPreviewOrigins[0],
   trustedOrigins: vercelPreviewOrigins,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
