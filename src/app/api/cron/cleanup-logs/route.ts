@@ -1,4 +1,4 @@
-import { cleanupLoginLogs } from "@/services/cron";
+import { cleanupErrorLogs, cleanupLoginLogs } from "@/services/cron";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -15,12 +15,14 @@ export async function POST(request: NextRequest) {
 		}
 
 		const result = await cleanupLoginLogs();
+		const deletedErrorLogs = await cleanupErrorLogs();
 
 		if (result.success) {
 			return NextResponse.json({
 				success: true,
 				message: result.message,
 				deletedCount: result.deletedCount,
+				deletedErrorLogs,
 				timestamp: new Date().toISOString(),
 			});
 		} else {
@@ -43,3 +45,6 @@ export async function POST(request: NextRequest) {
 		);
 	}
 }
+
+// Vercel Cron appelle toujours en GET
+export const GET = POST;

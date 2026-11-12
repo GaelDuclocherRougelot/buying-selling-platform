@@ -120,8 +120,17 @@ const PolitiqueDeConfidentialite = () => (
 					nature
 				</li>
 				<li>
-					Les données de paiement sont conservées 5 ans (obligation
-					fiscale)
+					Les données de paiement sont conservées 10 ans (obligation
+					comptable). Si vous supprimez votre compte, elles sont
+					conservées sous forme anonymisée
+				</li>
+				<li>
+					Les messages sont conservés tant que les comptes des
+					participants existent
+				</li>
+				<li>
+					Les journaux de connexion sont conservés 90 jours, les
+					journaux d&apos;erreurs et de sécurité 6 mois
 				</li>
 			</ul>
 
@@ -133,8 +142,18 @@ const PolitiqueDeConfidentialite = () => (
 			<ul className="list-disc pl-6">
 				<li>Notre hébergeur (Vercel)</li>
 				<li>Notre hébergeur de données (Neon.tech)</li>
+				<li>Cloudinary (stockage des images)</li>
+				<li>Resend (envoi des e-mails)</li>
 				<li>
-					Nos prestataires techniques (sécurité, gestion des e-mails)
+					PostHog, hébergé dans l&apos;Union européenne (mesure
+					d&apos;audience, uniquement si vous l&apos;acceptez)
+				</li>
+				<li>
+					Google (si vous utilisez la connexion avec Google)
+				</li>
+				<li>
+					Geoapify (suggestion de ville lors de la publication
+					d&apos;une annonce)
 				</li>
 				<li>
 					Stripe (pour le traitement des paiements) - voir leur
@@ -210,10 +229,11 @@ const PolitiqueDeConfidentialite = () => (
 
 			<h2>10. Transferts de données</h2>
 			<p>
-				Vos données sont stockées dans l&apos;Union Européenne. En cas
-				de transfert hors UE, nous nous assurons que le niveau de
-				protection est adéquat (notamment pour les services Stripe qui
-				respectent le Privacy Shield).
+				Certains de nos prestataires (Vercel, Neon, Stripe, Cloudinary,
+				Resend, Google) sont établis aux États-Unis ou peuvent y
+				traiter des données. Ces transferts sont encadrés par le Data
+				Privacy Framework UE–États-Unis ou par les clauses
+				contractuelles types de la Commission européenne.
 			</p>
 
 			<h2>11. Droit de plainte</h2>
@@ -232,7 +252,7 @@ const PolitiqueDeConfidentialite = () => (
 			<h2>12. Modifications</h2>
 			<p>
 				Cette politique peut être mise à jour. La date de dernière mise
-				à jour est : 17/06/2025.
+				à jour est : 12/11/2026.
 			</p>
 		</main>
 		<Footer />

@@ -39,7 +39,7 @@ Aucune donnée n'est vendue ni cédée à des tiers.
 | Personnes concernées | Utilisateurs inscrits |
 | Données | Nom, pseudo, email, mot de passe haché, photo de profil, rôle, identifiant et jetons Google, sessions (jeton, IP, navigateur), inscription en attente (payload chiffré AES-256-GCM, 1 h) |
 | Destinataires | Responsable, staff (`admin`, `moderator`), Neon, Vercel, Resend, Google, Cloudinary |
-| Conservation | Durée de vie du compte, puis 12 mois après la demande de suppression (suppression douce `deletedAt`) |
+| Conservation | Durée de vie du compte, puis 12 mois après la demande de suppression (suppression douce `deletedAt`). Passé ce délai : suppression, ou anonymisation si le compte est lié à des paiements (cron quotidien) |
 
 ### T2 — Publication et consultation des annonces
 
@@ -61,7 +61,7 @@ Aucune donnée n'est vendue ni cédée à des tiers.
 | Personnes concernées | Acheteurs et vendeurs |
 | Données | Contenu des messages, offres (montant, statut, dates) |
 | Destinataires | Les deux participants de la conversation, Neon, Vercel |
-| Conservation | Durée de vie des comptes participants (suppression en cascade) — **aucune purge automatique** |
+| Conservation | Durée de vie des comptes participants ; supprimés avec le compte (suppression ou anonymisation) |
 
 ### T4 — Paiements et transactions
 
@@ -72,7 +72,7 @@ Aucune donnée n'est vendue ni cédée à des tiers.
 | Personnes concernées | Acheteurs et vendeurs |
 | Données | Identifiants acheteur/vendeur, montant, commission, identifiant de paiement Stripe, statut ; identifiant et statut du compte Stripe Connect. Les données de carte et les justificatifs d'identité des vendeurs sont collectés et conservés par Stripe, jamais par ZONE |
 | Destinataires | Responsable, staff, Stripe, Neon, Vercel |
-| Conservation | 10 ans pour les pièces comptables (art. L123-22 du Code de commerce) — la politique de confidentialité annonce 5 ans |
+| Conservation | 10 ans pour les pièces comptables (art. L123-22 du Code de commerce) ; conservés sous forme anonymisée après suppression du compte |
 
 ### T5 — Expédition et validation de la livraison
 
@@ -92,9 +92,9 @@ Aucune donnée n'est vendue ni cédée à des tiers.
 | Finalité | Détecter les connexions frauduleuses et les attaques, diagnostiquer les erreurs |
 | Base légale | Intérêt légitime (sécurité du service) |
 | Personnes concernées | Utilisateurs inscrits, visiteurs |
-| Données | Journaux de connexion (IP, navigateur, localisation, succès/échec), journaux d'erreurs (IP, navigateur, chemin, identifiant utilisateur), journal de sécurité `logs/security.json` (IP, navigateur, identifiant de connexion saisi, refus d'accès) |
+| Données | Journaux de connexion (IP, navigateur, localisation, succès/échec), journaux d'erreurs (IP, navigateur, chemin, identifiant utilisateur), journal de sécurité `logs/security.json` (IP, navigateur, refus d'accès, identifiant de connexion saisi — nécessaire pour détecter les attaques ciblant un compte) |
 | Destinataires | Responsable, staff, Neon, Vercel, SIEM Wazuh |
-| Conservation | Journaux de connexion : 90 jours (purge automatique). Journaux d'erreurs et journal de sécurité : **durée non définie** |
+| Conservation | Journaux de connexion : 90 jours. Journaux d'erreurs : 6 mois. Purge automatique quotidienne (cron). Journal de sécurité : 6 mois, à appliquer dans la configuration du SIEM **[à confirmer]** |
 
 ### T7 — Mesure d'audience et analyse d'usage
 
@@ -127,7 +127,7 @@ Aucune donnée n'est vendue ni cédée à des tiers.
 | Personnes concernées | Utilisateurs inscrits |
 | Données | Export JSON des données du compte, date de la demande de suppression |
 | Destinataires | La personne concernée, responsable |
-| Conservation | Suppression définitive 12 mois après la demande |
+| Conservation | Suppression ou anonymisation définitive 12 mois après la demande |
 
 ## 4. Mesures de sécurité
 
@@ -144,4 +144,4 @@ Aucune donnée n'est vendue ni cédée à des tiers.
 
 | Date | Modification |
 | --- | --- |
-| 12/11/2026 | Création du registre |
+| 12/11/2026 | Création du registre ; durées de conservation des paiements, journaux et messages fixées |
