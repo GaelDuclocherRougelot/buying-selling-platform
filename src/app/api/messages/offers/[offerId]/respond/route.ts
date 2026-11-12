@@ -68,11 +68,13 @@ export async function POST(
 			data: { status: response },
 		});
 
-		// Mettre à jour le produit
-		await prisma.product.update({
-			where: { id: offer.conversation.productId },
-			data: { status: "waiting_payment" },
-		});
+		// Réserver le produit uniquement si l'offre est acceptée
+		if (response === "accepted") {
+			await prisma.product.update({
+				where: { id: offer.conversation.productId },
+				data: { status: "waiting_payment" },
+			});
+		}
 
 		return NextResponse.json({
 			success: true,

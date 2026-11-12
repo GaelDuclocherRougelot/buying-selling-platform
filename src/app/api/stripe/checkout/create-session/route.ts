@@ -11,6 +11,7 @@ import {
 	getSellerSalesCount,
 } from "@/lib/platform-fees";
 import { prisma } from "@/lib/prisma";
+import { securityLog } from "@/lib/security-log";
 import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -31,17 +32,12 @@ import { NextRequest, NextResponse } from "next/server";
  *             type: object
  *             required:
  *               - productId
- *               - amount
  *               - productTitle
  *             properties:
  *               productId:
  *                 type: string
  *                 description: ID du produit à acheter
  *                 example: "product_123"
- *               amount:
- *                 type: number
- *                 description: Montant total du paiement en euros
- *                 example: 59.99
  *               productTitle:
  *                 type: string
  *                 description: Titre du produit pour la description du paiement
@@ -64,6 +60,8 @@ import { NextRequest, NextResponse } from "next/server";
  *         description: Produit déjà vendu, paiement en cours, ou vendeur non configuré
  *       401:
  *         description: Non autorisé
+ *       403:
+ *         description: Produit réservé à un autre acheteur
  *       404:
  *         description: Produit non trouvé
  *       500:
@@ -84,7 +82,8 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json();
-		const { productId, amount, productTitle } = body;
+		// Le montant envoyé par le client est ignoré : il est calculé côté serveur
+		const { productId, productTitle } = body;
 
 		// Get product and seller information
 		const product = await prisma.product.findUnique({
@@ -113,6 +112,39 @@ export async function POST(request: NextRequest) {
 				{ status: 400 }
 			);
 		}
+
+		if (product.status !== "active" && product.status !== "waiting_payment") {
+			return NextResponse.json(
+				{ error: "Ce produit n'est pas disponible à l'achat" },
+				{ status: 400 }
+			);
+		}
+
+		// Offre acceptée de cet acheteur pour ce produit
+		const acceptedOffer = await prisma.offer.findFirst({
+			where: {
+				status: "accepted",
+				conversation: { productId, buyerId: session.user.id },
+			},
+			orderBy: { updatedAt: "desc" },
+		});
+
+		// Produit réservé : seul l'acheteur dont l'offre a été acceptée peut payer
+		if (product.status === "waiting_payment" && !acceptedOffer) {
+			await securityLog("authz.denied", request.headers, {
+				userId: session.user.id,
+				path: request.nextUrl.pathname,
+				method: "POST",
+				resource: "product",
+				resourceId: productId,
+			});
+			return NextResponse.json(
+				{ error: "Ce produit est réservé à un autre acheteur" },
+				{ status: 403 }
+			);
+		}
+
+		const amount = acceptedOffer ? acceptedOffer.amount : product.price;
 
 		// Vérifier qu'il n'y a pas déjà un paiement en cours pour ce produit
 		const existingPayment = await prisma.payment.findFirst({

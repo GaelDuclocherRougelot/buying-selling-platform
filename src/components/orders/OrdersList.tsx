@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOrders } from "@/lib/hooks/useOrders";
 import { toast } from "sonner";
 import BuyerValidateButton from "../payment/BuyerValidateButton";
-import PaymentButton from "../stripe/PaymentButton";
 
 interface OrdersListProps {
 	type?: "buyer" | "seller" | "all";
@@ -168,15 +167,6 @@ export function OrdersList({
 											</div>
 											{getStatusBadge(order.status)}
 										</div>
-										{order.status === "waiting_payment" && (
-											<PaymentButton
-												productId={order.product.id}
-												productTitle={
-													order.productTitle
-												}
-												amount={order.amount}
-											/>
-										)}
 										{order.status ===
 											"pending_buyer_validation" && (
 											<BuyerValidateButton

@@ -166,7 +166,8 @@ export default function OfferMessage({
 			{/* Affiche le bouton de paiement uniquement pour l'acheteur (non-expéditeur) quand l'offre est acceptée */}
 			{message.offer?.status === "accepted" &&
 				isCurrentUser &&
-				conversation.product?.status === "active" && (
+				(conversation.product?.status === "waiting_payment" ||
+					conversation.product?.status === "active") && (
 					<div className="mt-3 pt-3 border-t border-gray-100">
 						<div className="text-center">
 							<p className="text-sm text-green-700 mb-3">
