@@ -1,5 +1,4 @@
 import { getBaseURL } from '@/lib/api';
-import { vercelPreviewOrigins } from '@/lib/auth';
 import { encryptJson } from '@/lib/crypto';
 import { prisma } from '@/lib/prisma';
 import { resend } from '@/lib/resend';
@@ -44,8 +43,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // En preview, le lien doit rester sur la preview (NEXT_PUBLIC_APP_URL = prod)
-    const appUrl = vercelPreviewOrigins[0] ?? getBaseURL();
+    const appUrl = getBaseURL();
     const url = `${appUrl}/auth/register/complete?token=${encodeURIComponent(
       tokenId
     )}`;

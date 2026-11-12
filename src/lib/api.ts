@@ -4,10 +4,15 @@ import { handleApiError, handleError } from "./error-handler";
  * Utility function to get the base URL for API calls
  * - Navigateur : origine courante (même origine → CSP connect-src 'self',
  *   fonctionne aussi sur les previews Vercel et les domaines alternatifs)
- * - Serveur : NEXT_PUBLIC_APP_URL ou localhost:3000
+ * - Serveur en preview Vercel : URL du déploiement courant (sinon les appels
+ *   et les liens générés côté serveur partent vers la production)
+ * - Serveur sinon : NEXT_PUBLIC_APP_URL ou localhost:3000
  */
 export const getBaseURL = (): string => {
 	if (typeof window !== "undefined") return window.location.origin;
+	if (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL) {
+		return `https://${process.env.VERCEL_URL}`;
+	}
 	return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 };
 
@@ -38,6 +43,18 @@ export const apiFetch = async (
 	errorMessage?: string
 ): Promise<Response> => {
 	const url = createApiURL(endpoint);
+
+	// Preview protégée par Vercel : un appel serveur → preview est refusé (401)
+	// sans le secret de contournement, fourni par Vercel s'il est configuré.
+	const bypassSecret =
+		typeof window === "undefined" && process.env.VERCEL_ENV === "preview"
+			? process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+			: undefined;
+	if (bypassSecret) {
+		const headers = new Headers(options?.headers);
+		headers.set("x-vercel-protection-bypass", bypassSecret);
+		options = { ...options, headers };
+	}
 
 	try {
 		const response = await fetch(url, options);
