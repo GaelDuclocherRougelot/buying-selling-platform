@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET endpoint for checking the status and getting stats
+ * GET endpoint : appelé par Vercel Cron (toujours en GET), lance donc la
+ * suppression puis renvoie les statistiques
  */
 export async function GET(request: NextRequest) {
 	try {
@@ -101,10 +102,12 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
+		const result = await deleteExpiredUsers();
 		const stats = await getSoftDeletedUsersStats();
 
 		return NextResponse.json({
 			success: true,
+			result,
 			stats,
 			timestamp: new Date().toISOString(),
 		});

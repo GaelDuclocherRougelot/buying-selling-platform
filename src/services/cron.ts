@@ -1,9 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { LoginLogService } from "./login-log";
 
+/** Domaine des emails de remplacement des comptes anonymisés */
+const ANONYMIZED_EMAIL_DOMAIN = "deleted.invalid";
+
 /**
  * Deletes users that have been soft-deleted for more than 12 months
  * This function should be called by a cron job
+ *
+ * Les comptes liés à des paiements sont anonymisés au lieu d'être supprimés :
+ * les paiements doivent être conservés 10 ans (obligation comptable).
  */
 export async function deleteExpiredUsers() {
 	try {
@@ -18,6 +24,8 @@ export async function deleteExpiredUsers() {
 					not: null,
 					lt: twelveMonthsAgo,
 				},
+				// Comptes déjà anonymisés lors d'un passage précédent
+				NOT: { email: { endsWith: `@${ANONYMIZED_EMAIL_DOMAIN}` } },
 			},
 			include: {
 				sessions: true,
@@ -55,29 +63,47 @@ export async function deleteExpiredUsers() {
 				});
 			}
 
-			// Delete payments (both as buyer and seller)
+			// Delete products (ceux liés à un paiement sont conservés avec lui)
+			if (user.products.length > 0) {
+				await prisma.product.deleteMany({
+					where: { ownerId: user.id, payments: { none: {} } },
+				});
+			}
+
+			// Compte lié à des paiements : anonymiser au lieu de supprimer
 			if (user.PaymentBuyer.length > 0 || user.PaymentSeller.length > 0) {
-				await prisma.payment.deleteMany({
+				await prisma.conversation.deleteMany({
 					where: {
 						OR: [{ buyerId: user.id }, { sellerId: user.id }],
 					},
 				});
-			}
-
-			// Delete products
-			if (user.products.length > 0) {
-				await prisma.product.deleteMany({
-					where: { ownerId: user.id },
+				await prisma.favorite.deleteMany({ where: { userId: user.id } });
+				await prisma.loginLog.deleteMany({ where: { userId: user.id } });
+				await prisma.user.update({
+					where: { id: user.id },
+					data: {
+						name: "Utilisateur supprimé",
+						email: `deleted-${user.id}@${ANONYMIZED_EMAIL_DOMAIN}`,
+						emailVerified: false,
+						image: null,
+						username: null,
+						displayUsername: null,
+					},
 				});
 			}
 		}
 
-		// Finally, delete the users
+		// Finally, delete the users without payments
 		const deleteResult = await prisma.user.deleteMany({
 			where: {
-				deletedAt: {
-					not: null,
-					lt: twelveMonthsAgo,
+				id: {
+					in: usersToDelete
+						.filter(
+							(user) =>
+								user.PaymentBuyer.length === 0 &&
+								user.PaymentSeller.length === 0
+						)
+						.map((user) => user.id),
 				},
 			},
 		});
@@ -133,6 +159,21 @@ export async function getSoftDeletedUsersStats() {
 		expiredUsers,
 		retentionPeriod: "12 months",
 	};
+}
+
+/** Durée de conservation des journaux d'erreurs (recommandation CNIL : 6 mois à 1 an) */
+const ERROR_LOG_RETENTION_DAYS = 180;
+
+// Suppression des journaux d'erreurs (IP, navigateur) au-delà de la durée de conservation
+export async function cleanupErrorLogs(): Promise<number> {
+	const cutoffDate = new Date();
+	cutoffDate.setDate(cutoffDate.getDate() - ERROR_LOG_RETENTION_DAYS);
+
+	const result = await prisma.errorLog.deleteMany({
+		where: { createdAt: { lt: cutoffDate } },
+	});
+
+	return result.count;
 }
 
 // Nettoyage automatique des logs de connexion (tous les jours à 2h du matin)
