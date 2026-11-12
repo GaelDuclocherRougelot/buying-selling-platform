@@ -5,6 +5,10 @@
  * Tout est identifiable et supprimable :
  * - utilisateurs : email @synthetic.zone.invalid ou username « synthetic_… »
  * - annonces : appartiennent aux vendeurs synthétiques, description marquée
+ * - catégories créées par le seed : image marquée « zone_seed=1 »
+ *
+ * Toutes les annonces sont des objets de 5 kg maximum (poids indiqué dans la
+ * description).
  *
  * Usage :
  *   SEED_DATABASE_URL=postgresql://… SEED_CONFIRM=<hôte de la base> pnpm seed:synthetic
@@ -17,7 +21,9 @@
  *   SEED_STRIPE_ACCOUNT_ID  compte Stripe Connect de TEST (acct_…) donné au
  *                           vendeur principal, pour que le checkout fonctionne
  *   SEED_PRODUCTS           nombre d'annonces (défaut 40)
- *   SEED_RESET=true         supprime d'abord les données synthétiques existantes
+ *   SEED_RESET=true         supprime d'abord les données synthétiques existantes,
+ *                           puis recrée tout
+ *   SEED_DELETE=true        supprime les données synthétiques et s'arrête
  */
 /// <reference types="node" />
 import { PrismaClient } from '@prisma/client';
@@ -74,53 +80,128 @@ const prisma = new PrismaClient({ datasourceUrl: SEED_DATABASE_URL });
 
 // ---------- Données ----------
 
-const unsplash = (id: string) =>
-  `https://images.unsplash.com/photo-${id}?w=800&q=80&auto=format&fit=crop`;
+/** Poids maximal d'un objet mis en vente (kg). */
+const MAX_WEIGHT_KG = 5;
 
-const CATEGORIES = [
-  {
-    name: 'meubles',
-    displayName: 'Meubles',
-    image: unsplash('1555041469-a586c61ea9bc'),
-    items: ['Table en chêne', 'Chaise scandinave', 'Commode vintage', 'Étagère murale', 'Fauteuil en velours'],
-    price: [20, 400],
-  },
+// zone_seed=1 marque les catégories créées par ce script (supprimées au reset)
+const unsplash = (id: string) =>
+  `https://images.unsplash.com/photo-${id}?w=800&q=80&auto=format&fit=crop&zone_seed=1`;
+
+/** Images des catégories créées par les versions précédentes du seed (sans marqueur). */
+const LEGACY_SEED_IMAGES = [
+  '1555041469-a586c61ea9bc',
+  '1498049794561-7780e7231661',
+  '1445205170230-053b83016050',
+  '1517649763962-0c623066013b',
+  '1512820790803-83ca734da794',
+  '1484101403633-562f891dc89a',
+].map(id => `https://images.unsplash.com/photo-${id}?w=800&q=80&auto=format&fit=crop`);
+
+type Item = { title: string; kg: number };
+
+const CATEGORIES: {
+  name: string;
+  displayName: string;
+  image: string;
+  price: [number, number];
+  items: Item[];
+}[] = [
   {
     name: 'electronique',
     displayName: 'Électronique',
     image: unsplash('1498049794561-7780e7231661'),
-    items: ['Casque Bluetooth', 'Enceinte portable', 'Tablette 10 pouces', 'Liseuse', 'Console de jeux'],
-    price: [15, 450],
+    price: [15, 350],
+    items: [
+      { title: 'Casque Bluetooth', kg: 0.3 },
+      { title: 'Enceinte portable', kg: 0.6 },
+      { title: 'Tablette 10 pouces', kg: 0.5 },
+      { title: 'Liseuse', kg: 0.2 },
+      { title: 'Console de jeux portable', kg: 0.4 },
+      { title: 'Appareil photo compact', kg: 0.3 },
+    ],
   },
   {
     name: 'vetements',
     displayName: 'Vêtements',
     image: unsplash('1445205170230-053b83016050'),
-    items: ['Veste en jean', 'Manteau en laine', 'Robe d\'été', 'Pull en cachemire', 'Baskets en cuir'],
     price: [5, 150],
+    items: [
+      { title: 'Veste en jean', kg: 0.8 },
+      { title: 'Manteau en laine', kg: 1.5 },
+      { title: "Robe d'été", kg: 0.3 },
+      { title: 'Pull en cachemire', kg: 0.4 },
+      { title: 'Baskets en cuir', kg: 1 },
+    ],
   },
   {
-    name: 'sport',
-    displayName: 'Sport',
-    image: unsplash('1517649763962-0c623066013b'),
-    items: ['Vélo de ville', 'Raquette de tennis', 'Tapis de yoga', 'Haltères 2×5 kg', 'Skateboard'],
-    price: [10, 350],
+    name: 'accessoires',
+    displayName: 'Accessoires',
+    image: unsplash('1523275335684-37898b6baf30'),
+    price: [5, 200],
+    items: [
+      { title: 'Sac à main en cuir', kg: 0.9 },
+      { title: 'Montre vintage', kg: 0.1 },
+      { title: 'Lunettes de soleil', kg: 0.05 },
+      { title: 'Portefeuille', kg: 0.2 },
+      { title: 'Écharpe en soie', kg: 0.1 },
+    ],
   },
   {
     name: 'livres',
     displayName: 'Livres',
     image: unsplash('1512820790803-83ca734da794'),
-    items: ['Lot de romans policiers', 'Bande dessinée collector', 'Livre de cuisine', 'Encyclopédie illustrée'],
     price: [3, 60],
+    items: [
+      { title: 'Lot de 5 romans policiers', kg: 1.8 },
+      { title: 'Bande dessinée collector', kg: 0.6 },
+      { title: 'Livre de cuisine', kg: 1.2 },
+      { title: 'Encyclopédie illustrée', kg: 3 },
+    ],
+  },
+  {
+    name: 'jeux-jouets',
+    displayName: 'Jeux & jouets',
+    image: unsplash('1611996575749-79a3a250f948'),
+    price: [5, 80],
+    items: [
+      { title: 'Jeu de société', kg: 1.2 },
+      { title: 'Puzzle 1000 pièces', kg: 0.8 },
+      { title: 'Peluche', kg: 0.4 },
+      { title: 'Jeu de construction', kg: 1.5 },
+    ],
   },
   {
     name: 'maison',
     displayName: 'Maison & déco',
     image: unsplash('1484101403633-562f891dc89a'),
-    items: ['Lampe de chevet', 'Miroir rond', 'Service à thé', 'Plaid en laine', 'Plante artificielle'],
     price: [5, 120],
+    items: [
+      { title: 'Lampe de chevet', kg: 1.2 },
+      { title: 'Miroir rond', kg: 2.5 },
+      { title: 'Service à thé', kg: 2 },
+      { title: 'Plaid en laine', kg: 1 },
+      { title: 'Vase en céramique', kg: 1.5 },
+    ],
+  },
+  {
+    name: 'sport',
+    displayName: 'Sport',
+    image: unsplash('1517649763962-0c623066013b'),
+    price: [8, 120],
+    items: [
+      { title: 'Raquette de tennis', kg: 0.3 },
+      { title: 'Tapis de yoga', kg: 1.5 },
+      { title: 'Haltères 2 × 2 kg', kg: 4 },
+      { title: 'Ballon de football', kg: 0.45 },
+      { title: 'Gourde isotherme', kg: 0.4 },
+    ],
   },
 ];
+
+const tooHeavy = CATEGORIES.flatMap(c => c.items).filter(i => i.kg > MAX_WEIGHT_KG);
+if (tooHeavy.length > 0) {
+  fail(`Objets de plus de ${MAX_WEIGHT_KG} kg : ${tooHeavy.map(i => i.title).join(', ')}`);
+}
 
 const CITIES = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Bordeaux', 'Lille', 'Nantes', 'Rennes', 'Strasbourg', 'Montpellier'];
 const CONDITIONS = ['new', 'good', 'good', 'mid', 'damaged'];
@@ -147,7 +228,6 @@ async function syntheticUserIds() {
 
 async function reset() {
   const userIds = await syntheticUserIds();
-  if (userIds.length === 0) return 0;
   const products = await prisma.product.findMany({
     where: { ownerId: { in: userIds } },
     select: { id: true },
@@ -173,7 +253,30 @@ async function reset() {
     prisma.product.deleteMany({ where: { id: { in: productIds } } }),
     prisma.user.deleteMany({ where: { id: { in: userIds } } }),
   ]);
-  return userIds.length;
+
+  // Catégories créées par le seed, si plus aucune annonce ne les utilise
+  const { count: categories } = await prisma.category.deleteMany({
+    where: {
+      OR: [
+        { imageUrl: { contains: 'zone_seed=1' } },
+        { imageUrl: { in: LEGACY_SEED_IMAGES } },
+      ],
+      products: { none: {} },
+    },
+  });
+  return { users: userIds.length, products: productIds.length, categories };
+}
+
+/** Prévient si une image de catégorie ne s'affichera pas (identifiant Unsplash invalide). */
+async function checkImages() {
+  for (const c of CATEGORIES) {
+    try {
+      const res = await fetch(c.image, { method: 'HEAD', signal: AbortSignal.timeout(8000) });
+      if (!res.ok) console.warn(`⚠️ Image de « ${c.displayName} » introuvable (HTTP ${res.status}) : ${c.image}`);
+    } catch {
+      console.warn(`⚠️ Image de « ${c.displayName} » non vérifiable (réseau) : ${c.image}`);
+    }
+  }
 }
 
 // ---------- Création ----------
@@ -217,11 +320,21 @@ async function createUser(opts: {
 async function main() {
   console.log(`🌱 Seed synthétique → ${dbHost} / ${dbName}`);
 
-  if (process.env.SEED_RESET === 'true') {
-    console.log(`   Suppression des données synthétiques existantes : ${await reset()} utilisateur(s)`);
+  if (process.env.SEED_DELETE === 'true' || process.env.SEED_RESET === 'true') {
+    const r = await reset();
+    console.log(
+      `   Supprimé : ${r.users} utilisateur(s), ${r.products} annonce(s), ${r.categories} catégorie(s)` +
+        ' (favoris, conversations, sessions et paiements associés inclus)'
+    );
+    if (process.env.SEED_DELETE === 'true') {
+      console.log('✅ Données synthétiques supprimées.');
+      return;
+    }
   } else if ((await syntheticUserIds()).length > 0) {
     fail('Des données synthétiques existent déjà : relance avec SEED_RESET=true pour les remplacer.');
   }
+
+  await checkImages();
 
   // Catégories : créées seulement si absentes (les existantes sont réutilisées)
   const categories = [];
@@ -250,13 +363,15 @@ async function main() {
   // Annonces : 60 % chez le vendeur Stripe si fourni, pour que le checkout aboutisse
   for (let i = 0; i < PRODUCTS; i++) {
     const c = pick(categories);
+    const item = pick(c.items);
     const delivery = pick(DELIVERIES);
     const ownerId = STRIPE_ACCOUNT && Math.random() < 0.6 ? sellerIds[0] : pick(sellerIds);
     await prisma.product.create({
       data: {
-        title: pick(c.items),
+        title: item.title,
         description:
-          `Annonce de démonstration en ${c.displayName.toLowerCase()}, bon rapport qualité-prix.\n\n` +
+          `Annonce de démonstration en ${c.displayName.toLowerCase()}, bon rapport qualité-prix.\n` +
+          `Poids : ${item.kg.toLocaleString('fr-FR')} kg.\n\n` +
           SYNTHETIC_MARK,
         price: between(c.price[0], c.price[1]),
         condition: pick(CONDITIONS),
@@ -266,7 +381,8 @@ async function main() {
         status: 'active',
         city: pick(CITIES),
         delivery,
-        deliveryPrice: delivery === 'delivery' ? between(3, 15) : 0,
+        // Frais de port selon le poids (≤ 5 kg)
+        deliveryPrice: delivery === 'delivery' ? (item.kg <= 1 ? between(3, 6) : between(7, 12)) : 0,
       },
     });
   }
@@ -292,7 +408,7 @@ async function main() {
   }
 
   console.log(
-    `✅ ${categories.length} catégories, ${SELLERS.length} vendeurs, ${PRODUCTS} annonces actives` +
+    `✅ ${categories.length} catégories, ${SELLERS.length} vendeurs, ${PRODUCTS} annonces actives (≤ ${MAX_WEIGHT_KG} kg)` +
       (STRIPE_ACCOUNT ? ` (vendeur Stripe : ${STRIPE_ACCOUNT})` : ' (aucun vendeur Stripe : checkout impossible)')
   );
 }
