@@ -135,7 +135,7 @@ export default async function ProductPage(props: {
 				<section className="max-w-[85rem] mx-auto py-16 px-4 lg:px-10 w-full flex flex-col gap-6">
 					<div
 						className={cn(
-							"py-4 flex items-center justify-between w-full"
+							"py-4 flex flex-wrap items-center justify-between gap-4 w-full"
 						)}
 					>
 						<div className="flex items-center space-x-4">

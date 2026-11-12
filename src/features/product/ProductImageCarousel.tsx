@@ -22,7 +22,7 @@ export default function ProductImageCarousel(props: { images: string[] }) {
 			opts={{
 				align: "start",
 			}}
-			className="w-[670px] h-[500px] overflow-hidden"
+			className="w-full max-w-[670px] h-[300px] sm:h-[500px] overflow-hidden"
 		>
 			<CarouselContent>
 				{props.images.map((image) => (
@@ -30,7 +30,7 @@ export default function ProductImageCarousel(props: { images: string[] }) {
 						<Image
 							src={image}
 							alt="product"
-							className="object-cover max-w-md"
+							className="object-cover w-full max-w-md"
 							width={1920}
 							height={1080}
 						/>
