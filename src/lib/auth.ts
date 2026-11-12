@@ -21,7 +21,7 @@ const SIGN_IN_PATHS = ['/sign-in/email', '/sign-in/username'];
  * Origines autorisées en plus de BETTER_AUTH_URL : URLs des déploiements
  * de preview Vercel (fournies par Vercel au build/runtime).
  */
-const vercelPreviewOrigins =
+export const vercelPreviewOrigins =
   process.env.VERCEL_ENV === 'preview'
     ? [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
         .filter((host): host is string => Boolean(host))
@@ -29,6 +29,9 @@ const vercelPreviewOrigins =
     : [];
 
 export const auth = betterAuth({
+  // En preview, les liens des emails (vérification, mot de passe oublié)
+  // doivent rester sur la preview et non pointer vers BETTER_AUTH_URL (prod).
+  baseURL: vercelPreviewOrigins[0],
   trustedOrigins: vercelPreviewOrigins,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
