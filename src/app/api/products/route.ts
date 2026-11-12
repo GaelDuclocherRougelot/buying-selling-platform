@@ -17,6 +17,11 @@ import { NextRequest } from "next/server";
  *           type: string
  *         description: ID de la catégorie pour filtrer les produits
  *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Catégorie par identifiant, nom technique ou nom affiché (pages /categories/[categoryName])
+ *       - in: query
  *         name: search
  *         schema:
  *           type: string
@@ -65,6 +70,7 @@ export async function GET(request: NextRequest) {
 	return handleApiRoute(async () => {
 		const { searchParams } = new URL(request.url);
 		const categoryId = searchParams.get("categoryId");
+		const category = searchParams.get("category");
 		const search = searchParams.get("search");
 		const minPrice = searchParams.get("minPrice");
 		const maxPrice = searchParams.get("maxPrice");
@@ -72,12 +78,25 @@ export async function GET(request: NextRequest) {
 		const limit = parseInt(searchParams.get("limit") || "20");
 		const offset = parseInt(searchParams.get("offset") || "0");
 
+		// Annonces publiées : statut "active" (comme l'accueil). "approved"
+		// n'est jamais attribué, ce qui rendait les pages catégorie vides.
 		const where: Prisma.ProductWhereInput = {
-			status: "approved",
+			status: "active",
 		};
 
 		if (categoryId) {
 			where.categoryId = categoryId;
+		} else if (category) {
+			// Les pages catégorie passent le nom affiché (ex. « Maison & déco »)
+			where.category = {
+				is: {
+					OR: [
+						{ id: category },
+						{ name: category },
+						{ displayName: category },
+					],
+				},
+			};
 		}
 
 		if (search) {

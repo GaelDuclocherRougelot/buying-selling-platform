@@ -27,13 +27,15 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 		const fetchData = async () => {
 			try {
 				const { categoryName } = await params;
-				setCategoryName(categoryName);
 
 				// Décoder le nom de la catégorie (car il peut contenir des caractères spéciaux)
 				const decodedCategoryName = decodeURIComponent(categoryName);
+				// Titre affiché décodé (« Électronique » et non « %C3%89lectronique »)
+				setCategoryName(decodedCategoryName);
 
 				const response = await apiFetch(
-					`/api/products?category=${decodedCategoryName}`
+					// Encodé : les noms affichés peuvent contenir « & » (ex. « Maison & déco »)
+					`/api/products?category=${encodeURIComponent(decodedCategoryName)}`
 				);
 				if (!response.ok) {
 					throw new Error("Failed to fetch products");
