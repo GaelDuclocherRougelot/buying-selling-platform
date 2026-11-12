@@ -12,6 +12,7 @@ import {
 } from "@/lib/platform-fees";
 import { prisma } from "@/lib/prisma";
 import { securityLog } from "@/lib/security-log";
+import { releaseExpiredReservations } from "@/services/reservation";
 import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -84,6 +85,9 @@ export async function POST(request: NextRequest) {
 		const body = await request.json();
 		// Le montant envoyé par le client est ignoré : il est calculé côté serveur
 		const { productId, productTitle } = body;
+
+		// Une réservation expirée ne doit plus bloquer l'achat
+		await releaseExpiredReservations(productId);
 
 		// Get product and seller information
 		const product = await prisma.product.findUnique({

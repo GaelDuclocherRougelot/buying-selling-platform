@@ -1,5 +1,6 @@
 import { getUser } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
+import { securityLog } from "@/lib/security-log";
 import { RespondToOfferRequest } from "@/types/conversation";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -19,6 +20,13 @@ export async function POST(
 		const { offerId } = await params;
 		const body: RespondToOfferRequest = await request.json();
 		const { response } = body;
+
+		if (response !== "accepted" && response !== "rejected") {
+			return NextResponse.json(
+				{ error: "Réponse invalide" },
+				{ status: 400 }
+			);
+		}
 
 		// Récupérer l'offre avec la conversation et le produit
 		const offer = await prisma.offer.findUnique({
@@ -45,9 +53,17 @@ export async function POST(
 		// Vérifier que l'utilisateur peut répondre à cette offre
 		// Seul l'autre participant de la conversation peut répondre
 		if (
-			offer.conversation.buyerId !== user.id &&
-			offer.conversation.sellerId !== user.id
+			(offer.conversation.buyerId !== user.id &&
+				offer.conversation.sellerId !== user.id) ||
+			offer.senderId === user.id
 		) {
+			await securityLog("authz.denied", request.headers, {
+				userId: user.id,
+				path: request.nextUrl.pathname,
+				method: "POST",
+				resource: "offer",
+				resourceId: offerId,
+			});
 			return NextResponse.json(
 				{ error: "Accès non autorisé à cette offre" },
 				{ status: 403 }
