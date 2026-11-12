@@ -66,9 +66,9 @@ export async function GET(request: NextRequest) {
   return handleApiRoute(async () => {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
-    const categoryParam = searchParams.get('category');
-    const categoryId =
-      searchParams.get('categoryId') || categoryParam || undefined;
+    const categoryId = searchParams.get('categoryId');
+    // Le filtre de /search envoie le nom technique de la catégorie
+    const category = searchParams.get('category');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const condition = searchParams.get('condition');
@@ -78,8 +78,9 @@ export async function GET(request: NextRequest) {
 
     // Note: "q" is optional to allow the generic /search page to load
 
+    // Annonces publiées : statut "active" ("approved" n'est jamais attribué)
     const where: Prisma.ProductWhereInput = {
-      status: 'approved',
+      status: 'active',
     };
 
     if (query) {
@@ -91,6 +92,12 @@ export async function GET(request: NextRequest) {
 
     if (categoryId) {
       where.categoryId = categoryId;
+    } else if (category) {
+      where.category = {
+        is: {
+          OR: [{ id: category }, { name: category }, { displayName: category }],
+        },
+      };
     }
 
     if (minPrice || maxPrice) {

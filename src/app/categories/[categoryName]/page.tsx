@@ -33,7 +33,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 				const decodedCategoryName = decodeURIComponent(categoryName);
 
 				const response = await apiFetch(
-					`/api/products?category=${decodedCategoryName}`
+					// Encodé : les noms affichés peuvent contenir « & » (ex. « Maison & déco »)
+					`/api/products?category=${encodeURIComponent(decodedCategoryName)}`
 				);
 				if (!response.ok) {
 					throw new Error("Failed to fetch products");
