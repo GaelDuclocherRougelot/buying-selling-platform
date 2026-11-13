@@ -19,6 +19,15 @@ export async function getProductById(productId: string) {
 	);
 }
 
+export const PUBLIC_OWNER_SELECT = {
+	id: true,
+	name: true,
+	image: true,
+	username: true,
+	displayUsername: true,
+	emailVerified: true,
+} as const;
+
 export async function getProductWithOwnerById(productId: string) {
 	return await cacheUtils.withCache(
 		`${CACHE_KEYS.PRODUCT_DETAILS}:${productId}:with_owner`,
@@ -26,7 +35,8 @@ export async function getProductWithOwnerById(productId: string) {
 			return await prisma.product.findUnique({
 				where: { id: productId },
 				include: {
-					owner: true,
+					// Jamais email, stripeAccountId ni role : route publique
+					owner: { select: PUBLIC_OWNER_SELECT },
 				},
 			});
 		},

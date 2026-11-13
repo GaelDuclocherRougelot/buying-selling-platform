@@ -35,9 +35,13 @@ const updateUserSchema = z.object({
  *               properties:
  *                 id:
  *                   type: string
- *                 displayUsername:
+ *                 name:
  *                   type: string
- *                 email:
+ *                 image:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 displayUsername:
  *                   type: string
  *                 createdAt:
  *                   type: string
@@ -57,12 +61,14 @@ export async function GET(
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
+			// Champs publics uniquement (affichés sur /profile/[userId])
 			select: {
 				id: true,
+				name: true,
+				image: true,
+				username: true,
 				displayUsername: true,
-				email: true,
 				createdAt: true,
-				// Ne pas inclure les informations sensibles
 			},
 		});
 

@@ -65,11 +65,17 @@ export default function ProductActions({
 				sellerName={sellerName}
 				className="px-6 py-2"
 			/>
-			<PaymentButton
-				productId={productId}
-				amount={price}
-				productTitle={productTitle}
-			/>
+			{status === "waiting_payment" ? (
+				<Button variant="outline" disabled>
+					Réservé
+				</Button>
+			) : (
+				<PaymentButton
+					productId={productId}
+					amount={price}
+					productTitle={productTitle}
+				/>
+			)}
 			<FavoriteButton
 				productId={productId}
 				size="sm"

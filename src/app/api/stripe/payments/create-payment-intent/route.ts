@@ -4,14 +4,15 @@ import {
 	getPlatformFeeInCents,
 	getSellerSalesCount,
 } from "@/lib/platform-fees";
+import { prepareCheckout } from "@/lib/checkout";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+// `amount` éventuellement envoyé par le client est ignoré (retiré par Zod)
 const createPaymentIntentSchema = z.object({
 	productId: z.string(),
-	amount: z.number().positive(),
 });
 
 export async function POST(request: NextRequest) {
@@ -28,42 +29,24 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json();
-		const { productId, amount } = createPaymentIntentSchema.parse(body);
+		const { productId } = createPaymentIntentSchema.parse(body);
 
-		// Get product and seller information
-		const product = await prisma.product.findUnique({
-			where: { id: productId },
-			include: {
-				owner: {
-					select: { stripeAccountId: true },
-				},
-				category: {
-					select: { name: true },
-				},
-			},
-		});
+		// Mêmes contrôles que create-session ; `amount` du client ignoré
+		const checkout = await prepareCheckout(
+			request,
+			productId,
+			session.user.id
+		);
+		if (checkout instanceof NextResponse) return checkout;
+		const { product, stripeAccountId, itemPrice, amount } = checkout;
 
-		if (!product) {
-			return NextResponse.json(
-				{ error: "Product not found" },
-				{ status: 404 }
-			);
-		}
-
-		if (!product.owner.stripeAccountId) {
-			return NextResponse.json(
-				{ error: "Seller has not set up payments" },
-				{ status: 400 }
-			);
-		}
-
-		// 🎯 Calculate platform fee with progressive system
+		// 🎯 Calculate platform fee with progressive system (sur le prix de l'article)
 		const sellerSalesCount = await getSellerSalesCount(product.ownerId);
-		const feeInfo = calculatePlatformFee(amount, {
+		const feeInfo = calculatePlatformFee(itemPrice, {
 			category: product.category?.name?.toLowerCase(),
 			sellerSalesCount: sellerSalesCount,
 		});
-		const platformFeeAmount = getPlatformFeeInCents(amount, {
+		const platformFeeAmount = getPlatformFeeInCents(itemPrice, {
 			category: product.category?.name?.toLowerCase(),
 			sellerSalesCount: sellerSalesCount,
 		});
@@ -80,7 +63,7 @@ export async function POST(request: NextRequest) {
 			currency: "eur",
 			application_fee_amount: platformFeeAmount,
 			transfer_data: {
-				destination: product.owner.stripeAccountId,
+				destination: stripeAccountId,
 			},
 			metadata: {
 				productId,

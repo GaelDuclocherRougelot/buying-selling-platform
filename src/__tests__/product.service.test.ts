@@ -8,6 +8,7 @@ import {
   getProductsByCategory,
   getProductsByUserId,
   getProductWithOwnerById,
+  PUBLIC_OWNER_SELECT,
   invalidateProductCache,
 } from '@/services/product';
 
@@ -138,7 +139,7 @@ describe('Product Service', () => {
       expect(prisma.product.findUnique).toHaveBeenCalledWith({
         where: { id: 'prod_123' },
         include: {
-          owner: true,
+          owner: { select: PUBLIC_OWNER_SELECT },
         },
       });
       expect(result).toEqual(mockProductWithOwner);

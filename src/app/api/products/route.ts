@@ -1,8 +1,9 @@
 import { handleApiRoute } from "@/lib/api-error-handler";
+import { requireUser } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { logSqliSuspected } from "@/lib/security-log";
 import { Prisma } from "@prisma/client";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * @swagger
@@ -170,7 +171,6 @@ export async function GET(request: NextRequest) {
  *               - price
  *               - condition
  *               - categoryId
- *               - ownerId
  *             properties:
  *               title:
  *                 type: string
@@ -198,10 +198,6 @@ export async function GET(request: NextRequest) {
  *                 type: string
  *                 description: ID de la catégorie du produit
  *                 example: "cat_123"
- *               ownerId:
- *                 type: string
- *                 description: ID du propriétaire du produit
- *                 example: "user_123"
  *               deliveryPrice:
  *                 type: number
  *                 description: Prix de livraison
@@ -227,6 +223,8 @@ export async function GET(request: NextRequest) {
  *         description: Erreur interne du serveur
  */
 export async function POST(request: NextRequest) {
+	const user = await requireUser(request);
+	if (user instanceof NextResponse) return user;
 	return handleApiRoute(async () => {
 		const body = await request.json();
 		const {
@@ -236,7 +234,6 @@ export async function POST(request: NextRequest) {
 			condition,
 			imagesUrl,
 			categoryId,
-			ownerId,
 			deliveryPrice,
 			city,
 			delivery,
@@ -250,7 +247,8 @@ export async function POST(request: NextRequest) {
 				condition,
 				imagesUrl,
 				categoryId,
-				ownerId,
+				// Propriétaire = utilisateur connecté, jamais un ownerId du client
+				ownerId: user.id,
 				deliveryPrice: deliveryPrice ? parseFloat(deliveryPrice) : 0,
 				city,
 				delivery,

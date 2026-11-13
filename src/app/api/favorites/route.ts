@@ -163,7 +163,8 @@ export async function POST(request: NextRequest) {
 		const user = await requireUser(request);
 		const { productId } = await request.json();
 
-		if (!productId) {
+		// Chaîne obligatoire : un objet ({ not: "" }…) deviendrait un filtre Prisma
+		if (typeof productId !== "string" || !productId) {
 			throw createValidationErrorResponse([], "productId is required");
 		}
 

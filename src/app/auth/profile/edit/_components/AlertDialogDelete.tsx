@@ -17,11 +17,10 @@ export function AlertDialogDelete({ userId }: { userId: string }) {
 	const router = useRouter();
 
 	const handleDelete = async () => {
-		const res = await apiFetch("/api/auth/soft-delete-user", {
-			method: "POST",
-			body: JSON.stringify({ userId }),
-			headers: { "Content-Type": "application/json" },
-		});
+		const res = await apiFetch(
+			`/api/auth/soft-delete-user?userId=${encodeURIComponent(userId)}`,
+			{ method: "DELETE" }
+		);
 		if (res.ok) {
 			router.refresh();
 		} else {

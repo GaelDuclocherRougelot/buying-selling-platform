@@ -1,25 +1,60 @@
+import { createRateLimitErrorResponse } from "@/lib/api-error-handler";
+import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth-guards";
+import { getConnectionInfo } from "@/lib/login-logger";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+// Erreurs remontées par le client (src/lib/error-handler.ts) : route publique,
+// donc forme, taille et débit bornés. Les clés inconnues (dont userId) sont ignorées.
+const errorLogSchema = z.object({
+	message: z.string().min(1).max(2000),
+	code: z.string().max(100).optional(),
+	status: z.number().int().optional(),
+	path: z.string().max(2000).optional(),
+	stack: z.string().max(10000).optional(),
+	details: z
+		.unknown()
+		.refine((d) => d === undefined || JSON.stringify(d).length <= 10000, {
+			message: "details trop volumineux",
+		}),
+	timestamp: z.coerce.date(),
+});
 
 export async function POST(request: NextRequest) {
 	try {
-		const errorData = await request.json();
+		const { ipAddress: ip, userAgent } = getConnectionInfo(request.headers);
+		if (!rateLimit(`error-log:${ip}`, 20, 60_000)) {
+			return createRateLimitErrorResponse();
+		}
+		if (Number(request.headers.get("content-length")) > 32_000) {
+			return NextResponse.json(
+				{ error: "Données d'erreur trop volumineuses" },
+				{ status: 413 }
+			);
+		}
 
-		// Validation basique des données d'erreur
-		if (!errorData.message || !errorData.timestamp) {
+		const parsed = errorLogSchema.safeParse(
+			await request.json().catch(() => null)
+		);
+		if (!parsed.success) {
 			return NextResponse.json(
 				{ error: "Données d'erreur invalides" },
 				{ status: 400 }
 			);
 		}
+		const errorData = parsed.data;
 
-		// Extraire les informations de l'utilisateur si disponible
-		const userId = errorData.userId || null;
-		const userAgent = request.headers.get("user-agent") || null;
-		const ip =
-			request.headers.get("x-forwarded-for") ||
-			request.headers.get("x-real-ip") ||
-			"unknown";
+		// userId depuis la session uniquement, jamais depuis le corps
+		const session = await auth.api.getSession({ headers: request.headers });
+		const userId = session?.user?.id ?? null;
+		const details =
+			errorData.stack !== undefined
+				? { stack: errorData.stack, details: errorData.details ?? null }
+				: errorData.details ?? null;
 
 		try {
 			// Logger l'erreur dans la base de données
@@ -32,8 +67,11 @@ export async function POST(request: NextRequest) {
 					userId,
 					userAgent,
 					ip,
-					details: errorData.details ? errorData.details : null,
-					timestamp: new Date(errorData.timestamp),
+					details:
+						details === null
+							? Prisma.JsonNull
+							: (details as Prisma.InputJsonValue),
+					timestamp: errorData.timestamp,
 				},
 			});
 
@@ -51,7 +89,7 @@ export async function POST(request: NextRequest) {
 				userAgent,
 				ip,
 				timestamp: errorData.timestamp,
-				details: errorData.details,
+				details,
 			});
 		}
 
@@ -65,7 +103,9 @@ export async function POST(request: NextRequest) {
 	}
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+	const admin = await requireAdmin(request);
+	if (admin instanceof NextResponse) return admin;
 	try {
 		// Récupérer les logs d'erreur depuis la base de données
 		const errorLogs = await prisma.errorLog.findMany({
@@ -98,6 +138,8 @@ export async function GET() {
 }
 
 export async function DELETE(request: NextRequest) {
+	const admin = await requireAdmin(request);
+	if (admin instanceof NextResponse) return admin;
 	try {
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get("id");
@@ -112,7 +154,7 @@ export async function DELETE(request: NextRequest) {
 				message: "Erreur supprimée",
 			});
 		} else {
-			// Supprimer toutes les erreurs (optionnel: ajouter une authentification admin)
+			// Supprimer toutes les erreurs
 			const deleteCount = await prisma.errorLog.deleteMany({});
 			return NextResponse.json({
 				success: true,

@@ -1,7 +1,10 @@
+import { requireAdmin } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+	const admin = await requireAdmin(request);
+	if (admin instanceof NextResponse) return admin;
 	try {
 		// Récupérer toutes les preuves d'expédition avec les détails des paiements
 		const proofs = await prisma.shippingProof.findMany({

@@ -1,6 +1,9 @@
 import { getUser } from '@/lib/auth-session';
+import { getConnectionInfo } from '@/lib/login-logger';
 import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limit';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import LabelClient from './label-client';
 
@@ -19,6 +22,10 @@ export default async function LabelPage({
 }) {
   const user = await getUser();
   if (!user) redirect('/auth/login');
+
+  // Même compteur que PATCH /api/iot/weighings/[code] : 10 essais / minute / IP
+  const { ipAddress } = getConnectionInfo(await headers());
+  if (!rateLimit(`weighing-code:${ipAddress}`, 10, 60_000)) notFound();
 
   const { code } = await params;
   const weighing = await prisma.weighing.findUnique({

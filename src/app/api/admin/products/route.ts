@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -14,6 +15,8 @@ const createProductSchema = z.object({
 
 // GET /api/admin/products - Get all products (including sold ones)
 export async function GET(request: NextRequest) {
+	const admin = await requireAdmin(request);
+	if (admin instanceof NextResponse) return admin;
 	try {
 		const { searchParams } = new URL(request.url);
 		const page = parseInt(searchParams.get("page") || "1");
@@ -62,6 +65,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/products - Create a new product
 export async function POST(request: NextRequest) {
+	const admin = await requireAdmin(request);
+	if (admin instanceof NextResponse) return admin;
 	try {
 		const body = await request.json();
 
@@ -98,7 +103,7 @@ export async function POST(request: NextRequest) {
 				condition,
 				imagesUrl,
 				categoryId,
-				ownerId: "default-user-id", // Add default owner ID for admin-created products
+				ownerId: admin.id,
 			},
 		});
 

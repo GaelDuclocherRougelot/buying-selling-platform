@@ -1,5 +1,7 @@
 import { auth } from '@/lib/auth';
+import { getConnectionInfo } from '@/lib/login-logger';
 import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limit';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -9,6 +11,12 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  // Code de 4 caractères : on borne les essais pour empêcher l'énumération
+  const { ipAddress } = getConnectionInfo(request.headers);
+  if (!rateLimit(`weighing-code:${ipAddress}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Trop de tentatives' }, { status: 429 });
+  }
+
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
