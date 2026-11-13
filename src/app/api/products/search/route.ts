@@ -1,5 +1,6 @@
 import { handleApiRoute } from '@/lib/api-error-handler';
 import { prisma } from '@/lib/prisma';
+import { logSqliSuspected } from '@/lib/security-log';
 import { Prisma } from '@prisma/client';
 import { NextRequest } from 'next/server';
 
@@ -65,6 +66,11 @@ import { NextRequest } from 'next/server';
 export async function GET(request: NextRequest) {
   return handleApiRoute(async () => {
     const { searchParams } = new URL(request.url);
+    await logSqliSuspected(
+      request.headers,
+      request.nextUrl.pathname,
+      Object.fromEntries(searchParams),
+    );
     const query = searchParams.get('q');
     const categoryId = searchParams.get('categoryId');
     // Le filtre de /search envoie le nom technique de la catégorie
@@ -72,8 +78,12 @@ export async function GET(request: NextRequest) {
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const condition = searchParams.get('condition');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    // Valeurs sûres : jamais de NaN vers Prisma (sinon 500 sur saisie non numérique)
+    const page = Math.max(1, Math.trunc(Number(searchParams.get('page'))) || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, Math.trunc(Number(searchParams.get('limit'))) || 20),
+    );
     const offset = (page - 1) * limit;
 
     // Note: "q" is optional to allow the generic /search page to load
@@ -102,8 +112,10 @@ export async function GET(request: NextRequest) {
 
     if (minPrice || maxPrice) {
       where.price = {};
-      if (minPrice) where.price.gte = parseFloat(minPrice);
-      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+      const gte = parseFloat(minPrice ?? '');
+      const lte = parseFloat(maxPrice ?? '');
+      if (Number.isFinite(gte)) where.price.gte = gte;
+      if (Number.isFinite(lte)) where.price.lte = lte;
     }
 
     if (condition) {

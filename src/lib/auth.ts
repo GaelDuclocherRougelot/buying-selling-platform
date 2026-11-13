@@ -5,7 +5,7 @@ import { createAuthMiddleware, isAPIError } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { openAPI, username } from 'better-auth/plugins';
 import { resend } from './resend';
-import { securityLog } from './security-log';
+import { logSqliSuspected, securityLog } from './security-log';
 
 const prisma = new PrismaClient();
 
@@ -103,6 +103,10 @@ export const auth = betterAuth({
     // Événements de connexion envoyés au SIEM (brute force)
     after: createAuthMiddleware(async ctx => {
       if (!SIGN_IN_PATHS.includes(ctx.path) || !ctx.headers) return;
+      await logSqliSuspected(ctx.headers, ctx.path, {
+        email: ctx.body?.email,
+        username: ctx.body?.username,
+      });
       const failed = isAPIError(ctx.context.returned);
       await securityLog(
         failed ? 'auth.login_failed' : 'auth.login_success',
