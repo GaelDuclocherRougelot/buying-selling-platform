@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { createCategory } from "@/services/category";
 import { NextRequest, NextResponse } from "next/server";
@@ -22,6 +23,8 @@ async function checkAdminAccess(request: NextRequest) {
 
 // GET /api/admin/categories - Get all categories with pagination
 export async function GET(request: NextRequest) {
+	const admin = await requireAdmin(request);
+	if (admin instanceof NextResponse) return admin;
 	try {
 		const { searchParams } = new URL(request.url);
 		const page = parseInt(searchParams.get("page") || "1");

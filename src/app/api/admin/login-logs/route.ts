@@ -1,22 +1,13 @@
-import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth-guards";
 import { LoginLogService } from "@/services/login-log";
 import type { LoginAction } from "@/types/login-log";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
+	// 401 sans session, 403 si non admin (journalisés pour le SIEM)
+	const admin = await requireAdmin(request);
+	if (admin instanceof NextResponse) return admin;
 	try {
-		const session = await auth.api.getSession({
-			headers: request.headers,
-		});
-
-		// Vérifier que l'utilisateur est connecté et a les permissions admin
-		if (!session?.user || session.user.role !== "admin") {
-			return NextResponse.json(
-				{ error: "Accès non autorisé" },
-				{ status: 403 }
-			);
-		}
-
 		const { searchParams } = new URL(request.url);
 		const userId = searchParams.get("userId");
 		const action = searchParams.get("action") as LoginAction | null;
@@ -45,19 +36,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+	// Journal d'audit admin : écriture réservée aux admins
+	const admin = await requireAdmin(request);
+	if (admin instanceof NextResponse) return admin;
 	try {
-		const session = await auth.api.getSession({
-			headers: request.headers,
-		});
-
-		// Vérifier que l'utilisateur est connecté
-		if (!session?.user) {
-			return NextResponse.json(
-				{ error: "Non authentifié" },
-				{ status: 401 }
-			);
-		}
-
 		const body = await request.json();
 		const {
 			action,
@@ -77,7 +59,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		const logData = {
-			userId: session.user.id,
+			userId: admin.id,
 			action,
 			ipAddress,
 			userAgent,
