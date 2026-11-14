@@ -1,5 +1,9 @@
-import { handleApiRoute } from "@/lib/api-error-handler";
+import {
+	createValidationErrorResponse,
+	handleApiRoute,
+} from "@/lib/api-error-handler";
 import { requireUser } from "@/lib/auth-guards";
+import { isProductImageUrl } from "@/lib/cloudinary-url";
 import { prisma } from "@/lib/prisma";
 import { logSqliSuspected } from "@/lib/security-log";
 import { Prisma } from "@prisma/client";
@@ -238,6 +242,11 @@ export async function POST(request: NextRequest) {
 			city,
 			delivery,
 		} = body;
+
+		// Seules des images produit de notre cloud (cf. destroy Cloudinary)
+		if (!Array.isArray(imagesUrl) || !imagesUrl.every(isProductImageUrl)) {
+			throw createValidationErrorResponse([], "imagesUrl invalide");
+		}
 
 		const product = await prisma.product.create({
 			data: {

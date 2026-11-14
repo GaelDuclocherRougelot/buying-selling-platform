@@ -1,4 +1,6 @@
 import cloudinary from "@/lib/cloudinary";
+import { productImagePublicId } from "@/lib/cloudinary-url";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Test function to validate URL extraction
@@ -13,63 +15,14 @@ export function testUrlExtraction(url: string): void {
 }
 
 /**
- * Extrait l'ID public d'une URL Cloudinary
+ * Extrait l'ID public d'une URL Cloudinary.
+ * Limité aux images produit de notre cloud : une URL fournie par un client ne
+ * doit jamais permettre de détruire un autre asset (profil, preuve, message…).
  * @param url - L'URL Cloudinary complète
- * @returns L'ID public de l'image
+ * @returns L'ID public de l'image, ou null si l'URL n'est pas acceptée
  */
 export function extractPublicIdFromUrl(url: string): string | null {
-	try {
-		console.log("Tentative d'extraction de l'ID public depuis:", url);
-
-		// Vérifier que c'est bien une URL Cloudinary
-		if (!url.includes("cloudinary.com")) {
-			console.error("URL ne semble pas être une URL Cloudinary valide");
-			return null;
-		}
-
-		// Format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/image_name.jpg
-		const urlParts = url.split("/");
-		const uploadIndex = urlParts.findIndex((part) => part === "upload");
-
-		if (uploadIndex === -1) {
-			console.error("Partie 'upload' non trouvée dans l'URL");
-			return null;
-		}
-
-		// Prendre tout ce qui suit 'upload' jusqu'à la fin
-		const pathAfterUpload = urlParts.slice(uploadIndex + 1);
-		const fullPath = pathAfterUpload.join("/");
-
-		console.log("Chemin après 'upload':", fullPath);
-
-		// Supprimer l'extension du fichier et les paramètres de transformation
-		let publicId = fullPath;
-
-		// Supprimer les paramètres de transformation (ex: /w_300,h_200,c_fill)
-		// Chercher le dernier slash qui sépare les transformations du nom de fichier
-		const lastSlashIndex = publicId.lastIndexOf("/");
-		if (lastSlashIndex !== -1) {
-			const beforeLastSlash = publicId.substring(0, lastSlashIndex);
-			const afterLastSlash = publicId.substring(lastSlashIndex + 1);
-
-			// Si après le dernier slash il y a des paramètres (pas d'extension), on les supprime
-			if (!afterLastSlash.includes(".")) {
-				publicId = beforeLastSlash;
-			} else {
-				// Sinon on garde tout et on supprime juste l'extension
-				publicId = publicId.replace(/\.[^/.]+$/, "");
-			}
-		}
-
-		// Supprimer le préfixe de version si présent (ex: v1234567890/)
-		publicId = publicId.replace(/^v\d+\//, "");
-
-		console.log("ID public extrait:", publicId);
-		return publicId;
-	} catch (error) {
-		console.error("Erreur lors de l'extraction de l'ID public:", error);
-		return null;
-	}
+	return productImagePublicId(url);
 }
 
 /**
@@ -124,4 +77,21 @@ export async function deleteMultipleImagesFromCloudinary(
 	const failed = results.length - success;
 
 	return { success, failed };
+}
+
+/**
+ * Supprime les images d'un produit, sauf celles encore référencées par un
+ * autre produit : copier l'URL d'autrui dans son annonce ne permet pas de la
+ * détruire.
+ */
+export async function deleteProductImagesFromCloudinary(
+	productId: string,
+	urls: string[]
+): Promise<{ success: number; failed: number }> {
+	const shared = await prisma.product.findMany({
+		where: { id: { not: productId }, imagesUrl: { hasSome: urls } },
+		select: { imagesUrl: true },
+	});
+	const used = new Set(shared.flatMap((p) => p.imagesUrl));
+	return deleteMultipleImagesFromCloudinary(urls.filter((u) => !used.has(u)));
 }

@@ -1,6 +1,7 @@
 import { getUser } from "@/lib/auth-session";
 import { securityLog } from "@/lib/security-log";
-import { deleteMultipleImagesFromCloudinary } from "@/lib/cloudinary-utils";
+import { deleteProductImagesFromCloudinary } from "@/lib/cloudinary-utils";
+import { isProductImageUrl } from "@/lib/cloudinary-url";
 import { prisma } from "@/lib/prisma";
 import { getProductWithOwnerById } from "@/services/product";
 import { NextResponse } from "next/server";
@@ -212,6 +213,17 @@ export async function PUT(request: Request) {
 			}
 		}
 
+		// Nouvelles images : uniquement des images produit de notre cloud
+		const newImages = (parseResult.data.imagesUrl ?? []).filter(
+			(url) => !existingProduct.imagesUrl.includes(url)
+		);
+		if (!newImages.every(isProductImageUrl)) {
+			return NextResponse.json(
+				{ error: "Invalid image URL" },
+				{ status: 400 }
+			);
+		}
+
 		// If imagesUrl is being updated, delete removed images from Cloudinary
 		if (parseResult.data.imagesUrl && existingProduct.imagesUrl) {
 			const removedImages = existingProduct.imagesUrl.filter(
@@ -219,8 +231,10 @@ export async function PUT(request: Request) {
 			);
 
 			if (removedImages.length > 0) {
-				const deleteResult =
-					await deleteMultipleImagesFromCloudinary(removedImages);
+				const deleteResult = await deleteProductImagesFromCloudinary(
+					productId,
+					removedImages
+				);
 				console.log(
 					`Images supprimées de Cloudinary lors de la mise à jour: ${deleteResult.success} réussies, ${deleteResult.failed} échouées`
 				);
@@ -324,7 +338,8 @@ export async function DELETE(request: Request) {
 
 		// Delete images from Cloudinary if they exist
 		if (existingProduct.imagesUrl && existingProduct.imagesUrl.length > 0) {
-			const deleteResult = await deleteMultipleImagesFromCloudinary(
+			const deleteResult = await deleteProductImagesFromCloudinary(
+				productId,
 				existingProduct.imagesUrl
 			);
 			console.log(
