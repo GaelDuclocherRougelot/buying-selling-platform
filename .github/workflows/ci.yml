@@ -1,0 +1,63 @@
+# CI : lint, types, tests, audit et build sur chaque PR et chaque push sur main.
+# Le déploiement (CD) reste assuré par l'intégration Git de Vercel :
+# preview par PR, production sur main.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Une nouvelle exécution sur la même branche annule la précédente
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Valeurs factices : le build exige ces variables mais n'appelle aucun service
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      BETTER_AUTH_SECRET: ci-dummy-secret-ci-dummy-secret-0000
+      RESEND_API_KEY: re_ci_dummy
+      STRIPE_SECRET_KEY: sk_test_ci_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_ci_dummy
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      # Version lue dans le champ packageManager de package.json
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: npx prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      # next-env.d.ts (types des imports d'images) est ignoré par git : on le génère
+      - name: Types
+        run: |
+          npx next typegen
+          npx tsc --noEmit
+
+      - name: Tests
+        run: pnpm test --ci
+
+      - name: Audit des dépendances (high et critical)
+        run: pnpm audit --prod --audit-level=high
+
+      - name: Build
+        run: pnpm build
